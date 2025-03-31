@@ -1,119 +1,134 @@
-import { NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 import type { WorkforcePlan, SkillRequirement } from "@/types/workforce-components"
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    if (!supabaseAdmin) {
-      throw new Error("Supabase client not initialized")
-    }
+    const supabase = createClient();
 
-    const { data, error } = await supabaseAdmin
-      .from("workforce_plans")
+    // Get workforce plans
+    const { data: plans, error } = await supabase
+      .from('workforce_plans')
       .select(`
         *,
-        department:departments (
+        departments:department_id (
           id,
           name
         )
       `)
-      .order("created_at", { ascending: false })
+      .order('created_at', { ascending: false });
 
     if (error) {
-      console.error("[API] Error fetching workforce plans:", error)
-      throw error
+      console.error("Error fetching workforce plans:", error);
+      return NextResponse.json(
+        { error: "Failed to fetch workforce plans" },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json(data || [], {
-      headers: { 'Content-Type': 'application/json' }
-    })
-  } catch (error: any) {
-    console.error("[API] Error in GET /api/workforce/plans:", error)
+    // Process the data to match our expected interface
+    const processedPlans = plans.map(plan => ({
+      id: plan.id,
+      name: plan.name,
+      description: plan.description,
+      department_id: plan.department_id,
+      department_name: plan.departments?.name,
+      start_date: plan.start_date,
+      end_date: plan.end_date,
+      status: plan.status,
+      required_skills: plan.required_skills || [],
+      budget_amount: plan.budget_amount,
+      created_at: plan.created_at,
+      updated_at: plan.updated_at
+    }));
+
     return NextResponse.json({
-      error: error.message,
-      details: error.details || error.hint || null,
-      code: error.code || null
-    }, {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    })
+      plans: processedPlans,
+      count: processedPlans.length
+    });
+  } catch (error) {
+    console.error("Server error in workforce plans API:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    if (!supabaseAdmin) {
-      throw new Error("Supabase client not initialized")
-    }
+    const supabase = createClient();
+    const body = await request.json();
 
-    const body = await request.json()
+    // Extract data from the form
+    const {
+      planName,
+      description,
+      department,
+      startDate,
+      endDate,
+      budget,
+      requiredSkills
+    } = body;
 
     // Validate required fields
-    if (!body.name || !body.department_id || !body.start_date || !body.end_date) {
-      return NextResponse.json({
-        error: "Missing required fields: name, department_id, start_date, end_date"
-      }, {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      })
+    if (!planName || !department || !startDate || !endDate) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
     }
 
-    // Create the workforce plan
-    const { data: plan, error: planError } = await supabaseAdmin
-      .from("workforce_plans")
-      .insert([{
-        name: body.name,
-        description: body.description,
-        department_id: body.department_id,
-        start_date: body.start_date,
-        end_date: body.end_date,
-        status: "draft",
-        required_skills: body.required_skills || []
-      }])
+    // Process required skills
+    let skillsArray = [];
+    if (requiredSkills) {
+      // Simple parsing for demo - in production would use a more robust approach
+      skillsArray = requiredSkills.split(',').map((skill: string) => ({
+        skill_name: skill.trim(),
+        required_level: 1,
+        required_count: 1
+      }));
+    }
+
+    // Create workforce plan
+    const { data, error } = await supabase
+      .from('workforce_plans')
+      .insert([
+        {
+          name: planName,
+          description,
+          department_id: department,
+          start_date: startDate,
+          end_date: endDate,
+          budget_amount: budget ? parseInt(budget) : null,
+          required_skills: skillsArray,
+          status: 'draft'
+        }
+      ])
       .select()
-      .single()
+      .single();
 
-    if (planError) {
-      console.error("[API] Error creating workforce plan:", planError)
-      throw planError
+    if (error) {
+      console.error("Error creating workforce plan:", error);
+      return NextResponse.json(
+        { error: "Failed to create workforce plan" },
+        { status: 500 }
+      );
     }
 
-    // If there are required skills, create them
-    if (body.required_skills && body.required_skills.length > 0) {
-      const skillRequirements = body.required_skills.map((skill: SkillRequirement) => ({
-        plan_id: plan.id,
-        skill_id: skill.skill_id,
-        required_level: skill.required_level,
-        required_count: skill.required_count
-      }))
-
-      const { error: skillError } = await supabaseAdmin
-        .from("workforce_plan_skills")
-        .insert(skillRequirements)
-
-      if (skillError) {
-        console.error("[API] Error creating skill requirements:", skillError)
-        throw skillError
-      }
-    }
-
-    return NextResponse.json(plan, {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' }
-    })
-  } catch (error: any) {
-    console.error("[API] Error in POST /api/workforce/plans:", error)
     return NextResponse.json({
-      error: error.message,
-      details: error.details || error.hint || null,
-      code: error.code || null
-    }, {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    })
+      success: true,
+      plan: data
+    });
+  } catch (error) {
+    console.error("Server error in create workforce plan API:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 

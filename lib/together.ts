@@ -1,153 +1,122 @@
-import axios, { AxiosError } from 'axios';
+/**
+ * Utility functions for interacting with Together AI API
+ */
 
-const TOGETHER_API_URL = process.env.TOGETHER_API_URL || 'https://api.together.xyz/v1/chat/completions';
-const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY;
+const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY
+const TOGETHER_API_URL = "https://api.together.xyz/v1/chat/completions"
 
-interface Message {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
+export type LLMMessage = {
+  role: 'system' | 'user' | 'assistant'
+  content: string
 }
 
-interface TogetherResponse {
-  id: string;
-  object: string;
-  created: number;
-  model: string;
-  choices: {
-    index: number;
-    message: {
-      role: string;
-      content: string;
-    };
-    finish_reason: string;
-  }[];
-  usage: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
+/**
+ * Generate text using Together AI's Mixtral 8x7B Instruct model
+ */
+export async function generateWithMixtral(
+  prompt: string,
+  systemPrompt: string = "You are a helpful AI assistant.",
+  temperature: number = 0.7,
+  maxTokens: number = 1000
+): Promise<string> {
+  if (!TOGETHER_API_KEY) {
+    throw new Error("TOGETHER_API_KEY environment variable is not set")
+  }
+
+  const response = await fetch(TOGETHER_API_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${TOGETHER_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: prompt },
+      ],
+      temperature,
+      max_tokens: maxTokens,
+    }),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`Together AI API error: ${response.status} ${response.statusText} - ${errorText}`)
+  }
+
+  const data = await response.json()
+  return data.choices[0].message.content
 }
 
+/**
+ * Generate text using Together AI's Llama 3 70B Instruct model
+ */
 export async function generateWithLlama3(
   prompt: string,
-  systemPrompt: string = "You are a helpful AI assistant that specializes in business analytics, finance, and HR. Provide accurate, concise, and relevant information.",
+  systemPrompt: string = "You are a helpful AI assistant.",
   temperature: number = 0.7,
-  max_tokens: number = 1000
+  maxTokens: number = 1000
 ): Promise<string> {
-  try {
-    if (!TOGETHER_API_KEY) {
-      throw new Error('TOGETHER_API_KEY is not defined in environment variables');
-    }
-
-    const messages: Message[] = [
-      {
-        role: 'system',
-        content: systemPrompt
-      },
-      {
-        role: 'user',
-        content: prompt
-      }
-    ];
-
-    const response = await axios.post<TogetherResponse>(
-      TOGETHER_API_URL,
-      {
-        model: 'meta-llama/Llama-3-8b-chat-hf', // Using Llama 3 8B model
-        messages,
-        temperature,
-        max_tokens
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${TOGETHER_API_KEY}`
-        }
-      }
-    );
-
-    return response.data.choices[0].message.content;
-  } catch (error: unknown) {
-    console.error('Error calling Together.ai API:', error);
-    if (axios.isAxiosError(error) && error.response) {
-      console.error('Response data:', error.response.data);
-      console.error('Response status:', error.response.status);
-    }
-    throw error;
+  if (!TOGETHER_API_KEY) {
+    throw new Error("TOGETHER_API_KEY environment variable is not set")
   }
+
+  const response = await fetch(TOGETHER_API_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${TOGETHER_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "meta-llama/Llama-3-70b-instruct",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: prompt },
+      ],
+      temperature,
+      max_tokens: maxTokens,
+    }),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`Together AI API error: ${response.status} ${response.statusText} - ${errorText}`)
+  }
+
+  const data = await response.json()
+  return data.choices[0].message.content
 }
 
-export async function generateJsonWithLlama3<T>(
-  prompt: string,
-  systemPrompt: string = "You are a helpful AI assistant that specializes in business analytics, finance, and HR. Your response should ONLY be valid JSON without any explanation or markdown.",
-  temperature: number = 0.2,
-  max_tokens: number = 1000
+/**
+ * Generate JSON structure using Together AI's Mixtral model
+ * This function is optimized for generating valid JSON structures
+ */
+export async function generateJsonWithAI<T>(
+  prompt: string, 
+  systemPrompt: string, 
+  jsonExample?: string
 ): Promise<T> {
+  const enhancedSystemPrompt = `${systemPrompt}
+  
+  You MUST respond with ONLY valid JSON that can be parsed by JSON.parse().
+  Do not include any non-JSON text in your response, not even markdown code blocks.
+  Your entire response should be parseable JSON.
+  
+  ${jsonExample ? `Example JSON structure: ${jsonExample}` : ''}`;
+
   try {
-    const textResponse = await generateWithLlama3(prompt, systemPrompt, temperature, max_tokens);
+    const response = await generateWithMixtral(prompt, enhancedSystemPrompt, 0.2, 2000);
     
-    // Extract JSON from the response if it's wrapped in markdown code blocks
-    let jsonString = textResponse.trim();
-    
-    // First, check for markdown JSON code blocks
-    const jsonBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/;
-    const blockMatch = jsonString.match(jsonBlockRegex);
-    if (blockMatch && blockMatch[1]) {
-      jsonString = blockMatch[1].trim();
+    // Handle case where model might still include markdown code blocks despite instructions
+    let jsonString = response;
+    if (jsonString.includes('```')) {
+      jsonString = jsonString.replace(/```json\n?/, '').replace(/```\n?/, '');
     }
     
-    // Remove any leading/trailing text before or after JSON structure
-    // Look for array pattern: starts with [ and ends with ]
-    const arrayMatch = jsonString.match(/(\[[\s\S]*\])/);
-    if (arrayMatch && arrayMatch[1]) {
-      jsonString = arrayMatch[1];
-    } 
-    // Look for object pattern: starts with { and ends with }
-    else {
-      const objectMatch = jsonString.match(/(\{[\s\S]*\})/);
-      if (objectMatch && objectMatch[1]) {
-        jsonString = objectMatch[1];
-      }
-    }
-    
-    // Fix common JSON issues
-    jsonString = jsonString
-      // Remove trailing commas in arrays and objects
-      .replace(/,\s*([}\]])/g, '$1')
-      // Ensure property names are double-quoted
-      .replace(/([{,]\s*)(['"])?([a-zA-Z0-9_]+)(['"])?\s*:/g, '$1"$3":')
-      // Ensure string values are double-quoted
-      .replace(/:\s*['`]([^'`\n]*?)['`]/g, ':"$1"');
-    
-    console.log("Attempting to parse JSON:", jsonString.substring(0, 200) + (jsonString.length > 200 ? "..." : ""));
-    
-    try {
-      return JSON.parse(jsonString) as T;
-    } catch (parseError) {
-      console.error("JSON parse error:", parseError);
-      
-      // Last resort: try removing all non-JSON characters
-      const cleanedJson = jsonString
-        .replace(/[\u0000-\u001F\u007F-\u009F]/g, "") // Remove control characters
-        .replace(/\\n/g, "\\n")
-        .replace(/\\"/g, '\\"')
-        .replace(/\\&/g, "\\&")
-        .replace(/\\r/g, "\\r")
-        .replace(/\\t/g, "\\t")
-        .replace(/\\b/g, "\\b")
-        .replace(/\\f/g, "\\f");
-      
-      try {
-        return JSON.parse(cleanedJson) as T;
-      } catch (finalError: unknown) {
-        console.error("Final JSON parse failure:", finalError);
-        // If we can't parse JSON, return a meaningful error
-        const errorMessage = finalError instanceof Error ? finalError.message : 'Unknown JSON parsing error';
-        throw new Error(`Failed to parse JSON response: ${errorMessage}`);
-      }
-    }
-  } catch (error: unknown) {
-    console.error('Error generating or parsing JSON with Llama 3:', error);
-    throw error;
+    return JSON.parse(jsonString) as T;
+  } catch (error) {
+    console.error('Error generating JSON with AI:', error);
+    throw new Error('Failed to generate valid JSON from AI response');
   }
 } 

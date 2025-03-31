@@ -25,108 +25,23 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface OrgChartNode {
   id: string
   name: string
-  position: string
+  title: string
   department: string
   email?: string
-  avatar?: string
+  imageUrl?: string
   children: OrgChartNode[]
+  dotted_line_reports?: OrgChartNode[]
+  matrix_reports?: OrgChartNode[]
+  reporting_type?: "direct" | "matrix" | "dotted-line"
   isCollapsed?: boolean
-}
-
-// Sample org chart data
-const initialOrgChart: OrgChartNode = {
-  id: "1",
-  name: "Robert Johnson",
-  position: "CEO",
-  department: "Executive",
-  email: "robert.johnson@example.com",
-  avatar: "/placeholder.svg?height=64&width=64",
-  children: [
-    {
-      id: "2",
-      name: "Sarah Williams",
-      position: "CTO",
-      department: "Technology",
-      email: "sarah.williams@example.com",
-      avatar: "/placeholder.svg?height=64&width=64",
-      children: [
-        {
-          id: "5",
-          name: "Michael Chen",
-          position: "Engineering Director",
-          department: "Engineering",
-          email: "michael.chen@example.com",
-          avatar: "/placeholder.svg?height=64&width=64",
-          children: [
-            {
-              id: "9",
-              name: "Alex Johnson",
-              position: "Senior Developer",
-              department: "Engineering",
-              email: "alex.johnson@example.com",
-              avatar: "/placeholder.svg?height=64&width=64",
-              children: [],
-            },
-            {
-              id: "10",
-              name: "Priya Patel",
-              position: "DevOps Engineer",
-              department: "Engineering",
-              email: "priya.patel@example.com",
-              avatar: "/placeholder.svg?height=64&width=64",
-              children: [],
-            },
-          ],
-        },
-        {
-          id: "6",
-          name: "Emily Rodriguez",
-          position: "Product Director",
-          department: "Product",
-          email: "emily.rodriguez@example.com",
-          avatar: "/placeholder.svg?height=64&width=64",
-          children: [],
-        },
-      ],
-    },
-    {
-      id: "3",
-      name: "David Wilson",
-      position: "CFO",
-      department: "Finance",
-      email: "david.wilson@example.com",
-      avatar: "/placeholder.svg?height=64&width=64",
-      children: [
-        {
-          id: "7",
-          name: "Jennifer Lee",
-          position: "Finance Director",
-          department: "Finance",
-          email: "jennifer.lee@example.com",
-          avatar: "/placeholder.svg?height=64&width=64",
-          children: [],
-        },
-        {
-          id: "8",
-          name: "Thomas Brown",
-          position: "Accounting Manager",
-          department: "Finance",
-          email: "thomas.brown@example.com",
-          avatar: "/placeholder.svg?height=64&width=64",
-          children: [],
-        },
-      ],
-    },
-    {
-      id: "4",
-      name: "Lisa Martinez",
-      position: "CHRO",
-      department: "Human Resources",
-      email: "lisa.martinez@example.com",
-      avatar: "/placeholder.svg?height=64&width=64",
-      children: [],
-    },
-  ],
+  metadata?: {
+    skills?: string[]
+    performance_rating?: number
+    risk_of_loss?: "low" | "medium" | "high"
+    impact_of_loss?: "low" | "medium" | "high"
+    succession_candidates?: string[]
+    location?: string
+  }
 }
 
 // Drag and drop types
@@ -252,7 +167,7 @@ const OrgNode = ({
         </div>
 
         <Avatar className="h-16 w-16 mb-2">
-          <AvatarImage src={node.avatar} alt={node.name} />
+          <AvatarImage src={node.imageUrl} alt={node.name} />
           <AvatarFallback>
             {node.name
               .split(" ")
@@ -261,7 +176,7 @@ const OrgNode = ({
           </AvatarFallback>
         </Avatar>
         <h3 className="text-base font-medium">{node.name}</h3>
-        <p className="text-sm text-muted-foreground">{node.position}</p>
+        <p className="text-sm text-muted-foreground">{node.title}</p>
         <Badge variant="outline" className="mt-1">
           {node.department}
         </Badge>
@@ -310,14 +225,14 @@ const NodeEditDialog = ({
   onSave: (updatedNode: OrgChartNode) => void
 }) => {
   const [name, setName] = useState("")
-  const [position, setPosition] = useState("")
+  const [title, setTitle] = useState("")
   const [department, setDepartment] = useState("")
   const [email, setEmail] = useState("")
 
   useEffect(() => {
     if (node) {
       setName(node.name)
-      setPosition(node.position)
+      setTitle(node.title)
       setDepartment(node.department)
       setEmail(node.email || "")
     }
@@ -329,7 +244,7 @@ const NodeEditDialog = ({
     onSave({
       ...node,
       name,
-      position,
+      title,
       department,
       email,
     })
@@ -358,11 +273,11 @@ const NodeEditDialog = ({
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="position">Position</Label>
+            <Label htmlFor="title">Title</Label>
             <Input
-              id="position"
-              value={position}
-              onChange={(e) => setPosition(e.target.value)}
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               placeholder="Job Title"
             />
           </div>
@@ -404,7 +319,7 @@ const NodeEditDialog = ({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!name || !position || !department}>
+          <Button onClick={handleSave} disabled={!name || !title || !department}>
             Save
           </Button>
         </DialogFooter>
@@ -499,11 +414,106 @@ const OrgChartGeneratorDialog = ({
 
 // Main Org Chart Editor component
 export function OrgChartEditor() {
-  const [orgChart, setOrgChart] = useState<OrgChartNode>(initialOrgChart)
-  const [editNode, setEditNode] = useState<OrgChartNode | null>(null)
+  const [orgChart, setOrgChart] = useState<OrgChartNode | null>(null)
+  const [employees, setEmployees] = useState<any[]>([])
+  const [departments, setDepartments] = useState<any[]>([])
+  const [selectedNode, setSelectedNode] = useState<OrgChartNode | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isGeneratorDialogOpen, setIsGeneratorDialogOpen] = useState(false)
+  const [isGeneratorOpen, setIsGeneratorOpen] = useState(false)
   const [zoomLevel, setZoomLevel] = useState(100)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Fetch both org chart data and employees/departments when component mounts
+    Promise.all([
+      fetchOrgChart(),
+      fetchEmployees(),
+      fetchDepartments()
+    ]).catch(err => {
+      console.error("Error initializing editor:", err)
+      setError("Failed to load organization data")
+    }).finally(() => {
+      setLoading(false)
+    })
+  }, [])
+
+  const fetchOrgChart = async () => {
+    try {
+      const response = await fetch('/api/organization')
+      if (!response.ok) {
+        throw new Error('Failed to fetch organization chart')
+      }
+      const data = await response.json()
+      if (data.success && data.data) {
+        setOrgChart(data.data)
+      } else {
+        // If no org chart exists, we'll create one from scratch
+        setOrgChart(null)
+      }
+    } catch (error) {
+      console.error("Error fetching org chart:", error)
+      throw error
+    }
+  }
+
+  const fetchEmployees = async () => {
+    try {
+      const response = await fetch('/api/employees')
+      if (!response.ok) {
+        throw new Error('Failed to fetch employees')
+      }
+      const data = await response.json()
+      if (data.success && data.data) {
+        setEmployees(data.data)
+      }
+    } catch (error) {
+      console.error("Error fetching employees:", error)
+      throw error
+    }
+  }
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await fetch('/api/departments')
+      if (!response.ok) {
+        throw new Error('Failed to fetch departments')
+      }
+      const data = await response.json()
+      if (data.success && data.data) {
+        setDepartments(data.data)
+      }
+    } catch (error) {
+      console.error("Error fetching departments:", error)
+      throw error
+    }
+  }
+
+  // Function to save the updated org chart
+  const saveOrgChart = async (structure: OrgChartNode) => {
+    try {
+      const response = await fetch('/api/organization', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          structure,
+          name: 'Updated Organization Structure',
+          is_active: true
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save organization chart')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error("Error saving org chart:", error)
+      throw error
+    }
+  }
 
   // Function to toggle node collapse
   const handleToggleCollapse = (nodeId: string) => {
@@ -518,12 +528,12 @@ export function OrgChartEditor() {
       }
     }
 
-    setOrgChart(toggleNode(orgChart))
+    setOrgChart(toggleNode(orgChart as OrgChartNode))
   }
 
   // Function to edit a node
   const handleEditNode = (node: OrgChartNode) => {
-    setEditNode(node)
+    setSelectedNode(node)
     setIsEditDialogOpen(true)
   }
 
@@ -543,7 +553,7 @@ export function OrgChartEditor() {
                 ...updatedNode,
                 id: `${Date.now()}`,
                 children: [],
-                avatar: "/placeholder.svg?height=64&width=64",
+                imageUrl: "/placeholder.svg?height=64&width=64",
               },
             ],
           }
@@ -555,7 +565,7 @@ export function OrgChartEditor() {
         }
       }
 
-      setOrgChart(addChild(orgChart))
+      setOrgChart(addChild(orgChart as OrgChartNode))
     } else {
       // Update existing node
       const updateNode = (node: OrgChartNode): OrgChartNode => {
@@ -569,7 +579,7 @@ export function OrgChartEditor() {
         }
       }
 
-      setOrgChart(updateNode(orgChart))
+      setOrgChart(updateNode(orgChart as OrgChartNode))
     }
   }
 
@@ -595,7 +605,7 @@ export function OrgChartEditor() {
       return node
     }
 
-    setOrgChart(deleteNodeByPath(orgChart))
+    setOrgChart(deleteNodeByPath(orgChart as OrgChartNode))
   }
 
   // Function to add a child node
@@ -603,12 +613,12 @@ export function OrgChartEditor() {
     const newNode: OrgChartNode = {
       id: "new",
       name: "",
-      position: "",
+      title: "",
       department: "",
-      children: [{ id: parentId, name: "", position: "", department: "", children: [] }], // Store parent ID
+      children: [{ id: parentId, name: "", title: "", department: "", children: [] }], // Store parent ID
     }
 
-    setEditNode(newNode)
+    setSelectedNode(newNode)
     setIsEditDialogOpen(true)
   }
 
@@ -628,7 +638,7 @@ export function OrgChartEditor() {
       return getNodeByPath(childNode, path.slice(1))
     }
 
-    const draggedNode = getNodeByPath(orgChart, dragPath)
+    const draggedNode = getNodeByPath(orgChart as OrgChartNode, dragPath)
     if (!draggedNode) return
 
     // Create a deep copy of the org chart
@@ -649,7 +659,7 @@ export function OrgChartEditor() {
       return { ...node, children: updatedChildren }
     }
 
-    const orgChartWithoutDraggedNode = removeNodeByPath(newOrgChart, dragPath)
+    const orgChartWithoutDraggedNode = removeNodeByPath(newOrgChart as OrgChartNode, dragPath)
 
     // Add the dragged node to its new position
     const addNodeByPath = (node: OrgChartNode, path: number[], nodeToAdd: OrgChartNode): OrgChartNode => {
@@ -672,205 +682,41 @@ export function OrgChartEditor() {
   }
 
   // Function to generate org chart from prompt
-  const handleGenerateOrgChart = (prompt: string, structure: string, size: string) => {
-    // In a real implementation, this would call an AI service
-    // For now, we'll generate a sample org chart based on the inputs
+  const handleGenerateOrgChart = async (prompt: string, structureType: string, size: string) => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const response = await fetch('/api/organization/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          prompt,
+          structure_type: structureType,
+          size
+        }),
+      })
 
-    let generatedChart: OrgChartNode
+      if (!response.ok) {
+        throw new Error('Failed to generate organization structure')
+      }
 
-    if (prompt.toLowerCase().includes("tech") || prompt.toLowerCase().includes("startup")) {
-      // Generate a tech startup org chart
-      generatedChart = {
-        id: "1",
-        name: "Alex Morgan",
-        position: "CEO",
-        department: "Executive",
-        avatar: "/placeholder.svg?height=64&width=64",
-        children: [
-          {
-            id: "2",
-            name: "Jamie Chen",
-            position: "CTO",
-            department: "Technology",
-            avatar: "/placeholder.svg?height=64&width=64",
-            children: [
-              {
-                id: "5",
-                name: "Taylor Reed",
-                position: "Engineering Lead",
-                department: "Engineering",
-                avatar: "/placeholder.svg?height=64&width=64",
-                children: [],
-              },
-              {
-                id: "6",
-                name: "Jordan Smith",
-                position: "Product Lead",
-                department: "Product",
-                avatar: "/placeholder.svg?height=64&width=64",
-                children: [],
-              },
-            ],
-          },
-          {
-            id: "3",
-            name: "Casey Johnson",
-            position: "CMO",
-            department: "Marketing",
-            avatar: "/placeholder.svg?height=64&width=64",
-            children: [],
-          },
-          {
-            id: "4",
-            name: "Riley Brown",
-            position: "COO",
-            department: "Operations",
-            avatar: "/placeholder.svg?height=64&width=64",
-            children: [],
-          },
-        ],
+      const result = await response.json()
+      
+      if (result.success && result.data) {
+        setOrgChart(result.data)
+        setIsGeneratorOpen(false)
+      } else {
+        throw new Error(result.error || 'Unknown error occurred')
       }
-    } else if (prompt.toLowerCase().includes("healthcare") || prompt.toLowerCase().includes("hospital")) {
-      // Generate a healthcare org chart
-      generatedChart = {
-        id: "1",
-        name: "Dr. Sarah Johnson",
-        position: "Medical Director",
-        department: "Executive",
-        avatar: "/placeholder.svg?height=64&width=64",
-        children: [
-          {
-            id: "2",
-            name: "Dr. Michael Chen",
-            position: "Chief of Surgery",
-            department: "Surgery",
-            avatar: "/placeholder.svg?height=64&width=64",
-            children: [],
-          },
-          {
-            id: "3",
-            name: "Dr. Emily Rodriguez",
-            position: "Chief of Medicine",
-            department: "Medicine",
-            avatar: "/placeholder.svg?height=64&width=64",
-            children: [],
-          },
-          {
-            id: "4",
-            name: "James Wilson",
-            position: "Head of Nursing",
-            department: "Nursing",
-            avatar: "/placeholder.svg?height=64&width=64",
-            children: [],
-          },
-          {
-            id: "5",
-            name: "Lisa Martinez",
-            position: "Administrative Director",
-            department: "Administration",
-            avatar: "/placeholder.svg?height=64&width=64",
-            children: [],
-          },
-        ],
-      }
-    } else {
-      // Default generic org chart
-      generatedChart = {
-        id: "1",
-        name: "Sam Taylor",
-        position: "CEO",
-        department: "Executive",
-        avatar: "/placeholder.svg?height=64&width=64",
-        children: [
-          {
-            id: "2",
-            name: "Alex Johnson",
-            position: "VP of Operations",
-            department: "Operations",
-            avatar: "/placeholder.svg?height=64&width=64",
-            children: [],
-          },
-          {
-            id: "3",
-            name: "Jordan Smith",
-            position: "VP of Sales",
-            department: "Sales",
-            avatar: "/placeholder.svg?height=64&width=64",
-            children: [],
-          },
-          {
-            id: "4",
-            name: "Taylor Reed",
-            position: "VP of Marketing",
-            department: "Marketing",
-            avatar: "/placeholder.svg?height=64&width=64",
-            children: [],
-          },
-        ],
-      }
+    } catch (error: any) {
+      console.error("Error generating organization:", error)
+      setError(error.message || 'Failed to generate organization structure')
+    } finally {
+      setLoading(false)
     }
-
-    // Adjust based on structure type
-    if (structure === "flat") {
-      // Make all employees report directly to CEO
-      const flatChildren = []
-      const collectAllNodes = (node: OrgChartNode) => {
-        for (const child of node.children) {
-          flatChildren.push({
-            ...child,
-            children: [],
-          })
-          collectAllNodes(child)
-        }
-      }
-
-      collectAllNodes(generatedChart)
-      generatedChart.children = flatChildren
-    } else if (structure === "matrix") {
-      // Add some cross-functional reporting
-      const projectLead = {
-        id: "matrix-1",
-        name: "Quinn Davis",
-        position: "Project Lead",
-        department: "Project Management",
-        avatar: "/placeholder.svg?height=64&width=64",
-        children: [],
-      }
-
-      generatedChart.children.push(projectLead)
-    }
-
-    // Adjust based on size
-    if (size === "small") {
-      // Trim down the org chart
-      generatedChart.children = generatedChart.children.slice(0, 2)
-    } else if (size === "large" || size === "enterprise") {
-      // Add more depth and breadth
-      for (const child of generatedChart.children) {
-        if (child.children.length === 0) {
-          child.children = [
-            {
-              id: `${child.id}-1`,
-              name: `Team Lead 1`,
-              position: "Team Lead",
-              department: child.department,
-              avatar: "/placeholder.svg?height=64&width=64",
-              children: [],
-            },
-            {
-              id: `${child.id}-2`,
-              name: `Team Lead 2`,
-              position: "Team Lead",
-              department: child.department,
-              avatar: "/placeholder.svg?height=64&width=64",
-              children: [],
-            },
-          ]
-        }
-      }
-    }
-
-    setOrgChart(generatedChart)
   }
 
   return (
@@ -897,19 +743,19 @@ export function OrgChartEditor() {
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="flex items-center gap-1">
               <Users className="h-3 w-3" />
-              <span>{countNodes(orgChart)} Employees</span>
+              <span>{countNodes(orgChart as OrgChartNode)} Employees</span>
             </Badge>
             <Badge variant="outline" className="flex items-center gap-1">
               <Building className="h-3 w-3" />
-              <span>{countDepartments(orgChart)} Departments</span>
+              <span>{countDepartments(orgChart as OrgChartNode)} Departments</span>
             </Badge>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setIsGeneratorDialogOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => setIsGeneratorOpen(true)}>
               <Wand2 className="mr-2 h-4 w-4" />
               Generate
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => saveOrgChart(orgChart as OrgChartNode)}>
               <Save className="mr-2 h-4 w-4" />
               Save
             </Button>
@@ -920,29 +766,43 @@ export function OrgChartEditor() {
           className="min-h-[500px] overflow-auto rounded-md border p-4"
           style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: "top center" }}
         >
-          <DndProvider backend={HTML5Backend}>
-            <OrgNode
-              node={orgChart}
-              onToggleCollapse={handleToggleCollapse}
-              onEdit={handleEditNode}
-              onDelete={handleDeleteNode}
-              onAddChild={handleAddChild}
-              onDrop={handleDrop}
-            />
-          </DndProvider>
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <span>Loading...</span>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-full">
+              <span className="text-error">{error}</span>
+            </div>
+          ) : orgChart ? (
+            <DndProvider backend={HTML5Backend}>
+              <OrgNode
+                node={orgChart}
+                onToggleCollapse={handleToggleCollapse}
+                onEdit={handleEditNode}
+                onDelete={handleDeleteNode}
+                onAddChild={handleAddChild}
+                onDrop={handleDrop}
+              />
+            </DndProvider>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <span>No organization chart found.</span>
+            </div>
+          )}
         </div>
       </CardContent>
 
       <NodeEditDialog
-        node={editNode}
+        node={selectedNode}
         isOpen={isEditDialogOpen}
         onClose={() => setIsEditDialogOpen(false)}
         onSave={handleSaveNode}
       />
 
       <OrgChartGeneratorDialog
-        isOpen={isGeneratorDialogOpen}
-        onClose={() => setIsGeneratorDialogOpen(false)}
+        isOpen={isGeneratorOpen}
+        onClose={() => setIsGeneratorOpen(false)}
         onGenerate={handleGenerateOrgChart}
       />
     </Card>
@@ -975,4 +835,3 @@ function countDepartments(node: OrgChartNode): number {
 
 // Missing imports
 import { ZoomIn, ZoomOut, Building, Wand2 } from "lucide-react"
-

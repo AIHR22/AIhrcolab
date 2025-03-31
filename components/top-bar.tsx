@@ -15,6 +15,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { ModeToggle } from "@/components/mode-toggle"
+import Link from "next/link"
 
 interface TopBarProps {
   onToggleSidebar: () => void
@@ -55,6 +56,13 @@ export function TopBar({ onToggleSidebar }: TopBarProps) {
 
       <div className="flex flex-1 items-center justify-end gap-4">
         <ModeToggle />
+
+        <Link
+          href="/dashboard/organization"
+          className="flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 mr-2"
+        >
+          Organization
+        </Link>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

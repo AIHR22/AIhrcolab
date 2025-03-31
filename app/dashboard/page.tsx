@@ -25,6 +25,7 @@ import { RecentHires } from "@/components/dashboard/recent-hires"
 import { UpcomingReviews } from "@/components/dashboard/upcoming-reviews"
 import { TimeOffRequests } from "@/components/dashboard/time-off-requests"
 import { motion } from "framer-motion"
+import Link from "next/link"
 
 // Mock data for charts
 const workforceData = [
@@ -72,6 +73,18 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-semibold">Organization Module</h3>
+            <p className="text-sm text-muted-foreground">Access the new Organization module to manage your company structure</p>
+          </div>
+          <Link href="/dashboard/organization" className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md">
+            Go to Organization
+          </Link>
+        </div>
+      </div>
+
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">Welcome to your HR Suite dashboard. Here's what's happening today.</p>

@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { PlusCircle, Users, DollarSign } from "lucide-react"
+import { PlusCircle, Users, DollarSign, BarChart3, Activity, BrainCircuit, SendHorizonal, FileQuestion, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -22,414 +22,612 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { useToast } from "@/components/ui/use-toast"
+import { Skeleton } from "@/components/ui/skeleton"
+
+// Import the new workforce planning components
+import { HeadcountForecast } from "@/components/workforce/headcount-forecast"
+import { SkillGapAnalysis } from "@/components/workforce/skill-gap-analysis"
+import { WorkforceInsights } from "@/components/workforce/workforce-insights"
+import { ScenarioModeling } from "@/components/workforce/scenario-modeling"
+import { CostModelingChart } from "@/components/workforce/cost-modeling-chart"
+
+// Types
+import type { Department } from "@/types/organization"
+import type { WorkforcePlan as BaseWorkforcePlan, WorkforcePlanningAnalysis } from "@/types/workforce-components"
+
+// Extended WorkforcePlan with additional properties needed for UI
+interface WorkforcePlan extends BaseWorkforcePlan {
+  department_name?: string;
+  budget_amount?: number;
+}
 
 export default function WorkforcePlanningPage() {
   const router = useRouter()
+  const { toast } = useToast()
+  const [activeTab, setActiveTab] = useState("active")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isAIAnalyzing, setIsAIAnalyzing] = useState(false)
   const [aiResults, setAiResults] = useState<any>(null)
+  
+  // New state variables for API integration
+  const [departments, setDepartments] = useState<Department[]>([])
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null)
+  const [activePlans, setActivePlans] = useState<WorkforcePlan[]>([])
+  const [draftPlans, setDraftPlans] = useState<WorkforcePlan[]>([])
+  const [completedPlans, setCompletedPlans] = useState<WorkforcePlan[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  
+  // New state for form data
+  const [formData, setFormData] = useState({
+    planName: "",
+    description: "",
+    department: "",
+    startDate: "",
+    endDate: "",
+    budget: "",
+    requiredSkills: "",
+  })
+  
+  // Fetch departments and plans on component mount
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      setIsLoading(true)
+      try {
+        // Fetch departments
+        const deptResponse = await fetch('/api/departments')
+        if (deptResponse.ok) {
+          const deptData = await deptResponse.json()
+          setDepartments(deptData.departments || [])
+        }
+        
+        // Fetch workforce plans
+        const plansResponse = await fetch('/api/workforce/plans')
+        if (plansResponse.ok) {
+          const plansData = await plansResponse.json()
+          
+          // Filter plans by status
+          setActivePlans(plansData.plans?.filter((p: WorkforcePlan) => p.status === 'active') || [])
+          setDraftPlans(plansData.plans?.filter((p: WorkforcePlan) => p.status === 'draft') || [])
+          setCompletedPlans(plansData.plans?.filter((p: WorkforcePlan) => p.status === 'completed') || [])
+        }
+      } catch (error) {
+        console.error("Error fetching initial data:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load departments and plans",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    fetchInitialData()
+  }, [])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  const handleCreatePlan = async () => {
+    try {
+      const response = await fetch('/api/workforce/plans', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      })
+      
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Workforce plan created successfully",
+        })
+        setIsDialogOpen(false)
+        
+        // Refresh the plans list
+        const plansResponse = await fetch('/api/workforce/plans')
+        if (plansResponse.ok) {
+          const plansData = await plansResponse.json()
+          setDraftPlans(plansData.plans?.filter((p: WorkforcePlan) => p.status === 'draft') || [])
+        }
+        
+        // Reset form
+        setFormData({
+          planName: "",
+          description: "",
+          department: "",
+          startDate: "",
+          endDate: "",
+          budget: "",
+          requiredSkills: "",
+        })
+      }
+    } catch (error) {
+      console.error("Error creating plan:", error)
+      toast({
+        title: "Error",
+        description: "Failed to create workforce plan",
+        variant: "destructive",
+      })
+    }
+  }
 
   const handleAIAnalysis = async () => {
-    setIsAIAnalyzing(true)
-
-    // Simulate AI analysis
-    setTimeout(() => {
-      setIsAIAnalyzing(false)
-      setAiResults({
-        feasible: true,
-        skillGaps: [
-          { skill: "Machine Learning", gap: "High", recommendation: "Hire 2 ML Engineers" },
-          { skill: "Cloud Architecture", gap: "Medium", recommendation: "Train existing staff" },
-          { skill: "DevOps", gap: "Low", recommendation: "Contract temporarily" },
-        ],
-        hiringCosts: 250000,
-        revenueImpact: 1200000,
-        resourceAllocation: [
-          { team: "Engineering", allocation: 45 },
-          { team: "Design", allocation: 20 },
-          { team: "Product", allocation: 25 },
-          { team: "QA", allocation: 10 },
-        ],
+    if (!selectedDepartment) {
+      toast({
+        title: "Error",
+        description: "Please select a department for analysis",
+        variant: "destructive",
       })
-    }, 2000)
+      return
+    }
+    
+    setIsAIAnalyzing(true)
+    setAiResults(null)
+    
+    try {
+      // Get headcount forecasting data
+      const forecastResponse = await fetch('/api/workforce/forecasting', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          departmentId: selectedDepartment,
+          months: 12
+        })
+      })
+      
+      // Get skill gap analysis
+      const skillGapResponse = await fetch('/api/workforce/skill-gap', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          departmentId: selectedDepartment
+        })
+      })
+      
+      // Get workforce insights
+      const insightsResponse = await fetch('/api/workforce/insights', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          departmentId: selectedDepartment
+        })
+      })
+      
+      if (forecastResponse.ok && skillGapResponse.ok && insightsResponse.ok) {
+        const forecastData = await forecastResponse.json()
+        const skillGapData = await skillGapResponse.json()
+        const insightsData = await insightsResponse.json()
+        
+        setAiResults({
+          forecast: forecastData,
+          skillGap: skillGapData,
+          insights: insightsData
+        })
+      } else {
+        throw new Error("One or more API requests failed")
+      }
+    } catch (error) {
+      console.error("AI analysis error:", error)
+      toast({
+        title: "Analysis Error",
+        description: "Failed to complete workforce analysis",
+        variant: "destructive",
+      })
+    } finally {
+      setIsAIAnalyzing(false)
+    }
+  }
+
+  // Helper function to render plan cards
+  const renderPlanCards = (plans: WorkforcePlan[]) => {
+    if (isLoading) {
+      return Array(3).fill(0).map((_, i) => (
+        <Card key={i} className="w-full">
+          <CardHeader>
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-1/2 mt-2" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-4 w-full mt-2" />
+            <Skeleton className="h-4 w-3/4 mt-2" />
+          </CardContent>
+          <CardFooter>
+            <Skeleton className="h-10 w-20" />
+          </CardFooter>
+        </Card>
+      ))
+    }
+
+    if (plans.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center p-6 text-center">
+          <FileText className="h-12 w-12 text-muted-foreground mb-2" />
+          <h3 className="text-lg font-medium">No plans found</h3>
+          <p className="text-sm text-muted-foreground">
+            Get started by creating a new workforce plan
+          </p>
+        </div>
+      )
+    }
+
+    return plans.map((plan) => (
+      <Card key={plan.id} className="w-full">
+        <CardHeader>
+          <CardTitle>{plan.name}</CardTitle>
+          <CardDescription>
+            {plan.department_name} • Budget: ${parseInt(plan.budget_amount?.toString() || "0").toLocaleString()}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+            {plan.description}
+          </p>
+          <div className="flex items-center justify-between text-sm">
+            <div>
+              <span className="text-muted-foreground">Timeline:</span> {new Date(plan.start_date).toLocaleDateString()} - {new Date(plan.end_date).toLocaleDateString()}
+            </div>
+            <Badge>{plan.status}</Badge>
+          </div>
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/workforce-planning/${plan.id}`)}>
+            View Details
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setSelectedDepartment(plan.department_id)}
+          >
+            Analyze
+          </Button>
+        </CardFooter>
+      </Card>
+    ))
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="h-full flex-1 flex-col space-y-8 p-8 flex">
+      <div className="flex items-center justify-between space-y-2">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Workforce Planning</h1>
-          <p className="text-muted-foreground">AI-powered workforce planning and resource allocation</p>
+          <h2 className="text-2xl font-bold tracking-tight">Workforce Planning</h2>
+          <p className="text-muted-foreground">
+            Create and manage strategic workforce plans for your organization
+          </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Plan
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Create New Workforce Plan</DialogTitle>
-              <DialogDescription>
-                Enter the details of your new project to analyze workforce requirements
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="plan-name" className="text-right">
-                  Plan Name
-                </Label>
-                <Input id="plan-name" placeholder="Mobile App Development" className="col-span-3" />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="description" className="text-right">
-                  Description
-                </Label>
-                <Textarea id="description" placeholder="Describe the project and its goals" className="col-span-3" />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="department" className="text-right">
-                  Department
-                </Label>
-                <Select>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="engineering">Engineering</SelectItem>
-                    <SelectItem value="product">Product</SelectItem>
-                    <SelectItem value="marketing">Marketing</SelectItem>
-                    <SelectItem value="sales">Sales</SelectItem>
-                    <SelectItem value="operations">Operations</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="start-date" className="text-right">
-                  Start Date
-                </Label>
-                <Input id="start-date" type="date" className="col-span-3" />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="end-date" className="text-right">
-                  End Date
-                </Label>
-                <Input id="end-date" type="date" className="col-span-3" />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="budget" className="text-right">
-                  Budget
-                </Label>
-                <Input id="budget" type="number" placeholder="100000" className="col-span-3" />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="required-skills" className="text-right">
-                  Required Skills
-                </Label>
-                <Textarea id="required-skills" placeholder="React, Node.js, AWS, UI/UX Design" className="col-span-3" />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancel
+        <div className="flex items-center space-x-2">
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                New Plan
               </Button>
-              <Button onClick={handleAIAnalysis} disabled={isAIAnalyzing}>
-                {isAIAnalyzing ? "Analyzing..." : "Analyze with AI"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Create New Workforce Plan</DialogTitle>
+                <DialogDescription>
+                  Design a new workforce plan to meet your organization's future needs
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="planName">Plan Name</Label>
+                  <Input
+                    id="planName"
+                    name="planName"
+                    value={formData.planName}
+                    onChange={handleInputChange}
+                    placeholder="Q4 Engineering Expansion"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    placeholder="Describe the purpose and goals of this workforce plan"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="department">Department</Label>
+                    <Select 
+                      name="department" 
+                      value={formData.department} 
+                      onValueChange={(value) => handleInputChange({
+                        target: { name: 'department', value }
+                      } as any)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.map((dept) => (
+                          <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="budget">Budget</Label>
+                    <Input
+                      id="budget"
+                      name="budget"
+                      type="number"
+                      value={formData.budget}
+                      onChange={handleInputChange}
+                      placeholder="500000"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="startDate">Start Date</Label>
+                    <Input
+                      id="startDate"
+                      name="startDate"
+                      type="date"
+                      value={formData.startDate}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="endDate">End Date</Label>
+                    <Input
+                      id="endDate"
+                      name="endDate"
+                      type="date"
+                      value={formData.endDate}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="requiredSkills">Required Skills</Label>
+                  <Textarea
+                    id="requiredSkills"
+                    name="requiredSkills"
+                    value={formData.requiredSkills}
+                    onChange={handleInputChange}
+                    placeholder="Java, Python, Cloud Architecture, Machine Learning, etc."
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreatePlan}>Create Plan</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <div className="ml-2">
+            <Select 
+              value={selectedDepartment || ""} 
+              onValueChange={(value) => setSelectedDepartment(value || null)}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select department" />
+              </SelectTrigger>
+              <SelectContent>
+                {departments.map((dept) => (
+                  <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={handleAIAnalysis} 
+            disabled={isAIAnalyzing || !selectedDepartment}
+          >
+            {isAIAnalyzing ? (
+              <>
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <BrainCircuit className="mr-2 h-4 w-4" />
+                AI Analysis
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
-      <Tabs defaultValue="active">
+      <Tabs defaultValue="active" value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList>
-          <TabsTrigger value="active">Active Plans</TabsTrigger>
-          <TabsTrigger value="draft">Drafts</TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
+          <TabsTrigger value="active" className="flex items-center">
+            <Activity className="mr-2 h-4 w-4" />
+            Active Plans
+            {activePlans.length > 0 && (
+              <Badge className="ml-2" variant="outline">{activePlans.length}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="draft" className="flex items-center">
+            <FileQuestion className="mr-2 h-4 w-4" />
+            Draft Plans
+            {draftPlans.length > 0 && (
+              <Badge className="ml-2" variant="outline">{draftPlans.length}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="completed" className="flex items-center">
+            <FileText className="mr-2 h-4 w-4" />
+            Completed Plans
+            {completedPlans.length > 0 && (
+              <Badge className="ml-2" variant="outline">{completedPlans.length}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="analysis" className="flex items-center">
+            <BarChart3 className="mr-2 h-4 w-4" />
+            Analysis Results
+          </TabsTrigger>
         </TabsList>
-        <TabsContent value="active" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Mobile App Development</CardTitle>
-                <CardDescription>Engineering Department</CardDescription>
-                <Badge className="w-fit">In Progress</Badge>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <div>Apr 2023 - Oct 2023</div>
-                  <div>75% Complete</div>
-                </div>
-                <Progress value={75} className="mt-2" />
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">12 Employees</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">$120,000</span>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => router.push("/dashboard/workforce-planning/1")}
-                >
-                  View Details
-                </Button>
-              </CardFooter>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Website Redesign</CardTitle>
-                <CardDescription>Marketing Department</CardDescription>
-                <Badge className="w-fit">In Progress</Badge>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <div>Jun 2023 - Sep 2023</div>
-                  <div>40% Complete</div>
-                </div>
-                <Progress value={40} className="mt-2" />
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">8 Employees</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">$85,000</span>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => router.push("/dashboard/workforce-planning/2")}
-                >
-                  View Details
-                </Button>
-              </CardFooter>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Sales Expansion</CardTitle>
-                <CardDescription>Sales Department</CardDescription>
-                <Badge className="w-fit">In Progress</Badge>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <div>May 2023 - Dec 2023</div>
-                  <div>60% Complete</div>
-                </div>
-                <Progress value={60} className="mt-2" />
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">15 Employees</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">$200,000</span>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => router.push("/dashboard/workforce-planning/3")}
-                >
-                  View Details
-                </Button>
-              </CardFooter>
-            </Card>
+        <TabsContent value="active" className="mt-6">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {renderPlanCards(activePlans)}
           </div>
         </TabsContent>
-        <TabsContent value="draft" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>AI Integration Project</CardTitle>
-                <CardDescription>Engineering Department</CardDescription>
-                <Badge variant="outline" className="w-fit">
-                  Draft
-                </Badge>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <div>Planned: Nov 2023 - May 2024</div>
-                </div>
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Est. 10 Employees</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Est. $150,000</span>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" className="w-full">
-                  Edit Draft
-                </Button>
-              </CardFooter>
-            </Card>
+        <TabsContent value="draft" className="mt-6">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {renderPlanCards(draftPlans)}
           </div>
         </TabsContent>
-        <TabsContent value="completed" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>CRM Implementation</CardTitle>
-                <CardDescription>Sales Department</CardDescription>
-                <Badge variant="secondary" className="w-fit">
-                  Completed
-                </Badge>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <div>Jan 2023 - Mar 2023</div>
-                  <div>100% Complete</div>
-                </div>
-                <Progress value={100} className="mt-2" />
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">7 Employees</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">$90,000</span>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" className="w-full">
-                  View Report
-                </Button>
-              </CardFooter>
-            </Card>
+        <TabsContent value="completed" className="mt-6">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {renderPlanCards(completedPlans)}
           </div>
+        </TabsContent>
+        <TabsContent value="analysis" className="mt-6">
+          {!aiResults ? (
+            <div className="flex flex-col items-center justify-center p-12 text-center">
+              <BrainCircuit className="h-16 w-16 text-muted-foreground mb-4" />
+              <h3 className="text-xl font-medium">No Analysis Results</h3>
+              <p className="text-sm text-muted-foreground max-w-md mt-2">
+                Select a department and run an AI analysis to see forecasting, skill gap analysis, and insights.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Headcount Forecast */}
+              {aiResults.forecast && (
+                <HeadcountForecast forecastData={aiResults.forecast} />
+              )}
+
+              {/* Skill Gap Analysis */}
+              {aiResults.skillGap && (
+                <SkillGapAnalysis data={aiResults.skillGap} />
+              )}
+              
+              {/* Workforce Insights - Full Width */}
+              {aiResults.insights && (
+                <div className="md:col-span-2">
+                  <WorkforceInsights data={aiResults.insights} />
+                </div>
+              )}
+
+              {/* Placeholder for scenario modeling - would be filled from real API */}
+              {selectedDepartment && (
+                <div className="md:col-span-2 mt-6">
+                  <ScenarioModeling 
+                    departmentId={selectedDepartment}
+                    departmentName={departments.find(d => d.id === selectedDepartment)?.name}
+                    factorDefinitions={[
+                      {
+                        name: "Hiring Rate",
+                        currentValue: 5,
+                        minValue: 0,
+                        maxValue: 20,
+                        unit: "%",
+                        description: "Percentage of new hires per quarter relative to total headcount"
+                      },
+                      {
+                        name: "Attrition Rate",
+                        currentValue: 10,
+                        minValue: 0,
+                        maxValue: 30,
+                        unit: "%",
+                        description: "Percentage of employees leaving per year"
+                      },
+                      {
+                        name: "Efficiency Improvement",
+                        currentValue: 5,
+                        minValue: 0,
+                        maxValue: 20,
+                        unit: "%",
+                        description: "Expected productivity increase from training and tools"
+                      }
+                    ]}
+                    presetScenarios={[
+                      {
+                        name: "Growth Strategy",
+                        description: "Aggressive hiring with focus on efficiency",
+                        factors: {
+                          "Hiring Rate": 15,
+                          "Attrition Rate": 8,
+                          "Efficiency Improvement": 10
+                        },
+                        outcomes: {
+                          costImpact: 250000,
+                          headcountDelta: 12,
+                          timelineImpact: -15,
+                          riskLevel: "medium",
+                          benefitLevel: "high"
+                        }
+                      },
+                      {
+                        name: "Stability Strategy",
+                        description: "Maintain current staffing with improved efficiency",
+                        factors: {
+                          "Hiring Rate": 8,
+                          "Attrition Rate": 8,
+                          "Efficiency Improvement": 12
+                        },
+                        outcomes: {
+                          costImpact: 50000,
+                          headcountDelta: 0,
+                          timelineImpact: -20,
+                          riskLevel: "low",
+                          benefitLevel: "medium"
+                        }
+                      }
+                    ]}
+                  />
+                </div>
+              )}
+              
+              {/* Cost Modeling Chart - full width */}
+              {selectedDepartment && (
+                <div className="md:col-span-2 mt-6">
+                  <CostModelingChart 
+                    data={{
+                      department_id: selectedDepartment,
+                      department_name: departments.find(d => d.id === selectedDepartment)?.name,
+                      total_current_cost: 1250000,
+                      total_projected_cost: 1425000,
+                      year_over_year_change: 14,
+                      budget_utilization: 95,
+                      budget_allocation: 1500000,
+                      categories: [
+                        { name: "Salaries", value: 950000, color: "#2563eb", growthRate: 12 },
+                        { name: "Benefits", value: 180000, color: "#16a34a", growthRate: 8 },
+                        { name: "Training", value: 45000, color: "#d97706", growthRate: 25 },
+                        { name: "Equipment", value: 75000, color: "#dc2626", growthRate: 5 }
+                      ],
+                      projections: Array(12).fill(0).map((_, i) => {
+                        const month = new Date();
+                        month.setMonth(month.getMonth() + i);
+                        const monthStr = month.toISOString().substring(0, 7);
+                        return {
+                          month: monthStr,
+                          value: 1250000 + (i * 15000)
+                        };
+                      })
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
-
-      {aiResults && (
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle>AI Analysis Results</CardTitle>
-            <CardDescription>Based on your project requirements and current workforce</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-medium">Project Feasibility</h3>
-                <div className="mt-2 flex items-center gap-2">
-                  {aiResults.feasible ? (
-                    <Badge className="bg-green-500">Feasible</Badge>
-                  ) : (
-                    <Badge variant="destructive">Not Feasible</Badge>
-                  )}
-                  <span className="text-sm text-muted-foreground">
-                    {aiResults.feasible
-                      ? "This project can be completed with some adjustments to the current workforce."
-                      : "This project requires significant changes to the current workforce."}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-medium">Skill Gaps & Hiring Recommendations</h3>
-                <Table className="mt-2">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Skill</TableHead>
-                      <TableHead>Gap Level</TableHead>
-                      <TableHead>Recommendation</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {aiResults.skillGaps.map((gap: any, index: number) => (
-                      <TableRow key={index}>
-                        <TableCell>{gap.skill}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={gap.gap === "High" ? "destructive" : gap.gap === "Medium" ? "default" : "outline"}
-                          >
-                            {gap.gap}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{gap.recommendation}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <h3 className="text-lg font-medium">Financial Impact</h3>
-                  <Card className="mt-2">
-                    <CardContent className="pt-6">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm">Estimated Hiring Costs:</span>
-                          <span className="font-medium">${aiResults.hiringCosts.toLocaleString()}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm">Projected Revenue Impact:</span>
-                          <span className="font-medium text-green-500">
-                            ${aiResults.revenueImpact.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm">ROI:</span>
-                          <span className="font-medium text-green-500">
-                            {Math.round(
-                              ((aiResults.revenueImpact - aiResults.hiringCosts) / aiResults.hiringCosts) * 100,
-                            )}
-                            %
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-medium">Resource Allocation</h3>
-                  <Card className="mt-2">
-                    <CardContent className="pt-6">
-                      <div className="space-y-2">
-                        {aiResults.resourceAllocation.map((resource: any, index: number) => (
-                          <div key={index} className="space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm">{resource.team}</span>
-                              <span className="text-sm">{resource.allocation}%</span>
-                            </div>
-                            <Progress value={resource.allocation} />
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="outline">Download Report</Button>
-            <Button>Approve Plan</Button>
-          </CardFooter>
-        </Card>
-      )}
     </div>
   )
 }

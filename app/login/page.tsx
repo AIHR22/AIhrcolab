@@ -130,6 +130,7 @@ export default function LoginPage() {
                     className="pl-10"
                     required
                     disabled={isLoading}
+                    suppressHydrationWarning
                   />
                 </div>
               </div>
@@ -152,6 +153,7 @@ export default function LoginPage() {
                     className="pl-10"
                     required
                     disabled={isLoading}
+                    suppressHydrationWarning
                   />
                   <Button
                     type="button"
@@ -250,4 +252,3 @@ export default function LoginPage() {
     </div>
   )
 }
-

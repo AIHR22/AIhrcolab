@@ -17,6 +17,8 @@ export interface OrgChartNode {
     impact_of_loss?: "low" | "medium" | "high"
     succession_candidates?: string[]
     location?: string
+    employeeCount?: number
+    budget?: number
   }
 }
 

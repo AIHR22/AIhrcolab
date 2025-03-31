@@ -13,6 +13,8 @@
     "test:endpoint": "node scripts/test-endpoint.js",
     "test:all": "node scripts/test-all-endpoints.js",
     "test:actual": "node scripts/test-actual-endpoints.js",
+    "test:org": "node scripts/test-org-generator.js",
+    "test:org-api": "node scripts/test-org-api.js",
     "api:test": "node scripts/test-all-endpoints.js"
   },
   "dependencies": {

@@ -21,6 +21,8 @@ export interface WorkforcePlan {
   created_at: string
   updated_at: string
   department?: Department
+  budget_amount?: number
+  department_name?: string
 }
 
 export interface ResourceAllocation {
