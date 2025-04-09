@@ -99,6 +99,11 @@ export type AIRecommendations = {
     training_costs: number
     timeline_impact_days: number
   }
+  mitigation_strategies?: string[]
+  department_impact?: {
+    most_affected: string[]
+    impact_description: string
+  }
 }
 
 export type ProjectFeasibility = {
@@ -150,6 +155,11 @@ export type ProjectFeasibilityResult = {
     hiring_costs: number
     training_costs: number
     timeline_impact_days: number
+  }
+  mitigation_strategies?: string[]
+  department_impact?: {
+    most_affected: string[]
+    impact_description: string
   }
   created_at: string
 }

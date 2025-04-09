@@ -77,6 +77,13 @@ export function AppSidebar({ className, isCollapsed = false }: SidebarProps) {
           />
           <SidebarItem
             icon={TrendingUp}
+            title="Strategic Growth Planner"
+            href="/strategic-planning/growth-scenarios"
+            isActive={pathname.startsWith("/strategic-planning/growth-scenarios")}
+            isCollapsed={isCollapsed}
+          />
+          <SidebarItem
+            icon={TrendingUp}
             title="Revenue Forecasting"
             href="/dashboard/revenue"
             isActive={pathname.startsWith("/dashboard/revenue")}

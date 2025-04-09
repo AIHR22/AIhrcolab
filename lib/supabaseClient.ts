@@ -1,40 +1,67 @@
 import { createClient } from "@supabase/supabase-js"
+import type { Database } from "@/types/supabase"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-// Create a singleton instance for the client
-let supabaseInstance: ReturnType<typeof createClient> | null = null
-
-// Only create supabaseAdmin on the server side
-let supabaseAdminInstance: ReturnType<typeof createClient> | null = null
-
-export function getSupabase() {
-  if (!supabaseInstance) {
-    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey)
-  }
-  return supabaseInstance
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn(
+    "Missing Supabase URL or Anon Key. Check .env.local. Client-side features might fail."
+  )
 }
 
-export function getSupabaseAdmin() {
-  // Make sure we're on the server side
-  if (typeof window === 'undefined') {
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-    
-    if (!supabaseAdminInstance) {
-      supabaseAdminInstance = createClient(supabaseUrl, supabaseServiceKey, {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      })
-    }
-    return supabaseAdminInstance
-  } else {
-    console.warn("Attempted to use supabaseAdmin on the client side. This is not allowed.")
-    // Return the regular client instead
-    return getSupabase()
+// Singleton instance for the client-side (anon key)
+let supabaseInstance: ReturnType<typeof createClient<Database>> | null = null
+
+export function getSupabase() {
+  if (supabaseInstance) {
+    return supabaseInstance
   }
+  if (supabaseUrl && supabaseAnonKey) {
+    supabaseInstance = createClient<Database>(supabaseUrl, supabaseAnonKey)
+    return supabaseInstance
+  } 
+  // Return a dummy or throw error if keys are missing and no instance exists
+  console.error("Supabase client could not be initialized client-side due to missing keys.")
+  // Depending on desired behavior, you might throw an error or return a non-functional client
+  throw new Error("Supabase client cannot be initialized.")
+}
+
+// Singleton instance for the server-side admin client (service role key)
+let supabaseAdminInstance: ReturnType<typeof createClient<Database>> | null = null
+
+export function getSupabaseAdmin() {
+  // This function should only be called on the server side.
+  if (typeof window !== "undefined") {
+    console.error(
+      "Security Alert: getSupabaseAdmin() was called on the client-side!"
+    )
+    // Optionally throw an error or return null/anon client, but logging error is crucial.
+    throw new Error("Cannot initialize admin client on the client-side.")
+  }
+
+  if (supabaseAdminInstance) {
+    return supabaseAdminInstance
+  }
+
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL // Use the same URL
+
+  if (!url || !supabaseServiceKey) {
+    console.error(
+      "Missing Supabase URL or Service Role Key for admin client. Check environment variables."
+    )
+    throw new Error("Supabase admin client cannot be initialized.")
+  }
+
+  supabaseAdminInstance = createClient<Database>(url, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
+
+  return supabaseAdminInstance
 }
 
 // For backward compatibility - direct exports of the clients

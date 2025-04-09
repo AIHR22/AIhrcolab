@@ -1,83 +1,89 @@
 import { NextResponse } from "next/server"
-import { createClient } from '@supabase/supabase-js'
-
-// Initialize Supabase client with environment variables
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabaseAdmin = createClient(supabaseUrl, supabaseKey)
+import { supabaseAdmin } from "@/lib/supabase"
 
 export async function GET() {
+  console.log("[API] GET /api/skills: Starting request");
   try {
+    // Check if Supabase admin client is available
+    if (!supabaseAdmin) {
+      console.error("Supabase admin client not available for skills API");
+      return NextResponse.json(
+        { error: "Database connection error" },
+        { status: 500 }
+      );
+    }
+
+    console.log("[API] Fetching skills from database...");
     const { data: skills, error } = await supabaseAdmin
       .from("skills")
-      .select("id, name")
+      .select("id, name, category")
       .order("name", { ascending: true })
 
     if (error) {
-      throw error
+      console.error("Error fetching skills:", error);
+      throw error;
     }
 
-    return NextResponse.json({
-      success: true,
-      skills
-    })
+    console.log(`[API] Successfully fetched ${skills?.length || 0} skills`);
+    // Return just the skills array for simpler handling in components
+    return NextResponse.json(skills);
   } catch (error: any) {
-    console.error("Error fetching skills:", error)
+    console.error("Error in skills API:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message,
-      },
+      { error: error.message || "Error fetching skills" },
       { status: 500 }
-    )
+    );
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    
-    // Validate required fields
+    // Check if Supabase admin client is available
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { error: "Database connection error" },
+        { status: 500 }
+      );
+    }
+
+    // Parse and validate request body
+    let body;
+    try {
+      body = await request.json();
+    } catch (error) {
+      return NextResponse.json(
+        { error: "Invalid JSON in request body" },
+        { status: 400 }
+      );
+    }
+
     if (!body.name) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Name is required for creating a skill",
-        },
+        { error: "Skill name is required" },
         { status: 400 }
-      )
+      );
     }
 
-    // Create a minimal skill object with just the required fields
-    const skillData = {
-      name: body.name,
-      // These fields may not exist in your table, so let's make them optional:
-      ...(body.category ? { category: body.category } : {}),
-      ...(body.description ? { description: body.description } : {})
-    };
-
-    // Create the skill
+    // Insert the new skill
     const { data, error } = await supabaseAdmin
       .from("skills")
-      .insert(skillData)
-      .select()
+      .insert({
+        name: body.name,
+        category: body.category || "General",
+        description: body.description || ""
+      })
+      .select();
 
     if (error) {
-      throw error
+      console.error("Error creating skill:", error);
+      throw error;
     }
 
-    return NextResponse.json({
-      success: true,
-      skill: data[0]
-    })
+    return NextResponse.json(data[0]);
   } catch (error: any) {
-    console.error("Error creating skill:", error)
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message,
-      },
+      { error: error.message || "Error creating skill" },
       { status: 500 }
-    )
+    );
   }
 } 

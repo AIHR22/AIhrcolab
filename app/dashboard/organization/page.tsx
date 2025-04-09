@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Search, ZoomIn, ZoomOut, RefreshCw, Wand2, X, Settings, DownloadCloud, Bug } from "lucide-react"
+import Link from 'next/link'
+import { Plus, Search, ZoomIn, ZoomOut, RefreshCw, Wand2, X, Settings, DownloadCloud, Bug, FolderKanban, ClipboardPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -30,6 +31,7 @@ import { jsPDF } from "jspdf"
 import { saveAs } from "file-saver"
 import { OrgDebugPanel } from "@/components/organization/org-debug-panel"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { CreateProjectDialog } from "@/components/projects/create-project-dialog"
 
 export default function OrganizationPage() {
   // Add a console log to help debug
@@ -45,6 +47,7 @@ export default function OrganizationPage() {
   const [showDataSourceInfo, setShowDataSourceInfo] = useState(false)
   const [showDebugPanel, setShowDebugPanel] = useState(false)
   const [isGeneratingChart, setIsGeneratingChart] = useState(false)
+  const [showCreateProjectDialog, setShowCreateProjectDialog] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
 
@@ -156,21 +159,45 @@ export default function OrganizationPage() {
     }
   };
 
+  const handleProjectCreated = () => {
+    setShowCreateProjectDialog(false)
+    toast({
+      title: "Success",
+      description: "Project created successfully."
+    })
+  }
+
   return (
     <div className="container-fluid px-4 py-6 h-[calc(100vh-4rem)]">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
         <div>
           <h1 className="text-2xl font-bold">Organization Chart</h1>
           <p className="text-muted-foreground">Visualize your company's structure</p>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 flex-wrap gap-2">
           <Button 
             onClick={() => setShowAIGenerator(!showAIGenerator)}
             variant={showAIGenerator ? "secondary" : "default"}
+            size="sm"
           >
             <Wand2 className="mr-2 h-4 w-4" />
-            {showAIGenerator ? "Hide AI Generator" : "Generate with AI"}
+            {showAIGenerator ? "Hide AI Gen" : "Generate with AI"}
           </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowCreateProjectDialog(true)}
+          >
+             <ClipboardPlus className="mr-2 h-4 w-4" />
+             Create Project
+          </Button>
+          <Link href="/dashboard/workforce/project-feasibility" passHref>
+             <Button variant="outline" size="sm">
+               <FolderKanban className="mr-2 h-4 w-4" />
+               View Projects
+             </Button>
+          </Link>
           
           <Popover>
             <PopoverTrigger asChild>
@@ -361,6 +388,13 @@ export default function OrganizationPage() {
           </Tabs>
         </div>
       </div>
+
+      <CreateProjectDialog 
+        open={showCreateProjectDialog} 
+        onOpenChange={setShowCreateProjectDialog} 
+        onProjectCreated={handleProjectCreated} 
+      />
+
     </div>
   )
 }

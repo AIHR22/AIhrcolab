@@ -17,6 +17,7 @@ interface MultiSelectProps {
   onChange: (selected: string[]) => void
   placeholder?: string
   className?: string
+  disabled?: boolean
 }
 
 export function MultiSelect({
@@ -25,6 +26,7 @@ export function MultiSelect({
   onChange,
   placeholder = "Select options",
   className,
+  disabled = false,
 }: MultiSelectProps) {
   const inputRef = React.useRef<HTMLInputElement>(null)
   const [open, setOpen] = React.useState(false)
@@ -51,7 +53,7 @@ export function MultiSelect({
   const selectables = options.filter((option) => !selected.includes(option.value))
 
   return (
-    <Command onKeyDown={handleKeyDown} className={`overflow-visible bg-transparent ${className}`}>
+    <Command onKeyDown={handleKeyDown} className={`overflow-visible bg-transparent ${className} ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
       <div className="group border border-input px-3 py-2 text-sm ring-offset-background rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
         <div className="flex gap-1 flex-wrap">
           {selected.map((option) => {

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { getCompanySettings, updateCompanySettings } from "@/lib/supabase/api"
 import { toast } from "@/hooks/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
+import { IntegrationsTab } from "@/components/settings/integrations-tab"
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<any>(null)
@@ -245,7 +246,7 @@ export default function SettingsPage() {
               <CardDescription>Manage your ERP and CRM integrations</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Integration settings will be implemented in a future update.</p>
+              <IntegrationsTab />
             </CardContent>
           </Card>
         </TabsContent>
@@ -265,4 +266,3 @@ export default function SettingsPage() {
     </div>
   )
 }
-

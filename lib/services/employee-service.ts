@@ -1,4 +1,10 @@
 import type { Database } from "@/lib/database.types"
+import { createClient } from "@supabase/supabase-js"
+
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 type Employee = Database["public"]["Tables"]["employees"]["Row"]
 type NewEmployee = Database["public"]["Tables"]["employees"]["Insert"]
@@ -52,30 +58,75 @@ export const employeeService = {
     }
   },
 
-  async create(employee: NewEmployee) {
+  async create(employee: any) {
+    if (!employee) {
+      throw new Error("Employee data is required")
+    }
+
+    // Extract skills from employee data
+    const { skills, ...employeeData } = employee
+
     try {
-      console.log("Creating employee with data:", employee)
-      const res = await fetch("/api/employees", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(employee),
-      })
-      
-      console.log("POST /api/employees response:", res.status)
-      
-      if (!res.ok) {
-        const error = await res.json()
-        console.error("Error creating employee:", error)
-        throw new Error(error.message || "Failed to create employee")
+      // Start a Supabase transaction
+      const { data: newEmployee, error: employeeError } = await supabase
+        .from("employees")
+        .insert(employeeData)
+        .select()
+        .single()
+
+      if (employeeError) {
+        console.error("Error creating employee:", employeeError)
+        throw employeeError
       }
-      
-      const data = await res.json()
-      console.log("Created employee:", data)
-      return data
+
+      // If skills are provided, add them to the employee_skills table
+      if (skills && skills.length > 0 && newEmployee?.id) {
+        const employeeSkills = skills.map((skill: { skill_id: string; proficiency_level: number }) => ({
+          employee_id: newEmployee.id,
+          skill_id: skill.skill_id,
+          proficiency_level: skill.proficiency_level || 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }))
+
+        const { error: skillsError } = await supabase
+          .from("employee_skills")
+          .insert(employeeSkills)
+
+        if (skillsError) {
+          console.error("Error adding employee skills:", skillsError)
+          // We don't throw here since the employee was created successfully
+          // Instead, we log the error and continue
+        }
+      }
+
+      // Fetch the employee with their skills
+      const { data: employeeWithSkills, error: fetchError } = await supabase
+        .from("employees")
+        .select(`
+          *,
+          employee_skills (
+            skill_id,
+            proficiency_level,
+            skills (
+              id,
+              name,
+              category
+            )
+          )
+        `)
+        .eq("id", newEmployee.id)
+        .single()
+
+      if (fetchError) {
+        console.error("Error fetching employee with skills:", fetchError)
+        // Return the employee without skills if we can't fetch them
+        return newEmployee
+      }
+
+      return employeeWithSkills
     } catch (error) {
-      console.error("Error in create:", error)
+      console.error("Error in create employee transaction:", error)
       throw error
     }
   },

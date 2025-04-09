@@ -6,7 +6,7 @@
  */
 
 // Types for ERP systems
-export type ERPSystem = "sap" | "oracle" | "workday"
+export type ERPSystem = "sap" | "oracle" | "workday" | "dynamics" | "csv"
 
 export interface ERPConnectionConfig {
   system: ERPSystem
@@ -411,6 +411,205 @@ class WorkdayIntegration {
   }
 }
 
+// Dynamics Integration
+class DynamicsIntegration {
+  private config: ERPConnectionConfig
+  private token: string | null = null
+
+  constructor(config: ERPConnectionConfig) {
+    this.config = config
+  }
+
+  private async authenticate(): Promise<string> {
+    try {
+      // In a real implementation, this would make an actual API call to Dynamics
+      // For demonstration, we're simulating the authentication process
+      console.log(`Authenticating with Dynamics at ${this.config.baseUrl}`)
+
+      if (!this.config.clientId || !this.config.clientSecret) {
+        throw new Error("Dynamics authentication requires clientId and clientSecret")
+      }
+
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 600))
+
+      // Generate a mock token
+      this.token = `dynamics-token-${Date.now()}`
+      return this.token
+    } catch (error) {
+      console.error("Dynamics Authentication failed:", error)
+      throw new Error(`Dynamics Authentication failed: ${error instanceof Error ? error.message : "Unknown error"}`)
+    }
+  }
+
+  async getEmployees(): Promise<ERPEmployee[]> {
+    if (!this.token) {
+      await this.authenticate()
+    }
+
+    try {
+      // Simulate API call to Dynamics API
+      console.log("Fetching employees from Dynamics...")
+      await new Promise((resolve) => setTimeout(resolve, 700))
+
+      // Return mock data
+      return [
+        {
+          id: "DYN001",
+          firstName: "Michael",
+          lastName: "Brown",
+          email: "michael.brown@example.com",
+          department: "Finance",
+          position: "Financial Analyst",
+          salary: 95000,
+          startDate: "2023-06-05",
+          costCenter: "CC003",
+        },
+        {
+          id: "DYN002",
+          firstName: "Jessica",
+          lastName: "Davis",
+          email: "jessica.davis@example.com",
+          department: "Human Resources",
+          position: "HR Specialist",
+          salary: 85000,
+          startDate: "2022-09-20",
+          costCenter: "CC004",
+        },
+      ]
+    } catch (error) {
+      console.error("Error fetching employees from Dynamics:", error)
+      throw new Error(`Dynamics API Error: ${error instanceof Error ? error.message : "Unknown error"}`)
+    }
+  }
+
+  async submitHiringRequest(request: ERPHiringRequest): Promise<{ requestId: string; status: string }> {
+    if (!this.token) {
+      await this.authenticate()
+    }
+
+    try {
+      // Simulate API call to Dynamics
+      console.log("Submitting hiring request to Dynamics...")
+      console.log("Request data:", JSON.stringify(request, null, 2))
+      await new Promise((resolve) => setTimeout(resolve, 900))
+
+      // Return mock response
+      return {
+        requestId: `DYN-HR-${Date.now()}`,
+        status: "pending_approval",
+      }
+    } catch (error) {
+      console.error("Error submitting hiring request to Dynamics:", error)
+      throw new Error(`Dynamics API Error: ${error instanceof Error ? error.message : "Unknown error"}`)
+    }
+  }
+
+  async syncProject(project: ERPProject): Promise<{ projectId: string; status: string }> {
+    if (!this.token) {
+      await this.authenticate()
+    }
+
+    try {
+      // Simulate API call to Dynamics
+      console.log("Syncing project to Dynamics...")
+      console.log("Project data:", JSON.stringify(project, null, 2))
+      await new Promise((resolve) => setTimeout(resolve, 1100))
+
+      // Return mock response
+      return {
+        projectId: project.id,
+        status: "synced",
+      }
+    } catch (error) {
+      console.error("Error syncing project to Dynamics:", error)
+      throw new Error(`Dynamics API Error: ${error instanceof Error ? error.message : "Unknown error"}`)
+    }
+  }
+}
+
+// CSV Integration
+class CSVIntegration {
+  private config: ERPConnectionConfig
+
+  constructor(config: ERPConnectionConfig) {
+    this.config = config
+  }
+
+  async getEmployees(): Promise<ERPEmployee[]> {
+    try {
+      // Simulate reading from CSV file
+      console.log("Fetching employees from CSV...")
+      await new Promise((resolve) => setTimeout(resolve, 700))
+
+      // Return mock data
+      return [
+        {
+          id: "CSV001",
+          firstName: "John",
+          lastName: "Smith",
+          email: "john.smith@example.com",
+          department: "Engineering",
+          position: "Senior Developer",
+          salary: 120000,
+          startDate: "2022-01-15",
+          costCenter: "CC001",
+        },
+        {
+          id: "CSV002",
+          firstName: "Emily",
+          lastName: "Johnson",
+          email: "emily.johnson@example.com",
+          department: "Marketing",
+          position: "Marketing Manager",
+          salary: 110000,
+          startDate: "2021-03-10",
+          costCenter: "CC002",
+        },
+      ]
+    } catch (error) {
+      console.error("Error fetching employees from CSV:", error)
+      throw new Error(`CSV Error: ${error instanceof Error ? error.message : "Unknown error"}`)
+    }
+  }
+
+  async submitHiringRequest(request: ERPHiringRequest): Promise<{ requestId: string; status: string }> {
+    try {
+      // Simulate writing to CSV file
+      console.log("Submitting hiring request to CSV...")
+      console.log("Request data:", JSON.stringify(request, null, 2))
+      await new Promise((resolve) => setTimeout(resolve, 900))
+
+      // Return mock response
+      return {
+        requestId: `CSV-HR-${Date.now()}`,
+        status: "pending_approval",
+      }
+    } catch (error) {
+      console.error("Error submitting hiring request to CSV:", error)
+      throw new Error(`CSV Error: ${error instanceof Error ? error.message : "Unknown error"}`)
+    }
+  }
+
+  async syncProject(project: ERPProject): Promise<{ projectId: string; status: string }> {
+    try {
+      // Simulate writing to CSV file
+      console.log("Syncing project to CSV...")
+      console.log("Project data:", JSON.stringify(project, null, 2))
+      await new Promise((resolve) => setTimeout(resolve, 1100))
+
+      // Return mock response
+      return {
+        projectId: project.id,
+        status: "synced",
+      }
+    } catch (error) {
+      console.error("Error syncing project to CSV:", error)
+      throw new Error(`CSV Error: ${error instanceof Error ? error.message : "Unknown error"}`)
+    }
+  }
+}
+
 // ERP Integration Factory
 export class ERPIntegrationFactory {
   static createIntegration(config: ERPConnectionConfig) {
@@ -421,6 +620,10 @@ export class ERPIntegrationFactory {
         return new OracleIntegration(config)
       case "workday":
         return new WorkdayIntegration(config)
+      case "dynamics":
+        return new DynamicsIntegration(config)
+      case "csv":
+        return new CSVIntegration(config)
       default:
         throw new Error(`Unsupported ERP system: ${config.system}`)
     }
@@ -506,8 +709,17 @@ export const createERPIntegrationService = () => {
       tenant: "example_tenant",
       apiKey: "workday_api_key",
     },
+    {
+      system: "dynamics",
+      baseUrl: "https://api.dynamics.example.com",
+      clientId: "dynamics_client_id",
+      clientSecret: "dynamics_client_secret",
+    },
+    {
+      system: "csv",
+      baseUrl: "https://example.com/erp-data.csv",
+    },
   ]
 
   return new ERPIntegrationService(configs)
 }
-
