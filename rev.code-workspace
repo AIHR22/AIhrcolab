@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"name": "contexts",
+			"path": "../Downloads/AIhrcolab-master-2/contexts"
+		},
+		{
+			"name": "components",
+			"path": "../Downloads/AIhrcolab-master-2/components"
+		},
+		{
+			"name": "revenue-forecast-module",
+			"path": "."
+		}
+	],
+	"settings": {}
+}

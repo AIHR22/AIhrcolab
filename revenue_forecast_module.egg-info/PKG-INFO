@@ -1,0 +1,10 @@
+Metadata-Version: 2.4
+Name: revenue-forecast-module
+Version: 1.0.0
+Requires-Python: >=3.10
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: scikit-learn
+Requires-Dist: flask
+Dynamic: requires-dist
+Dynamic: requires-python

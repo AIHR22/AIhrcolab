@@ -1,0 +1,86 @@
+{
+  "info": {
+    "name": "Revenue Forecast API Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "ML Predictions",
+      "item": [
+        {
+          "name": "Get Prediction",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "apikey",
+                "value": "{{supabaseKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supabaseKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ml/predict",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ml", "predict"]
+            }
+          },
+          "test": [
+            "pm.test('Status code is 200', function () {",
+            "    pm.response.to.have.status(200);",
+            "});",
+            "pm.test('Response has required fields', function () {",
+            "    const jsonData = pm.response.json();",
+            "    pm.expect(jsonData).to.have.property('predictions');",
+            "    pm.expect(jsonData).to.have.property('insights');",
+            "});"
+          ]
+        },
+        {
+          "name": "Train Model",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "apikey",
+                "value": "{{supabaseKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supabaseKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ml/train",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ml", "train"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "test": [
+            "pm.test('Status code is 200', function () {",
+            "    pm.response.to.have.status(200);",
+            "});",
+            "pm.test('Response has training results', function () {",
+            "    const jsonData = pm.response.json();",
+            "    pm.expect(jsonData).to.have.property('success');",
+            "});"
+          ]
+        }
+      ]
+    }
+  ]
+} 

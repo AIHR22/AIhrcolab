@@ -1,0 +1,15 @@
+{
+  "name": "revenue-forecast-module",
+  "version": "1.0.0",
+  "description": "Revenue forecasting module using Prophet, ML, and Llama 4",
+  "scripts": {
+    "start:all": "bash start-dev.sh",
+    "test": "npm run test:backend",
+    "test:backend": "pytest",
+    "test:coverage": "pytest --cov"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {}
+}

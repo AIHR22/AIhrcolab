@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Revenue Forecast API Tests" tests="2" time="0.053">
+  <testsuite name="ML Predictions / Get Prediction" id="f94a0fd3-6da8-46ae-96d1-b229b3b87f0c" timestamp="2025-04-08T22:00:43.150Z" tests="0" failures="0" errors="0" time="0.048"/>
+  <testsuite name="ML Predictions / Train Model" id="eb8e7d1c-f760-44ee-9056-ec0605f1fe7f" timestamp="2025-04-08T22:00:43.150Z" tests="0" failures="0" errors="0" time="0.005"/>
+</testsuites>
