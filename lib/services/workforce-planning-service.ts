@@ -87,12 +87,39 @@ export const workforcePlanningService = {
     console.log("Fetching workforce planning dashboard data...")
     try {
       const departmentOverview = await this.getDepartmentOverview()
-      // Fetch data for other dashboard components here later
+      
+      // Fetch real attrition and growth data from workforce_plans
+      const { data: workforcePlans, error: plansError } = await supabase
+        .from('workforce_plans')
+        .select('department_id, attrition_rate, growth_rate, current_headcount, forecasted_headcount')
+        .order('plan_date', { ascending: false })
+        .limit(1) // Get most recent plan per department
+
+      if (plansError) {
+        console.error("Error fetching workforce plans:", plansError)
+        throw plansError
+      }
+
+      // Calculate attrition risk based on real data
+      const attritionRisk = workforcePlans.map(plan => ({
+        department_id: plan.department_id,
+        rate: plan.attrition_rate,
+        predicted_attrition_count: Math.round(plan.current_headcount * (plan.attrition_rate / 100))
+      }))
+
+      // Calculate skill demand based on growth projections
+      const skillDemand = workforcePlans.map(plan => ({
+        department_id: plan.department_id,
+        current_headcount: plan.current_headcount,
+        projected_headcount: plan.forecasted_headcount,
+        growth_rate: plan.growth_rate
+      }))
+
       return {
         departmentOverview,
-        attritionRisk: [], // Placeholder
-        skillDemand: [], // Placeholder
-        budgetVsActual: [], // Placeholder
+        attritionRisk,
+        skillDemand,
+        budgetVsActual: [], // To be implemented in next phase
       }
     } catch (error) {
       console.error("Error fetching dashboard data:", error)
@@ -368,4 +395,4 @@ export const workforcePlanningService = {
        // throw new Error(error.message || `Failed to get project analysis for ${projectId}`);
     }
   }
-} 
+}

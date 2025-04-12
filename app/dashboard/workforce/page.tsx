@@ -6,10 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-// Assuming chart components might be in a different structure or need creation
-// import { HeadcountChart } from "@/components/charts/headcount-chart"
-// import { DepartmentDistribution } from "@/components/charts/department-distribution"
-// import { AttritionChart } from "@/components/charts/attrition-chart"
+// Import the chart components
+import { HeadcountChart } from "@/components/charts/headcount-chart"
+import { DepartmentDistribution } from "@/components/charts/department-distribution"
+import { AttritionChart } from "@/components/charts/attrition-chart"
 import { HiringRecommendations } from "@/components/projects/hiring-recommendations" // Corrected path
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -44,12 +44,7 @@ interface DepartmentOverviewData {
   requiredHeadcount: number
 }
 
-// Placeholder chart component
-const PlaceholderChart = ({ title }: { title: string }) => (
-  <div className="h-[350px] w-full flex items-center justify-center border rounded-md bg-muted/50">
-    <p className="text-muted-foreground">{title} Chart Placeholder</p>
-  </div>
-);
+// No longer need placeholder chart component as we have real chart components now
 
 export default function WorkforcePlanningPage() {
   const router = useRouter();
@@ -67,6 +62,7 @@ export default function WorkforcePlanningPage() {
   const [currentHeadcount, setCurrentHeadcount] = useState<number>(0);
   const [currentTotalCost, setCurrentTotalCost] = useState<number>(0);
   const [departmentOverviewData, setDepartmentOverviewData] = useState<DepartmentOverviewData[]>([]) // <<< Add state
+  const [totalDepartments, setTotalDepartments] = useState<number>(0); // State for total departments count
 
   // Fetch data on component mount and when timeframe or department changes
   useEffect(() => {
@@ -84,7 +80,8 @@ export default function WorkforcePlanningPage() {
         optimizeWorkforceCost({ time_frame: "monthly", include_outsourcing: true, department_id: departmentId }),
         predictAttrition({ include_factors: true, months, department_id: departmentId }),
         reallocateWorkforce({ target_utilization: 0.85, department_id: departmentId }),
-        workforcePlanningService.getDepartmentOverview() // <<< Fetch overview data
+        workforcePlanningService.getDepartmentOverview(), // <<< Fetch overview data
+        fetch('/api/workforce/dashboard').then(res => res.json()) // Fetch dashboard data including total departments
       ]);
 
       // Process Forecast
@@ -144,6 +141,17 @@ export default function WorkforcePlanningPage() {
         setDepartmentOverviewData([]); // <<< Clear state on error
       }
 
+      // Process Dashboard Data (including total departments)
+      if (results[5].status === 'fulfilled') {
+        const dashboardData = results[5].value;
+        setTotalDepartments(dashboardData.total_departments || 0);
+        // We can also use other dashboard data if needed
+      } else {
+        console.warn("API Error fetching dashboard data:", results[5].reason);
+        apiErrorMessages.push('Dashboard');
+        // Keep using departmentData.length as fallback
+      }
+
       if (apiErrorMessages.length > 0) {
         setError(`Failed to load: ${apiErrorMessages.join(', ')}. Some components might be missing data.`);
       } else {
@@ -161,17 +169,16 @@ export default function WorkforcePlanningPage() {
     const projectedEndHeadcount = headcountData.length > 0 ? headcountData[headcountData.length - 1]?.headcount : currentHeadcount;
     const headcountChange = projectedEndHeadcount - currentHeadcount;
     const avgAttritionPercent = (attritionRate * 100).toFixed(1) + '%';
-    const totalDepartments = departmentData.length;
     const totalCostFormatted = `$${(currentTotalCost / 1000000).toFixed(1)}M`; // Assuming cost is in dollars
 
     return {
       currentHeadcount: currentHeadcount || 0,
       headcountChange: headcountChange || 0,
       avgAttrition: avgAttritionPercent,
-      totalDepartments: totalDepartments || 0,
+      totalDepartments: totalDepartments || 0, // Use the totalDepartments state from our API
       totalCost: totalCostFormatted
     };
-  }, [headcountData, departmentData, attritionRate, currentHeadcount, currentTotalCost]);
+  }, [headcountData, attritionRate, currentHeadcount, currentTotalCost, totalDepartments]);
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -316,7 +323,7 @@ export default function WorkforcePlanningPage() {
                 <CardTitle>Headcount Forecast ({timeframe})</CardTitle>
               </CardHeader>
               <CardContent className="pl-2">
-                {loading ? <Skeleton className="h-[350px] w-full" /> : <PlaceholderChart title="Headcount" /> /* <HeadcountChart data={headcountData} /> */ }
+                {loading ? <Skeleton className="h-[350px] w-full" /> : <HeadcountChart data={headcountData} />}
               </CardContent>
             </Card>
             <Card className="col-span-3">
@@ -327,7 +334,7 @@ export default function WorkforcePlanningPage() {
                 </CardDescription>
           </CardHeader>
           <CardContent>
-                 {loading ? <Skeleton className="h-[350px] w-full" /> : <PlaceholderChart title="Department Distribution" /> /* <DepartmentDistribution data={departmentData} /> */ }
+                 {loading ? <Skeleton className="h-[350px] w-full" /> : <DepartmentDistribution data={departmentData} />}
           </CardContent>
         </Card>
           </div>
@@ -340,7 +347,7 @@ export default function WorkforcePlanningPage() {
                 </CardDescription>
           </CardHeader>
               <CardContent className="pl-2">
-                {loading ? <Skeleton className="h-[300px] w-full" /> : <PlaceholderChart title="Attrition" /> /* <AttritionChart data={attritionData} /> */ }
+                {loading ? <Skeleton className="h-[300px] w-full" /> : <AttritionChart data={attritionData} />}
           </CardContent>
         </Card>
       </div>

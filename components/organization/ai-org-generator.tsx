@@ -18,9 +18,10 @@ import { Badge } from "@/components/ui/badge"
 interface AIOrgGeneratorProps {
   onGenerated: (data: OrgChartNode) => void
   onGenerationStart?: () => void
+  selectedProject?: string | null
 }
 
-export function AIOrgGenerator({ onGenerated, onGenerationStart }: AIOrgGeneratorProps) {
+export function AIOrgGenerator({ onGenerated, onGenerationStart, selectedProject }: AIOrgGeneratorProps) {
   const [prompt, setPrompt] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [previewData, setPreviewData] = useState<OrgChartNode | null>(null)
@@ -128,13 +129,47 @@ export function AIOrgGenerator({ onGenerated, onGenerationStart }: AIOrgGenerato
     }
   }
 
-  const handleApply = () => {
-    if (previewData) {
-      onGenerated(previewData)
+  const handleApply = async () => {
+    if (!previewData) return;
+
+    try {
+      if (selectedProject) {
+        // Save the generated chart to the project
+        const response = await fetch('/api/organization/projects/save-generated-chart', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            projectId: selectedProject,
+            generatedChart: previewData
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save chart to project');
+        }
+
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to save chart to project');
+        }
+
+        toast({
+          title: 'Success',
+          description: 'Organization chart saved to project successfully',
+        });
+      }
+
+      // Update the main view
+      onGenerated(previewData);
+    } catch (error) {
+      console.error('Error saving chart:', error);
       toast({
-        title: "Changes Applied",
-        description: "The organization chart has been updated.",
-      })
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to save organization chart',
+        variant: 'destructive',
+      });
     }
   }
 
@@ -356,4 +391,4 @@ export function AIOrgGenerator({ onGenerated, onGenerationStart }: AIOrgGenerato
       </Tabs>
     </div>
   )
-} 
+}

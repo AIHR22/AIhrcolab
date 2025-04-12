@@ -12,6 +12,7 @@ import { getCompanySettings, updateCompanySettings } from "@/lib/supabase/api"
 import { toast } from "@/hooks/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
 import { IntegrationsTab } from "@/components/settings/integrations-tab"
+import { IntegrationProvider } from "@/contexts/integration-context"
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<any>(null)
@@ -240,15 +241,17 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="integrations">
-          <Card>
-            <CardHeader>
-              <CardTitle>Integration Settings</CardTitle>
-              <CardDescription>Manage your ERP and CRM integrations</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <IntegrationsTab />
-            </CardContent>
-          </Card>
+          <IntegrationProvider>
+            <Card>
+              <CardHeader>
+                <CardTitle>Integration Settings</CardTitle>
+                <CardDescription>Manage your ERP and CRM integrations</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <IntegrationsTab />
+              </CardContent>
+            </Card>
+          </IntegrationProvider>
         </TabsContent>
 
         <TabsContent value="api">

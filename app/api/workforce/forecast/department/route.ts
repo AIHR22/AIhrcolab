@@ -49,16 +49,51 @@ export async function POST(request: Request) {
 
     const { department_id, months = 12 } = body;
 
-    // Skip actual database queries for now and return mock data
-    // This will at least let the frontend display something
-    const mockCurrentHeadcount = 42; // Fixed number for testing
-    const departmentName = department_id ? "Engineering" : "Overall Company";
-    const growthRate = 0.05; // Default company-wide quarterly growth
-    const attritionRate = 0.03; // Default company-wide quarterly attrition
+    // Fetch actual department data and headcount
+    let departmentName = "Overall Company";
+    let currentHeadcount = 0;
+    let growthRate = 0.05; // Default if not set
+    let attritionRate = 0.03; // Default if not set
+
+    if (department_id) {
+      // Get department details including name and rates
+      const { data: deptData, error: deptError } = await supabaseAdmin
+        .from('departments')
+        .select('name, growth_rate, attrition_rate')
+        .eq('id', department_id)
+        .single();
+
+      if (deptError) throw deptError;
+      
+      if (deptData) {
+        departmentName = deptData.name;
+        growthRate = deptData.growth_rate || growthRate;
+        attritionRate = deptData.attrition_rate || attritionRate;
+      }
+
+      // Get current headcount for department
+      const { count, error: countError } = await supabaseAdmin
+        .from('employees')
+        .select('id', { count: 'exact', head: true })
+        .eq('department_id', department_id)
+        .eq('status', 'active');
+
+      if (countError) throw countError;
+      currentHeadcount = count || 0;
+    } else {
+      // Get total company headcount
+      const { count, error: countError } = await supabaseAdmin
+        .from('employees')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'active');
+
+      if (countError) throw countError;
+      currentHeadcount = count || 0;
+    }
 
     // Generate monthly projections
     const projections = [];
-    let projectedHeadcount = mockCurrentHeadcount;
+    let projectedHeadcount = currentHeadcount;
 
     for (let i = 0; i < months; i++) {
         const loopMonth = new Date();
@@ -85,16 +120,16 @@ export async function POST(request: Request) {
     }
 
     // Generate key findings based on the projections
-    const netChange = projections.length > 0 ? projections[projections.length - 1].headcount - mockCurrentHeadcount : 0;
-    const percentChange = mockCurrentHeadcount > 0 ? ((netChange / mockCurrentHeadcount) * 100).toFixed(1) : '0.0';
+    const netChange = projections.length > 0 ? projections[projections.length - 1].headcount - currentHeadcount : 0;
+    const percentChange = currentHeadcount > 0 ? ((netChange / currentHeadcount) * 100).toFixed(1) : '0.0';
 
     const keyFindings = [
         `Projected ${netChange >= 0 ? 'growth' : 'reduction'} of ${Math.abs(netChange)} employees (${percentChange}%) over the next ${months} months for ${departmentName}.`,
-        projections.length > 0 ? `Expected to reach ${projections[projections.length - 1].headcount} employees by ${projections[projections.length - 1].month}.` : `Current headcount is ${mockCurrentHeadcount}.`,
+        projections.length > 0 ? `Expected to reach ${projections[projections.length - 1].headcount} employees by ${projections[projections.length - 1].month}.` : `Current headcount is ${currentHeadcount}.`,
         `Based on average quarterly growth rate of ${(growthRate * 100).toFixed(1)}% and attrition rate of ${(attritionRate * 100).toFixed(1)}%.`
     ];
 
-    if (netChange > mockCurrentHeadcount * 0.1 && mockCurrentHeadcount > 0) {
+    if (netChange > currentHeadcount * 0.1 && currentHeadcount > 0) {
       keyFindings.push("Significant hiring efforts may be required to meet projected growth.");
     } else if (netChange < 0) {
       keyFindings.push("Potential need for workforce reduction strategies if trends continue.");
@@ -103,7 +138,7 @@ export async function POST(request: Request) {
     const result = {
       department_id: department_id || null,
       department_name: departmentName,
-      current_headcount: mockCurrentHeadcount,
+      current_headcount: currentHeadcount,
       projections,
       growth_rate: growthRate * 100,
       attrition_rate: attritionRate * 100,
@@ -120,4 +155,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}
