@@ -21,7 +21,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts"
-import { RecentHires } from "@/components/dashboard/recent-hires"
+
 import { UpcomingReviews } from "@/components/dashboard/upcoming-reviews"
 import { TimeOffRequests } from "@/components/dashboard/time-off-requests"
 import { motion } from "framer-motion"
@@ -316,70 +316,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </motion.div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <motion.div
-          className="col-span-1"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Card className="col-span-1">
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Common tasks and operations</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-2">
-                <Button className="justify-start">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add New Employee
-                </Button>
-                <Button className="justify-start" variant="outline">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Generate Payroll Report
-                </Button>
-                <Button className="justify-start" variant="outline">
-                  <BarChart2 className="mr-2 h-4 w-4" />
-                  Run Forecasting Analysis
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          className="col-span-2"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Card className="col-span-2">
-            <CardHeader>
-              <Tabs defaultValue="recent-hires" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="recent-hires">Recent Hires</TabsTrigger>
-                  <TabsTrigger value="upcoming-reviews">Upcoming Reviews</TabsTrigger>
-                  <TabsTrigger value="time-off">Time Off Requests</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="recent-hires">
-                <TabsContent value="recent-hires" className="mt-0">
-                  <RecentHires />
-                </TabsContent>
-                <TabsContent value="upcoming-reviews" className="mt-0">
-                  <UpcomingReviews />
-                </TabsContent>
-                <TabsContent value="time-off" className="mt-0">
-                  <TimeOffRequests />
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
     </div>
   )
 }

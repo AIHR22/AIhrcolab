@@ -89,41 +89,7 @@ export function AppSidebar({ className, isCollapsed = false }: SidebarProps) {
             isActive={pathname.startsWith("/dashboard/revenue")}
             isCollapsed={isCollapsed}
           />
-          <SidebarItem
-            icon={UserPlus}
-            title="Recruitment"
-            href="/dashboard/recruitment"
-            isActive={pathname.startsWith("/dashboard/recruitment")}
-            isCollapsed={isCollapsed}
-          />
-          <SidebarItem
-            icon={UserCog}
-            title="Onboarding"
-            href="/dashboard/onboarding"
-            isActive={pathname.startsWith("/dashboard/onboarding")}
-            isCollapsed={isCollapsed}
-          />
-          <SidebarItem
-            icon={BarChart2}
-            title="Performance"
-            href="/dashboard/performance"
-            isActive={pathname.startsWith("/dashboard/performance")}
-            isCollapsed={isCollapsed}
-          />
-          <SidebarItem
-            icon={Heart}
-            title="Engagement"
-            href="/dashboard/engagement"
-            isActive={pathname.startsWith("/dashboard/engagement")}
-            isCollapsed={isCollapsed}
-          />
-          <SidebarItem
-            icon={ShieldCheck}
-            title="Compliance"
-            href="/dashboard/compliance"
-            isActive={pathname.startsWith("/dashboard/compliance")}
-            isCollapsed={isCollapsed}
-          />
+
           <SidebarItem
             icon={FileText}
             title="Reports"

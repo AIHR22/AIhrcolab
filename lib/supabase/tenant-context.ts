@@ -14,7 +14,15 @@ export async function getCurrentTenantContext(): Promise<TenantContext | null> {
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser();
     if (authError || !user) return null;
 
-    // Check if user is platform admin
+    // Check if user is platform admin by email and role
+    if (user.email === 'arvindfenova@gmail.com') {
+      return {
+        tenantId: null, // Platform admin can access all tenants
+        role: 'platform_admin'
+      };
+    }
+
+    // Check user profile role
     const { data: userProfile } = await supabaseAdmin
       .from('user_profiles')
       .select('role')

@@ -14,6 +14,7 @@ import {
 import { useRouter } from "next/navigation"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { useEffect, useState } from "react"
+import { NotificationBell } from "@/components/notifications/notification-bell"
 
 export function UserNav() {
   const router = useRouter()
@@ -37,7 +38,9 @@ export function UserNav() {
   }, [supabase])
 
   return (
-    <DropdownMenu>
+    <div className="flex items-center gap-2">
+      <NotificationBell />
+      <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
@@ -58,7 +61,6 @@ export function UserNav() {
           <DropdownMenuItem
             onClick={() => {
               router.push('/profile')
-              router.refresh()
             }}
           >
             Profile
@@ -85,6 +87,7 @@ export function UserNav() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+    </div>
   )
 }
 

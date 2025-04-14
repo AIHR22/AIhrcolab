@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 // Update import to use the consolidated client file
 import { getSupabase } from "@/lib/supabaseClient"
 import { Database } from "@/types/supabase"
+import { createTenantAwareClient, getCurrentTenantContext } from "@/lib/supabase/tenant-context"
 
 // Define the shape of the context data
 interface AuthContextType {
@@ -27,16 +28,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const initializeTenantContext = async (currentSession: Session | null) => {
+      if (currentSession) {
+        try {
+          const tenantContext = await getCurrentTenantContext()
+          if (tenantContext) {
+            // For platform admin, we don't need tenant-specific client
+            if (tenantContext.role === 'platform_admin') {
+              setSession(currentSession)
+              return
+            }
+            // For regular users, set up tenant-aware client
+            const client = createTenantAwareClient(tenantContext.tenantId)
+            if (client.fetch) {
+              supabase.fetch = client.fetch.bind(client)
+            }
+            setSession(currentSession)
+          } else {
+            console.error('No tenant context available')
+            await signOut()
+            window.location.href = '/login'
+            return
+          }
+        } catch (error) {
+          console.error('Error initializing tenant context:', error)
+          await signOut()
+          window.location.href = '/login'
+          return
+        }
+      } else {
+        setSession(null)
+      }
+    }
+
     const fetchSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      setSession(session)
+      await initializeTenantContext(session)
       setLoading(false)
     }
 
     fetchSession()
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      await initializeTenantContext(session)
     })
 
     return () => {
