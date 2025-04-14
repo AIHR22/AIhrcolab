@@ -1,6 +1,7 @@
 import { supabase } from "./supabase-client"
 import type { Database } from "./database.types"
 import { createClient } from "@/lib/supabase/supabase-client"
+import { createTenantAwareClient, getCurrentTenantContext } from "./tenant-context"
 
 // Employee API
 export async function getEmployees() {
@@ -12,20 +13,25 @@ export async function getEmployees() {
 
 // Function to get recent hires
 export async function getRecentHires(limit = 5) {
-  const client = createClient()
+  const tenantContext = await getCurrentTenantContext();
+  if (!tenantContext) {
+    throw new Error("No tenant context available");
+  }
+
+  const client = createTenantAwareClient(tenantContext.tenantId);
 
   const { data, error } = await client
     .from("employees")
     .select("*")
     .order("start_date", { ascending: false })
-    .limit(limit)
+    .limit(limit);
 
   if (error) {
-    console.error("Error fetching recent hires:", error)
-    throw new Error("Failed to fetch recent hires")
+    console.error("Error fetching recent hires:", error);
+    throw error;
   }
 
-  return data || []
+  return data || [];
 }
 
 export async function getEmployee(id: string) {

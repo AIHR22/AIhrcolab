@@ -24,8 +24,10 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { useToast } from "@/components/ui/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
+import { workforcePlanningService } from '@/lib/services/workforce-planning-service'
 
 // Import the new workforce planning components
+import { DepartmentOverview } from "@/components/workforce/department-overview"
 import { HeadcountForecast } from "@/components/workforce/headcount-forecast"
 import { SkillGapAnalysis } from "@/components/workforce/skill-gap-analysis"
 import { WorkforceInsights } from "@/components/workforce/workforce-insights"
@@ -35,6 +37,14 @@ import { CostModelingChart } from "@/components/workforce/cost-modeling-chart"
 // Types
 import type { Department } from "@/types/organization"
 import type { WorkforcePlan as BaseWorkforcePlan, WorkforcePlanningAnalysis } from "@/types/workforce-components"
+
+// Add type for department overview data
+interface DepartmentOverviewData {
+  id: string
+  name: string
+  currentHeadcount: number
+  requiredHeadcount: number
+}
 
 // Extended WorkforcePlan with additional properties needed for UI
 interface WorkforcePlan extends BaseWorkforcePlan {
@@ -57,6 +67,7 @@ export default function WorkforcePlanningPage() {
   const [draftPlans, setDraftPlans] = useState<WorkforcePlan[]>([])
   const [completedPlans, setCompletedPlans] = useState<WorkforcePlan[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [departmentOverviewData, setDepartmentOverviewData] = useState<DepartmentOverviewData[]>([])
   
   // New state for form data
   const [formData, setFormData] = useState({
@@ -69,7 +80,7 @@ export default function WorkforcePlanningPage() {
     requiredSkills: "",
   })
   
-  // Fetch departments and plans on component mount
+  // Fetch departments, plans, and overview data on component mount
   useEffect(() => {
     const fetchInitialData = async () => {
       setIsLoading(true)
@@ -91,11 +102,16 @@ export default function WorkforcePlanningPage() {
           setDraftPlans(plansData.plans?.filter((p: WorkforcePlan) => p.status === 'draft') || [])
           setCompletedPlans(plansData.plans?.filter((p: WorkforcePlan) => p.status === 'completed') || [])
         }
+
+        // Fetch Department Overview data using our service
+        const overviewData = await workforcePlanningService.getDepartmentOverview()
+        setDepartmentOverviewData(overviewData)
+
       } catch (error) {
         console.error("Error fetching initial data:", error)
         toast({
           title: "Error",
-          description: "Failed to load departments and plans",
+          description: "Failed to load initial workforce data",
           variant: "destructive",
         })
       } finally {
@@ -104,7 +120,7 @@ export default function WorkforcePlanningPage() {
     }
     
     fetchInitialData()
-  }, [])
+  }, [toast])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -496,15 +512,21 @@ export default function WorkforcePlanningPage() {
           </div>
         </TabsContent>
         <TabsContent value="analysis" className="mt-6">
-          {!aiResults ? (
+          {!aiResults && departmentOverviewData.length === 0 && !isLoading ? (
             <div className="flex flex-col items-center justify-center p-12 text-center">
               <BrainCircuit className="h-16 w-16 text-muted-foreground mb-4" />
-              <h3 className="text-xl font-medium">No Analysis Results</h3>
+              <h3 className="text-xl font-medium">Workforce Analysis</h3>
               <p className="text-sm text-muted-foreground max-w-md mt-2">
-                Select a department and run an AI analysis to see forecasting, skill gap analysis, and insights.
+                View department headcount overview below, or select a department and run AI analysis for forecasting and insights.
               </p>
             </div>
-          ) : (
+          ) : null}
+          
+          <div className="mb-6">
+             <DepartmentOverview data={departmentOverviewData} isLoading={isLoading} />
+          </div>
+
+          {aiResults && (
             <div className="grid gap-6 md:grid-cols-2">
               {/* Headcount Forecast */}
               {aiResults.forecast && (
@@ -523,77 +545,77 @@ export default function WorkforcePlanningPage() {
                 </div>
               )}
 
-              {/* Placeholder for scenario modeling - would be filled from real API */}
+              {/* Scenario Modeling Placeholder */}
               {selectedDepartment && (
-                <div className="md:col-span-2 mt-6">
-                  <ScenarioModeling 
-                    departmentId={selectedDepartment}
-                    departmentName={departments.find(d => d.id === selectedDepartment)?.name}
-                    factorDefinitions={[
-                      {
-                        name: "Hiring Rate",
-                        currentValue: 5,
-                        minValue: 0,
-                        maxValue: 20,
-                        unit: "%",
-                        description: "Percentage of new hires per quarter relative to total headcount"
-                      },
-                      {
-                        name: "Attrition Rate",
-                        currentValue: 10,
-                        minValue: 0,
-                        maxValue: 30,
-                        unit: "%",
-                        description: "Percentage of employees leaving per year"
-                      },
-                      {
-                        name: "Efficiency Improvement",
-                        currentValue: 5,
-                        minValue: 0,
-                        maxValue: 20,
-                        unit: "%",
-                        description: "Expected productivity increase from training and tools"
-                      }
-                    ]}
-                    presetScenarios={[
-                      {
-                        name: "Growth Strategy",
-                        description: "Aggressive hiring with focus on efficiency",
-                        factors: {
-                          "Hiring Rate": 15,
-                          "Attrition Rate": 8,
-                          "Efficiency Improvement": 10
-                        },
-                        outcomes: {
-                          costImpact: 250000,
-                          headcountDelta: 12,
-                          timelineImpact: -15,
-                          riskLevel: "medium",
-                          benefitLevel: "high"
-                        }
-                      },
-                      {
-                        name: "Stability Strategy",
-                        description: "Maintain current staffing with improved efficiency",
-                        factors: {
-                          "Hiring Rate": 8,
-                          "Attrition Rate": 8,
-                          "Efficiency Improvement": 12
-                        },
-                        outcomes: {
-                          costImpact: 50000,
-                          headcountDelta: 0,
-                          timelineImpact: -20,
-                          riskLevel: "low",
-                          benefitLevel: "medium"
-                        }
-                      }
-                    ]}
-                  />
-                </div>
+                 <div className="md:col-span-2 mt-6">
+                   <ScenarioModeling 
+                     departmentId={selectedDepartment}
+                     departmentName={departments.find(d => d.id === selectedDepartment)?.name}
+                     factorDefinitions={[
+                       {
+                         name: "Hiring Rate",
+                         currentValue: 5,
+                         minValue: 0,
+                         maxValue: 20,
+                         unit: "%",
+                         description: "Percentage of new hires per quarter relative to total headcount"
+                       },
+                       {
+                         name: "Attrition Rate",
+                         currentValue: 10,
+                         minValue: 0,
+                         maxValue: 30,
+                         unit: "%",
+                         description: "Percentage of employees leaving per year"
+                       },
+                       {
+                         name: "Efficiency Improvement",
+                         currentValue: 5,
+                         minValue: 0,
+                         maxValue: 20,
+                         unit: "%",
+                         description: "Expected productivity increase from training and tools"
+                       }
+                     ]}
+                     presetScenarios={[
+                       {
+                         name: "Growth Strategy",
+                         description: "Aggressive hiring with focus on efficiency",
+                         factors: {
+                           "Hiring Rate": 15,
+                           "Attrition Rate": 8,
+                           "Efficiency Improvement": 10
+                         },
+                         outcomes: {
+                           costImpact: 250000,
+                           headcountDelta: 12,
+                           timelineImpact: -15,
+                           riskLevel: "medium",
+                           benefitLevel: "high"
+                         }
+                       },
+                       {
+                         name: "Stability Strategy",
+                         description: "Maintain current staffing with improved efficiency",
+                         factors: {
+                           "Hiring Rate": 8,
+                           "Attrition Rate": 8,
+                           "Efficiency Improvement": 12
+                         },
+                         outcomes: {
+                           costImpact: 50000,
+                           headcountDelta: 0,
+                           timelineImpact: -20,
+                           riskLevel: "low",
+                           benefitLevel: "medium"
+                         }
+                       }
+                     ]}
+                   />
+                 </div>
               )}
               
-              {/* Cost Modeling Chart - full width */}
+              {/* Cost Modeling Chart Placeholder */}
               {selectedDepartment && (
                 <div className="md:col-span-2 mt-6">
                   <CostModelingChart 

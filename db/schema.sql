@@ -11,39 +11,58 @@ DROP TABLE IF EXISTS performance_reviews CASCADE;
 DROP TABLE IF EXISTS documents CASCADE;
 DROP TABLE IF EXISTS employees CASCADE;
 DROP TABLE IF EXISTS departments CASCADE;
+DROP TABLE IF EXISTS skills CASCADE;
+DROP TABLE IF EXISTS positions CASCADE;
+DROP TABLE IF EXISTS employee_skills CASCADE;
+DROP TABLE IF EXISTS projects CASCADE;
+DROP TABLE IF EXISTS project_skills CASCADE;
+DROP TABLE IF EXISTS project_allocations CASCADE;
+DROP TABLE IF EXISTS employee_performance CASCADE;
+DROP TABLE IF EXISTS workforce_plans CASCADE;
+DROP TABLE IF EXISTS project_feasibility CASCADE;
 
 -- Create departments table first since employees will reference it
 CREATE TABLE IF NOT EXISTS departments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT UNIQUE NOT NULL,
-  description TEXT,
-  manager_id UUID,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  name VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create skills table
+CREATE TABLE IF NOT EXISTS skills (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name VARCHAR(255) NOT NULL,
+  category VARCHAR(100),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create positions table
+CREATE TABLE IF NOT EXISTS positions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  title VARCHAR(255) NOT NULL,
+  department_id UUID REFERENCES departments(id),
+  level VARCHAR(50),
+  avg_salary DECIMAL(12,2),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create employees table
 CREATE TABLE IF NOT EXISTS employees (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  first_name TEXT NOT NULL,
-  last_name TEXT NOT NULL,
-  email TEXT UNIQUE NOT NULL,
-  position TEXT NOT NULL,
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  position_id UUID REFERENCES positions(id),
   department_id UUID REFERENCES departments(id),
   hire_date DATE NOT NULL,
-  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'on_leave')),
-  manager_id UUID REFERENCES employees(id),
-  avatar_url TEXT,
-  salary DECIMAL(12, 2) NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  salary DECIMAL(12,2),
+  performance_score DECIMAL(5,2),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-
--- Add foreign key constraint for department manager after employees table exists
-ALTER TABLE departments 
-ADD CONSTRAINT fk_department_manager 
-FOREIGN KEY (manager_id) 
-REFERENCES employees(id);
 
 -- Create documents table
 CREATE TABLE IF NOT EXISTS documents (
@@ -138,6 +157,101 @@ CREATE TABLE IF NOT EXISTS employee_training (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create employee skills table (junction table)
+CREATE TABLE IF NOT EXISTS employee_skills (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  employee_id UUID REFERENCES employees(id),
+  skill_id UUID REFERENCES skills(id),
+  proficiency_level INTEGER CHECK (proficiency_level BETWEEN 1 AND 5),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(employee_id, skill_id)
+);
+
+-- Create projects table
+CREATE TABLE IF NOT EXISTS projects (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  start_date DATE,
+  end_date DATE,
+  budget DECIMAL(15,2),
+  status VARCHAR(50) DEFAULT 'planned',
+  priority VARCHAR(50),
+  complexity VARCHAR(50),
+  department_id UUID REFERENCES departments(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create project skills table (required skills for projects)
+CREATE TABLE IF NOT EXISTS project_skills (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  project_id UUID REFERENCES projects(id),
+  skill_id UUID REFERENCES skills(id),
+  required_level INTEGER CHECK (required_level BETWEEN 1 AND 5),
+  required_count INTEGER,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(project_id, skill_id)
+);
+
+-- Create project allocations table
+CREATE TABLE IF NOT EXISTS project_allocations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  project_id UUID REFERENCES projects(id),
+  employee_id UUID REFERENCES employees(id),
+  allocation_percentage INTEGER CHECK (allocation_percentage BETWEEN 0 AND 100),
+  start_date DATE,
+  end_date DATE,
+  role VARCHAR(100),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create employee performance table
+CREATE TABLE IF NOT EXISTS employee_performance (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  employee_id UUID REFERENCES employees(id),
+  review_date DATE NOT NULL,
+  performance_score DECIMAL(5,2),
+  satisfaction_score DECIMAL(5,2),
+  workload_score DECIMAL(5,2),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create workforce plans table
+CREATE TABLE IF NOT EXISTS workforce_plans (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  project_id UUID REFERENCES projects(id),
+  department_id UUID REFERENCES departments(id),
+  plan_date DATE NOT NULL,
+  required_headcount INTEGER,
+  current_headcount INTEGER,
+  forecasted_headcount INTEGER,
+  attrition_rate DECIMAL(5,2),
+  growth_rate DECIMAL(5,2),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create project_feasibility table
+CREATE TABLE IF NOT EXISTS project_feasibility (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    project_name TEXT NOT NULL,
+    analysis_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    feasibility_score INTEGER NOT NULL,
+    resource_gap JSONB NOT NULL,
+    skill_gap JSONB NOT NULL,
+    recommendation TEXT,
+    ai_recommendations JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Enable Row Level Security
 ALTER TABLE employees ENABLE ROW LEVEL SECURITY;
 ALTER TABLE departments ENABLE ROW LEVEL SECURITY;
@@ -148,6 +262,13 @@ ALTER TABLE attendance ENABLE ROW LEVEL SECURITY;
 ALTER TABLE leave_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE training_courses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE employee_training ENABLE ROW LEVEL SECURITY;
+ALTER TABLE employee_skills ENABLE ROW LEVEL SECURITY;
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE project_skills ENABLE ROW LEVEL SECURITY;
+ALTER TABLE project_allocations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE employee_performance ENABLE ROW LEVEL SECURITY;
+ALTER TABLE workforce_plans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE project_feasibility ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing policies if they exist
 DROP POLICY IF EXISTS "Allow authenticated users to read employees" ON employees;
@@ -237,3 +358,52 @@ CREATE TRIGGER update_employee_training_updated_at
 BEFORE UPDATE ON employee_training
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_employee_skills_updated_at
+BEFORE UPDATE ON employee_skills
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_projects_updated_at
+BEFORE UPDATE ON projects
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_project_skills_updated_at
+BEFORE UPDATE ON project_skills
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_project_allocations_updated_at
+BEFORE UPDATE ON project_allocations
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_employee_performance_updated_at
+BEFORE UPDATE ON employee_performance
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_workforce_plans_updated_at
+BEFORE UPDATE ON workforce_plans
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_project_feasibility_updated_at
+    BEFORE UPDATE ON project_feasibility
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Create indexes for better query performance
+CREATE INDEX IF NOT EXISTS idx_employee_skills_employee_id ON employee_skills(employee_id);
+CREATE INDEX IF NOT EXISTS idx_employee_skills_skill_id ON employee_skills(skill_id);
+CREATE INDEX IF NOT EXISTS idx_project_skills_project_id ON project_skills(project_id);
+CREATE INDEX IF NOT EXISTS idx_project_skills_skill_id ON project_skills(skill_id);
+CREATE INDEX IF NOT EXISTS idx_project_allocations_project_id ON project_allocations(project_id);
+CREATE INDEX IF NOT EXISTS idx_project_allocations_employee_id ON project_allocations(employee_id);
+CREATE INDEX IF NOT EXISTS idx_employee_performance_employee_id ON employee_performance(employee_id);
+CREATE INDEX IF NOT EXISTS idx_workforce_plans_project_id ON workforce_plans(project_id);
+CREATE INDEX IF NOT EXISTS idx_workforce_plans_department_id ON workforce_plans(department_id);
+CREATE INDEX IF NOT EXISTS idx_project_feasibility_project_name ON project_feasibility(project_name);
+CREATE INDEX IF NOT EXISTS idx_project_feasibility_analysis_date ON project_feasibility(analysis_date);
+CREATE INDEX IF NOT EXISTS idx_project_feasibility_score ON project_feasibility(feasibility_score);

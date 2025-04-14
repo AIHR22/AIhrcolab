@@ -10,47 +10,60 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2, XCircle, RefreshCw, Link } from "lucide-react"
+import { useIntegration } from "@/contexts/integration-context"
+import { useToast } from "@/hooks/use-toast"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface IntegrationProps {
+  id: string
   name: string
-  description: string
-  status: "connected" | "disconnected" | "error"
-  logo: string
-  lastSync?: string
+  system_type: string
+  description?: string
+  is_active: boolean
+  last_sync_at?: string
+  logo?: string
 }
 
-const integrations: IntegrationProps[] = [
-  {
-    name: "SAP SuccessFactors",
-    description: "Employee data and organizational structure",
-    status: "connected",
-    logo: "/placeholder.svg?height=40&width=40",
-    lastSync: "2023-03-12T14:30:00Z",
-  },
-  {
-    name: "Workday",
-    description: "Payroll and benefits management",
-    status: "disconnected",
-    logo: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    name: "Oracle HCM",
-    description: "Performance management and learning",
-    status: "error",
-    logo: "/placeholder.svg?height=40&width=40",
-    lastSync: "2023-03-10T09:15:00Z",
-  },
-  {
-    name: "ADP",
-    description: "Payroll and tax filing",
-    status: "connected",
-    logo: "/placeholder.svg?height=40&width=40",
-    lastSync: "2023-03-13T08:45:00Z",
-  },
-]
+const systemDescriptions: Record<string, string> = {
+  sap: "Employee data and organizational structure",
+  workday: "Payroll and benefits management",
+  oracle: "Performance management and learning",
+  microsoft_dynamics: "HR and workforce management",
+  generic_rest: "Custom REST API integration",
+  csv_file: "CSV file import"
+}
 
 export function ERPIntegration() {
   const [activeTab, setActiveTab] = useState("configured")
+  const { integrations, isLoading, error, refreshIntegrations, triggerSync, toggleIntegrationStatus } = useIntegration()
+  const { toast } = useToast()
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <div className="grid gap-4 md:grid-cols-2">
+          {[1, 2].map((i) => (
+            <Skeleton key={i} className="h-48" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>
+          {error}
+          <Button variant="outline" size="sm" className="mt-2" onClick={refreshIntegrations}>
+            Retry
+          </Button>
+        </AlertDescription>
+      </Alert>
+    )
+  }
 
   return (
     <div>
@@ -64,7 +77,12 @@ export function ERPIntegration() {
         <TabsContent value="configured">
           <div className="grid gap-4 md:grid-cols-2">
             {integrations.map((integration) => (
-              <IntegrationCard key={integration.name} integration={integration} />
+              <IntegrationCard 
+                key={integration.id} 
+                integration={integration}
+                onSync={triggerSync}
+                onStatusToggle={toggleIntegrationStatus}
+              />
             ))}
           </div>
         </TabsContent>
@@ -112,7 +130,7 @@ export function ERPIntegration() {
 
               <div className="space-y-2">
                 <Label htmlFor="api-key">Global API Key</Label>
-                <Input id="api-key" type="password" value="••••••••••••••••" />
+                <Input id="api-key" type="password" defaultValue="••••••••••••••••" />
               </div>
 
               <div className="flex items-center justify-between">
@@ -141,12 +159,21 @@ export function ERPIntegration() {
   )
 }
 
-function IntegrationCard({ integration }: { integration: IntegrationProps }) {
+function IntegrationCard({ integration, onSync, onStatusToggle }: { integration: IntegrationProps; onSync?: (id: string) => void; onStatusToggle?: (id: string) => void }) {
   const [syncing, setSyncing] = useState(false)
 
   const handleSync = () => {
     setSyncing(true)
+    if (onSync) {
+      onSync(integration.id)
+    }
     setTimeout(() => setSyncing(false), 2000)
+  }
+
+  const handleStatusToggle = () => {
+    if (onStatusToggle) {
+      onStatusToggle(integration.id)
+    }
   }
 
   const getStatusBadge = (status: string) => {
@@ -180,48 +207,63 @@ function IntegrationCard({ integration }: { integration: IntegrationProps }) {
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-2">
-            <img src={integration.logo || "/placeholder.svg"} alt={integration.name} className="h-10 w-10 rounded" />
+            <img 
+              src={integration.logo || `/placeholder.svg?system=${integration.system_type}`} 
+              alt={integration.name} 
+              className="h-10 w-10 rounded" 
+            />
             <div>
               <CardTitle className="text-base">{integration.name}</CardTitle>
-              <CardDescription>{integration.description}</CardDescription>
+              <CardDescription>{systemDescriptions[integration.system_type] || integration.description}</CardDescription>
             </div>
           </div>
-          {getStatusIcon(integration.status)}
+          {getStatusIcon(integration.is_active)}
         </div>
       </CardHeader>
       <CardContent>
         <div className="flex justify-between items-center text-sm">
           <div className="flex items-center gap-2">
             <span>Status:</span>
-            {getStatusBadge(integration.status)}
+            {getStatusBadge(integration.is_active)}
           </div>
-          {integration.lastSync && (
-            <span className="text-muted-foreground">Last sync: {new Date(integration.lastSync).toLocaleString()}</span>
+          {integration.last_sync_at && (
+            <span className="text-muted-foreground">
+              Last sync: {new Date(integration.last_sync_at).toLocaleString()}
+            </span>
           )}
         </div>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button variant="outline" size="sm">
-          Configure
-        </Button>
         <Button
-          variant="secondary"
+          variant="outline"
           size="sm"
           onClick={handleSync}
-          disabled={integration.status === "disconnected" || syncing}
+          disabled={!integration.is_active || syncing}
         >
           {syncing ? (
             <>
-              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
               Syncing...
             </>
           ) : (
             <>
-              <RefreshCw className="mr-2 h-4 w-4" />
+              <RefreshCw className="h-4 w-4 mr-1" />
               Sync Now
             </>
           )}
         </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleStatusToggle}
+          >
+            {integration.is_active ? 'Deactivate' : 'Activate'}
+          </Button>
+          <Button variant="ghost" size="sm">
+            Configure
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   )

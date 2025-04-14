@@ -12,10 +12,22 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
+import { MultiSelect } from "@/components/ui/multi-select"
 
 interface Department {
   id: string
   name: string
+}
+
+interface Skill {
+  id: string
+  name: string
+  category: string
+}
+
+interface EmployeeSkill {
+  skill_id: string
+  proficiency_level: number
 }
 
 const employeeSchema = z.object({
@@ -24,7 +36,7 @@ const employeeSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().optional(),
   position: z.string().optional(),
-  department: z.string().optional(),
+  department_id: z.string().optional(),
   hire_date: z.string().optional(),
   status: z.string().optional(),
   address: z.string().optional(),
@@ -32,6 +44,11 @@ const employeeSchema = z.object({
   team: z.string().optional(),
   username: z.string().optional(),
   role: z.string().optional(),
+  skills: z.array(z.object({
+    skill_id: z.string(),
+    proficiency_level: z.number().min(1).max(5)
+  })).optional(),
+  salary: z.string().or(z.number()).optional(),
 })
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>
@@ -45,8 +62,12 @@ export function EmployeeForm({ initialData, employeeId }: EmployeeFormProps) {
   const router = useRouter()
   const { toast } = useToast()
   const [departments, setDepartments] = useState<Department[]>([])
+  const [skills, setSkills] = useState<Skill[]>([])
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([])
+  const [skillProficiencies, setSkillProficiencies] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(false)
   const [fetchingDepartments, setFetchingDepartments] = useState(true)
+  const [fetchingSkills, setFetchingSkills] = useState(true)
 
   const isEditMode = !!employeeId
 
@@ -58,7 +79,7 @@ export function EmployeeForm({ initialData, employeeId }: EmployeeFormProps) {
       email: "",
       phone: "",
       position: "",
-      department: "",
+      department_id: "",
       hire_date: new Date().toISOString().split("T")[0],
       status: "active",
       address: "",
@@ -66,6 +87,8 @@ export function EmployeeForm({ initialData, employeeId }: EmployeeFormProps) {
       team: "",
       username: "",
       role: "employee",
+      skills: [],
+      salary: "",
     },
   })
 
@@ -90,8 +113,61 @@ export function EmployeeForm({ initialData, employeeId }: EmployeeFormProps) {
       }
     }
 
+    const fetchSkills = async () => {
+      console.log("Attempting to fetch skills...");
+      try {
+        const response = await fetch("/api/skills")
+        console.log("Skills API response status:", response.status);
+        if (!response.ok) {
+          throw new Error("Failed to fetch skills")
+        }
+        const data = await response.json()
+        console.log("Skills data fetched:", data);
+        setSkills(data)
+      } catch (error) {
+        console.error("Error fetching skills:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load skills. Please try again.",
+          variant: "destructive",
+        })
+      } finally {
+        setFetchingSkills(false)
+      }
+    }
+
     fetchDepartments()
+    fetchSkills()
   }, [])
+
+  useEffect(() => {
+    // Initialize selected skills and proficiencies from initialData if available
+    if (initialData?.skills) {
+      const skillIds = (initialData.skills as EmployeeSkill[]).map(s => s.skill_id)
+      setSelectedSkills(skillIds)
+      
+      const proficiencies: Record<string, number> = {}
+      ;(initialData.skills as EmployeeSkill[]).forEach(s => {
+        proficiencies[s.skill_id] = s.proficiency_level
+      })
+      setSkillProficiencies(proficiencies)
+    }
+  }, [initialData])
+
+  // Handler for updating skill proficiency
+  const handleProficiencyChange = (skillId: string, level: number) => {
+    setSkillProficiencies(prev => ({
+      ...prev,
+      [skillId]: level
+    }))
+
+    // Update form value
+    const updatedSkills = selectedSkills.map(id => ({
+      skill_id: id,
+      proficiency_level: id === skillId ? level : (skillProficiencies[id] || 1)
+    }))
+    form.setValue('skills', updatedSkills)
+  }
 
   const onSubmit = async (data: EmployeeFormValues) => {
     setLoading(true)
@@ -209,7 +285,7 @@ export function EmployeeForm({ initialData, employeeId }: EmployeeFormProps) {
 
           <FormField
             control={form.control}
-            name="department"
+            name="department_id"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Department</FormLabel>
@@ -310,6 +386,92 @@ export function EmployeeForm({ initialData, employeeId }: EmployeeFormProps) {
                     <SelectItem value="hr">HR</SelectItem>
                   </SelectContent>
                 </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="skills"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Skills</FormLabel>
+                <FormControl>
+                  <MultiSelect
+                    disabled={fetchingSkills}
+                    options={skills.map(skill => ({
+                      label: skill.name,
+                      value: skill.id,
+                      category: skill.category
+                    }))}
+                    placeholder="Select skills..."
+                    selected={selectedSkills}
+                    onChange={(selected) => {
+                      setSelectedSkills(selected)
+                      // Update form value with proficiency levels
+                      const skillsWithProficiency = selected.map(skillId => ({
+                        skill_id: skillId,
+                        proficiency_level: skillProficiencies[skillId] || 1
+                      }))
+                      form.setValue('skills', skillsWithProficiency)
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {selectedSkills.length > 0 && (
+            <div className="col-span-2 border rounded-md p-4">
+              <h4 className="font-medium mb-2">Skill Proficiency Levels</h4>
+              <div className="space-y-3">
+                {selectedSkills.map(skillId => {
+                  const skill = skills.find(s => s.id === skillId)
+                  return (
+                    <div key={skillId} className="flex items-center justify-between gap-2">
+                      <span>{skill?.name || 'Unknown Skill'}</span>
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map(level => (
+                          <button
+                            key={level}
+                            type="button"
+                            onClick={() => handleProficiencyChange(skillId, level)}
+                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs
+                              ${skillProficiencies[skillId] === level 
+                                ? 'bg-primary text-primary-foreground' 
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                          >
+                            {level}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Set proficiency level for each skill (1: Beginner, 5: Expert)
+              </p>
+            </div>
+          )}
+
+          <FormField
+            control={form.control}
+            name="salary"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Salary</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    placeholder="50000" 
+                    {...field} 
+                    value={field.value || ""} 
+                    onChange={e => field.onChange(e.target.value ? Number(e.target.value) : "")}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}

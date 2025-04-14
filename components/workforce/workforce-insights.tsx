@@ -1,10 +1,12 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { BrainCircuit, AlertTriangle, TrendingUp, UserCog, SendHorizonal } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface InsightCategory {
   name: string;
@@ -14,20 +16,67 @@ interface InsightCategory {
     description: string;
     priority: "high" | "medium" | "low";
     actionable: boolean;
+    action_type?: string;
+    action_details?: string;
   }[];
 }
 
 interface WorkforceInsightsProps {
-  data: {
-    department_id: string;
+  data?: {
+    department_id?: string;
     department_name?: string;
     analysis_date: string;
     categories: InsightCategory[];
     summary: string;
   };
+  loading?: boolean;
+  onGenerateReport?: () => void;
 }
 
-export function WorkforceInsights({ data }: WorkforceInsightsProps) {
+export function WorkforceInsights({ data, loading = false, onGenerateReport }: WorkforceInsightsProps) {
+  if (loading) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-32 mt-2" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <Skeleton className="h-20 w-full" />
+          <div className="flex justify-between items-center">
+            <div className="flex space-x-2">
+              <Skeleton className="h-16 w-20" />
+              <Skeleton className="h-16 w-20" />
+              <Skeleton className="h-16 w-20" />
+            </div>
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!data) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center text-xl">
+            <BrainCircuit className="mr-2 h-5 w-5" /> AI-Powered Insights
+          </CardTitle>
+          <CardDescription>No insights available at this time.</CardDescription>
+        </CardHeader>
+      </Card>
+    )
+  }
+  
   const { categories, summary } = data;
   
   // Count high priority insights for highlighting
@@ -137,7 +186,7 @@ export function WorkforceInsights({ data }: WorkforceInsightsProps) {
                         {insight.actionable && (
                           <div className="mt-2 flex justify-end">
                             <Button size="sm" variant="outline" className="text-xs h-7">
-                              Create Action
+                              {insight.action_type || "Create Action"}
                             </Button>
                           </div>
                         )}
@@ -151,7 +200,7 @@ export function WorkforceInsights({ data }: WorkforceInsightsProps) {
         </Accordion>
       </CardContent>
       <CardFooter>
-        <Button className="w-full">
+        <Button className="w-full" onClick={onGenerateReport}>
           <SendHorizonal className="mr-2 h-4 w-4" />
           Generate Detailed Report
         </Button>

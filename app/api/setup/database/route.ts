@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+// import { createClient } from "@supabase/supabase-js" // Removed local client import
+import { supabaseAdmin } from "@/lib/supabase"; // Import shared admin client
 
-const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+// const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!) // Removed local client definition
 
 export async function POST() {
   try {
+    // Check if the shared admin client is available
+    if (!supabaseAdmin) {
+      console.error("Database setup error: Supabase admin client is not available.");
+      return NextResponse.json({ error: "Server configuration error: Supabase client not initialized" }, { status: 500 });
+    }
+
     // Create user_profiles table if it doesn't exist
     const { error: profilesError } = await supabaseAdmin.rpc("create_table_if_not_exists", {
       table_name: "user_profiles",

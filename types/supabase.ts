@@ -45,30 +45,27 @@ export interface Database {
           title: string
           department_id: string | null
           level: string | null
-          description: string | null
-          is_manager: boolean
+          avg_salary: number | null
           created_at: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           id?: string
           title: string
           department_id?: string | null
           level?: string | null
-          description?: string | null
-          is_manager?: boolean
+          avg_salary?: number | null
           created_at?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           id?: string
           title?: string
           department_id?: string | null
           level?: string | null
-          description?: string | null
-          is_manager?: boolean
+          avg_salary?: number | null
           created_at?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -83,23 +80,20 @@ export interface Database {
         Row: {
           id: string
           name: string
-          manager_id: string | null
           created_at: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           id?: string
           name: string
-          manager_id?: string | null
           created_at?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           id?: string
           name?: string
-          manager_id?: string | null
           created_at?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -113,30 +107,42 @@ export interface Database {
       employees: {
         Row: {
           id: string
-          name: string
+          first_name: string
+          last_name: string
           email: string
           position_id: string | null
           department_id: string | null
+          hire_date: string
+          salary: number | null
+          performance_score: number | null
           created_at: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           id?: string
-          name: string
+          first_name: string
+          last_name: string
           email: string
           position_id?: string | null
           department_id?: string | null
+          hire_date: string
+          salary?: number | null
+          performance_score?: number | null
           created_at?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           id?: string
-          name?: string
+          first_name?: string
+          last_name?: string
           email?: string
           position_id?: string | null
           department_id?: string | null
+          hire_date?: string
+          salary?: number | null
+          performance_score?: number | null
           created_at?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -150,27 +156,27 @@ export interface Database {
       employee_skills: {
         Row: {
           id: string
-          employee_id: string
-          skill_id: string
-          proficiency_level: number
+          employee_id: string | null
+          skill_id: string | null
+          proficiency_level: number | null
           created_at: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           id?: string
-          employee_id: string
-          skill_id: string
-          proficiency_level: number
+          employee_id?: string | null
+          skill_id?: string | null
+          proficiency_level?: number | null
           created_at?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           id?: string
-          employee_id?: string
-          skill_id?: string
-          proficiency_level?: number
+          employee_id?: string | null
+          skill_id?: string | null
+          proficiency_level?: number | null
           created_at?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -191,23 +197,23 @@ export interface Database {
         Row: {
           id: string
           name: string
-          description: string | null
+          category: string | null
           created_at: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           id?: string
           name: string
-          description?: string | null
+          category?: string | null
           created_at?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           id?: string
           name?: string
-          description?: string | null
+          category?: string | null
           created_at?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -218,9 +224,13 @@ export interface Database {
           description: string | null
           start_date: string | null
           end_date: string | null
+          budget: number | null
           status: string | null
+          priority: string | null
+          complexity: string | null
+          department_id: string | null
           created_at: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           id?: string
@@ -228,9 +238,13 @@ export interface Database {
           description?: string | null
           start_date?: string | null
           end_date?: string | null
+          budget?: number | null
           status?: string | null
+          priority?: string | null
+          complexity?: string | null
+          department_id?: string | null
           created_at?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           id?: string
@@ -238,45 +252,92 @@ export interface Database {
           description?: string | null
           start_date?: string | null
           end_date?: string | null
+          budget?: number | null
           status?: string | null
+          priority?: string | null
+          complexity?: string | null
+          department_id?: string | null
           created_at?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: []
+      }
+      project_skills: {
+        Row: {
+          id: string
+          project_id: string | null
+          skill_id: string | null
+          required_level: number | null
+          required_count: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id?: string | null
+          skill_id?: string | null
+          required_level?: number | null
+          required_count?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string | null
+          skill_id?: string | null
+          required_level?: number | null
+          required_count?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_skills_project_id_fkey"
+            columns: ["project_id"]
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_skills_skill_id_fkey"
+            columns: ["skill_id"]
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       project_allocations: {
         Row: {
           id: string
-          project_id: string
-          employee_id: string
-          role: string | null
-          allocation_percentage: number
+          project_id: string | null
+          employee_id: string | null
+          allocation_percentage: number | null
           start_date: string | null
           end_date: string | null
+          role: string | null
           created_at: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
           id?: string
-          project_id: string
-          employee_id: string
-          role?: string | null
-          allocation_percentage?: number
+          project_id?: string | null
+          employee_id?: string | null
+          allocation_percentage?: number | null
           start_date?: string | null
           end_date?: string | null
+          role?: string | null
           created_at?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
           id?: string
-          project_id?: string
-          employee_id?: string
-          role?: string | null
-          allocation_percentage?: number
+          project_id?: string | null
+          employee_id?: string | null
+          allocation_percentage?: number | null
           start_date?: string | null
           end_date?: string | null
+          role?: string | null
           created_at?: string
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -594,49 +655,6 @@ export interface Database {
           }
         ]
       }
-      project_skills: {
-        Row: {
-          id: string
-          project_id: string
-          skill_id: string
-          required_level: number
-          required_count: number
-          created_at: string
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          project_id: string
-          skill_id: string
-          required_level: number
-          required_count: number
-          created_at?: string
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          project_id?: string
-          skill_id?: string
-          required_level?: number
-          required_count?: number
-          created_at?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "project_skills_project_id_fkey"
-            columns: ["project_id"]
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "project_skills_skill_id_fkey"
-            columns: ["skill_id"]
-            referencedRelation: "skills"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
       skill_gap_analysis: {
         Row: {
           id: string
@@ -755,6 +773,79 @@ export interface Database {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      employee_performance: {
+        Row: {
+          id: string
+          employee_id: string | null
+          review_date: string
+          performance_score: number | null
+          satisfaction_score: number | null
+          workload_score: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          employee_id?: string | null
+          review_date: string
+          performance_score?: number | null
+          satisfaction_score?: number | null
+          workload_score?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          employee_id?: string | null
+          review_date?: string
+          performance_score?: number | null
+          satisfaction_score?: number | null
+          workload_score?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      workforce_plans: {
+        Row: {
+          id: string
+          project_id: string | null
+          department_id: string | null
+          plan_date: string
+          required_headcount: number | null
+          current_headcount: number | null
+          forecasted_headcount: number | null
+          attrition_rate: number | null
+          growth_rate: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id?: string | null
+          department_id?: string | null
+          plan_date: string
+          required_headcount?: number | null
+          current_headcount?: number | null
+          forecasted_headcount?: number | null
+          attrition_rate?: number | null
+          growth_rate?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string | null
+          department_id?: string | null
+          plan_date?: string
+          required_headcount?: number | null
+          current_headcount?: number | null
+          forecasted_headcount?: number | null
+          attrition_rate?: number | null
+          growth_rate?: number | null
+          created_at?: string
+          updated_at?: string
+        }
       }
     }
     Views: {

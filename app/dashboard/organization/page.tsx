@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Search, ZoomIn, ZoomOut, RefreshCw, Wand2, X, Settings, DownloadCloud, Bug } from "lucide-react"
+import Link from 'next/link'
+import { Plus, Search, ZoomIn, ZoomOut, RefreshCw, Wand2, X, Settings, DownloadCloud, Bug, FolderKanban, ClipboardPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -30,6 +31,7 @@ import { jsPDF } from "jspdf"
 import { saveAs } from "file-saver"
 import { OrgDebugPanel } from "@/components/organization/org-debug-panel"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { CreateProjectDialog } from "@/components/projects/create-project-dialog"
 
 export default function OrganizationPage() {
   // Add a console log to help debug
@@ -45,12 +47,19 @@ export default function OrganizationPage() {
   const [showDataSourceInfo, setShowDataSourceInfo] = useState(false)
   const [showDebugPanel, setShowDebugPanel] = useState(false)
   const [isGeneratingChart, setIsGeneratingChart] = useState(false)
+  const [showCreateProjectDialog, setShowCreateProjectDialog] = useState(false)
+  const [selectedProject, setSelectedProject] = useState<string | null>(null)
   const { toast } = useToast()
   const router = useRouter()
 
-  // Initial data fetch when component mounts
+  // Get selected project from URL and fetch data
   useEffect(() => {
-    fetchOrganizationData()
+    const searchParams = new URLSearchParams(window.location.search)
+    const projectId = searchParams.get('selectedProject')
+    if (projectId) {
+      setSelectedProject(projectId)
+    }
+    fetchOrganizationData(projectId)
   }, [])
 
   // Check if in development mode
@@ -58,10 +67,11 @@ export default function OrganizationPage() {
     setShowDebugPanel(process.env.NODE_ENV === 'development')
   }, [])
 
-  const fetchOrganizationData = async () => {
+  const fetchOrganizationData = async (projectId?: string | null) => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/organization')
+      const url = projectId ? `/api/organization/projects/org-chart?projectId=${projectId}` : '/api/organization'
+      const response = await fetch(url)
       if (!response.ok) {
         if (response.status === 404 || response.status === 500) {
           setNeedsSetup(true)
@@ -72,11 +82,21 @@ export default function OrganizationPage() {
       }
       
       const result = await response.json()
-      if (result.success && result.data) {
-        setOrganizationData(result.data)
-        setNeedsSetup(false)
+      if (result.success) {
+        if (result.data) {
+          setOrganizationData(result.data)
+          setNeedsSetup(false)
+        } else {
+          // Only set needsSetup if we explicitly get a setup required response
+          setNeedsSetup(response.status === 404)
+        }
       } else {
-        setNeedsSetup(true)
+        // Handle other API errors without triggering setup
+        toast({
+          title: "Error",
+          description: result.error || "Failed to load organization data",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error('Error fetching organization data:', error)
@@ -104,13 +124,50 @@ export default function OrganizationPage() {
     router.push(`/dashboard/employees/${node.id}`)
   }
 
-  const handleAIGenerated = (data: OrgChartNode) => {
-    setOrganizationData(data)
-    toast({
-      title: "Success",
-      description: "Organization chart has been updated with the AI-generated structure",
-    })
-    setIsGeneratingChart(false)
+  const handleAIGenerated = async (data: OrgChartNode) => {
+    try {
+      setIsGeneratingChart(true)
+      
+      if (selectedProject) {
+        // Save the generated chart to the project
+        const response = await fetch('/api/organization/projects/save-generated-chart', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            projectId: selectedProject,
+            generatedChart: data
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to save organization chart to project')
+        }
+      }
+
+      setOrganizationData(data)
+      toast({
+        title: "Success",
+        description: selectedProject 
+          ? "Organization chart has been saved to the project" 
+          : "Organization chart has been updated with the AI-generated structure",
+      })
+
+      // Refresh the data to ensure we have the latest version
+      if (selectedProject) {
+        await fetchOrganizationData(selectedProject)
+      }
+    } catch (error) {
+      console.error('Error handling AI generated chart:', error)
+      toast({
+        title: "Error",
+        description: "Failed to save the generated organization chart",
+        variant: "destructive",
+      })
+    } finally {
+      setIsGeneratingChart(false)
+    }
   }
 
   const exportChartToPDF = async () => {
@@ -156,21 +213,45 @@ export default function OrganizationPage() {
     }
   };
 
+  const handleProjectCreated = () => {
+    setShowCreateProjectDialog(false)
+    toast({
+      title: "Success",
+      description: "Project created successfully."
+    })
+  }
+
   return (
     <div className="container-fluid px-4 py-6 h-[calc(100vh-4rem)]">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
         <div>
           <h1 className="text-2xl font-bold">Organization Chart</h1>
           <p className="text-muted-foreground">Visualize your company's structure</p>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 flex-wrap gap-2">
           <Button 
             onClick={() => setShowAIGenerator(!showAIGenerator)}
             variant={showAIGenerator ? "secondary" : "default"}
+            size="sm"
           >
             <Wand2 className="mr-2 h-4 w-4" />
-            {showAIGenerator ? "Hide AI Generator" : "Generate with AI"}
+            {showAIGenerator ? "Hide AI Gen" : "Generate with AI"}
           </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowCreateProjectDialog(true)}
+          >
+             <ClipboardPlus className="mr-2 h-4 w-4" />
+             Create Project
+          </Button>
+          <Link href="/dashboard/organization/projects" passHref>
+             <Button variant="outline" size="sm">
+               <FolderKanban className="mr-2 h-4 w-4" />
+               View Projects
+             </Button>
+          </Link>
           
           <Popover>
             <PopoverTrigger asChild>
@@ -250,6 +331,7 @@ export default function OrganizationPage() {
                   <AIOrgGenerator 
                     onGenerated={handleAIGenerated} 
                     onGenerationStart={() => setIsGeneratingChart(true)}
+                    selectedProject={selectedProject}
                   />
                 </CardContent>
               </Card>
@@ -361,6 +443,13 @@ export default function OrganizationPage() {
           </Tabs>
         </div>
       </div>
+
+      <CreateProjectDialog 
+        open={showCreateProjectDialog} 
+        onOpenChange={setShowCreateProjectDialog} 
+        onProjectCreated={handleProjectCreated} 
+      />
+
     </div>
   )
 }

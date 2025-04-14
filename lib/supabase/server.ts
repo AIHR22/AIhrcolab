@@ -3,30 +3,34 @@ import { cookies } from 'next/headers'
 import { createClient as createClientNoSSR } from '@supabase/supabase-js'
 import { Database } from '@/types/supabase'
 
-export function createClient() {
+export async function createClient() {
   const cookieStore = cookies()
   
-  return createServerClient<Database>(
+  return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         get(name: string) {
-          return cookieStore.get(name)?.value
+          const cookie = cookieStore.get(name)
+          return cookie?.value
         },
         set(name: string, value: string, options: any) {
           try {
-            cookieStore.set({ name, value, ...options })
+            cookieStore.set(name, value, options)
           } catch (error) {
-            // Cookie cannot be set inside a try/catch block in middleware
-            // https://github.com/vercel/next.js/discussions/49245
+            // The `set` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
           }
         },
         remove(name: string, options: any) {
           try {
-            cookieStore.set({ name, value: '', ...options })
+            cookieStore.set(name, '', { ...options, maxAge: 0 })
           } catch (error) {
-            // Cookie cannot be removed inside a try/catch block in middleware
+            // The `delete` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
           }
         },
       },

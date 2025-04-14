@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Bell, Menu, Search, Settings, User } from "lucide-react"
+import { TenantSelector } from "@/components/tenant-selector"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -55,6 +56,7 @@ export function TopBar({ onToggleSidebar }: TopBarProps) {
       </div>
 
       <div className="flex flex-1 items-center justify-end gap-4">
+        <TenantSelector />
         <ModeToggle />
 
         <Link
