@@ -25,12 +25,9 @@ export function getSupabase() {
         storage: typeof window !== 'undefined' ? window.localStorage : undefined,
         storageKey: 'supabase.auth.token',
         detectSessionInUrl: true,
-        flowType: 'pkce',
-        debug: process.env.NODE_ENV === 'development',
-        // @ts-ignore - This is actually valid but TS doesn't recognize it
-        retryAttempts: 3 // Add retry attempts for better reliability
+        flowType: 'pkce'
       }
-    }) as ReturnType<typeof createClient<Database>>
+    })
     return supabaseInstance
   } 
   // Return a dummy or throw error if keys are missing and no instance exists

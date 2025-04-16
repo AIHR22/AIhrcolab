@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { DollarSign, TrendingUp, BarChart2, Download, RefreshCw, Calculator, Users, Briefcase } from "lucide-react"
+import { useState, useEffect, useCallback, useMemo } from "react"
+import { DollarSign, TrendingUp, BarChart2, Download, RefreshCw, Calculator, Users, Briefcase, Loader2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -22,352 +22,1406 @@ import {
 import { Slider } from "@/components/ui/slider"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "@/components/ui/use-toast"
+
+// Type definitions
+type ViewMode = "company-wide" | "project-based"
+type TabOption = "current-view" | "project-view" | "comparison" | "what-if" // Added what-if tab
+type ComparisonPeriod = "monthly" | "quarterly" | "yearly"
+type ComparisonMetric = "revenue" | "growth" | "profitability"
+
+interface Department {
+  id: string;
+  name: string;
+  headcount: number;
+  revenue_per_employee: number;
+  total_revenue: number;
+}
+
+interface SectionVisibility {
+  metrics: boolean
+  projectionModel: boolean
+  revenueTrends: boolean
+  profitabilitySimulator: boolean
+  departmentRevenue: boolean
+  whatIfScenario: boolean
+  projectMetrics: boolean
+  departmentAllocation: boolean
+  projectTimeline: boolean
+}
 
 // Mock data for revenue forecasting
-const revenueData = [
-  { month: "Jan", actual: 1200000, projected: 1250000 },
-  { month: "Feb", actual: 1250000, projected: 1300000 },
-  { month: "Mar", actual: 1300000, projected: 1350000 },
-  { month: "Apr", actual: 1350000, projected: 1400000 },
-  { month: "May", actual: 1400000, projected: 1450000 },
-  { month: "Jun", actual: 1450000, projected: 1500000 },
-  { month: "Jul", actual: 1500000, projected: 1550000 },
-  { month: "Aug", actual: 1550000, projected: 1600000 },
-  { month: "Sep", actual: 1600000, projected: 1650000 },
-  { month: "Oct", actual: 1650000, projected: 1700000 },
-  { month: "Nov", actual: 1700000, projected: 1750000 },
-  { month: "Dec", actual: 1750000, projected: 1800000 },
+// TODO: Replace with actual API data when backend is connected
+const mockRevenueData = [
+  { month: "Jan 2024", actual: 1200000, projected: 1250000 },
+  { month: "Feb 2024", actual: 1250000, projected: 1300000 },
+  { month: "Mar 2024", actual: 1300000, projected: 1350000 },
+  { month: "Apr 2024", actual: 1350000, projected: 1400000 },
+  { month: "May 2024", actual: 1400000, projected: 1450000 },
+  { month: "Jun 2024", actual: 1450000, projected: 1500000 },
+  { month: "Jul 2024", actual: 1500000, projected: 1550000 },
+  { month: "Aug 2024", actual: null, projected: 1600000 },
+  { month: "Sep 2024", actual: null, projected: 1650000 },
+  { month: "Oct 2024", actual: null, projected: 1700000 },
+  { month: "Nov 2024", actual: null, projected: 1750000 },
+  { month: "Dec 2024", actual: null, projected: 1800000 },
 ]
 
-const departmentRevenueData = [
-  { department: "Engineering", revenue: 650000, headcount: 65, revenuePerEmployee: 10000 },
-  { department: "Sales", revenue: 480000, headcount: 40, revenuePerEmployee: 12000 },
-  { department: "Marketing", revenue: 250000, headcount: 25, revenuePerEmployee: 10000 },
-  { department: "Product", revenue: 220000, headcount: 20, revenuePerEmployee: 11000 },
-  { department: "Design", revenue: 150000, headcount: 15, revenuePerEmployee: 10000 },
-  { department: "Finance", revenue: 100000, headcount: 10, revenuePerEmployee: 10000 },
-  { department: "HR", revenue: 50000, headcount: 5, revenuePerEmployee: 10000 },
+// Mock department data
+// TODO: Replace with actual API data when backend is connected
+const mockDepartmentData = [
+  { id: "1", name: "Engineering", headcount: 65, revenue_per_employee: 10000, total_revenue: 650000 },
+  { id: "2", name: "Sales", headcount: 40, revenue_per_employee: 12000, total_revenue: 480000 },
+  { id: "3", name: "Marketing", headcount: 25, revenue_per_employee: 10000, total_revenue: 250000 },
+  { id: "4", name: "Product", headcount: 20, revenue_per_employee: 11000, total_revenue: 220000 },
+  { id: "5", name: "Design", headcount: 15, revenue_per_employee: 10000, total_revenue: 150000 },
+  { id: "6", name: "Finance", headcount: 10, revenue_per_employee: 10000, total_revenue: 100000 },
+  { id: "7", name: "HR", headcount: 5, revenue_per_employee: 10000, total_revenue: 50000 },
 ]
 
-export default function RevenueForecasting() {
-  const [employeeCount, setEmployeeCount] = useState(180)
-  const [avgSalary, setAvgSalary] = useState(95000)
+// Mock comparison data
+// TODO: Replace with actual API data when backend is connected
+const mockComparisonData = [
+  { period: "Jan", current: 120000, previous: 100000 },
+  { period: "Feb", current: 125000, previous: 105000 },
+  { period: "Mar", current: 130000, previous: 110000 },
+  { period: "Apr", current: 135000, previous: 115000 },
+  { period: "May", current: 140000, previous: 120000 },
+  { period: "Jun", current: 145000, previous: 125000 },
+]
+
+// Mock what-if scenarios - company-wide
+// TODO: Replace with actual API data when backend is connected
+const mockWhatIfScenarios = [
+  { id: "1", name: "Revenue drops by 10% in Q2", impact: -350000, category: "revenue" },
+  { id: "2", name: "Marketing spend increases by 25%", impact: -120000, category: "expense" },
+  { id: "3", name: "Exchange rate shifts by 5%", impact: -80000, category: "financial" },
+  { id: "4", name: "Vendor payments delayed by 30 days", impact: 45000, category: "cash-flow" },
+  { id: "5", name: "All salaries increase by 8%", impact: -210000, category: "hr" },
+]
+
+// Mock project data
+// TODO: Replace with actual API data when backend is connected
+const mockProjects = [
+  { id: "project-1", name: "Marketing Campaign Q2", status: "Active", revenue: 250000 },
+  { id: "project-2", name: "New Product Launch", status: "Planning", revenue: 500000 },
+  { id: "project-3", name: "Website Redesign", status: "Completed", revenue: 120000 },
+]
+
+// Helper functions
+const formatCurrency = (value: number | null | undefined) => {
+  if (value === null || value === undefined) return "$0";
+  return `$${value.toLocaleString()}`;
+}
+
+const formatPercentage = (value: number | null | undefined, decimals = 1) => {
+  if (value === null || value === undefined) return "0.0%";
+  return `${value.toFixed(decimals)}%`;
+}
+
+export default function RevenuePage() {
+  // TODO: Add actual data fetching when backend is connected
+  // const { data: revenueData, isLoading, error } = useRevenueData();
+  
+  const isLoading = false;
+  const error = null;
+  
+  // If there's an error, show the error
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h1 className="text-2xl font-bold mb-4 text-destructive">Error Loading Revenue Data</h1>
+        <p className="text-muted-foreground mb-8">
+          An error occurred while loading revenue data.
+        </p>
+        <div className="flex gap-4">
+          <Button onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  return <RevenueForecasting />;
+}
+
+export function RevenueForecasting() {
+  // UI state
+  const [viewMode, setViewMode] = useState<ViewMode>("company-wide")
+  const [activeTab, setActiveTab] = useState<TabOption>("current-view")
+  const [selectedProject, setSelectedProject] = useState<string | undefined>()
+  const [comparisonPeriod, setComparisonPeriod] = useState<ComparisonPeriod>("monthly")
+  const [comparisonMetric, setComparisonMetric] = useState<ComparisonMetric>("revenue")
+  
+  // Revenue projection model state
+  const [employeeCount, setEmployeeCount] = useState(100)
+  const [averageSalary, setAverageSalary] = useState(60000)
   const [revenuePerEmployee, setRevenuePerEmployee] = useState(10000)
   const [growthRate, setGrowthRate] = useState(5)
-  const [timeframe, setTimeframe] = useState("12months")
+  const [projectionTimeframe, setProjectionTimeframe] = useState("12months")
+  
+  // What-if scenario state
+  const [employeeGrowth, setEmployeeGrowth] = useState(0)
+  const [salaryChange, setSalaryChange] = useState(0)
+  const [revenuePerEmployeeChange, setRevenuePerEmployeeChange] = useState(0)
+  const [growthRateChange, setGrowthRateChange] = useState(0)
+  const [whatIfScenarios, setWhatIfScenarios] = useState(mockWhatIfScenarios)
+  const [activeScenarios, setActiveScenarios] = useState<string[]>([])
+  const [customScenarios, setCustomScenarios] = useState<{
+    revenueChange: number;
+    marketingSpend: number;
+    exchangeRate: number;
+    paymentDelay: number;
+    salaryIncrease: number;
+  }>({
+    revenueChange: 0,
+    marketingSpend: 0,
+    exchangeRate: 0,
+    paymentDelay: 0,
+    salaryIncrease: 0
+  })
+
+  // Department simulator state
+  const [departmentData, setDepartmentData] = useState<Department[]>(mockDepartmentData)
+  const [headcountImpacts, setHeadcountImpacts] = useState<Record<string, number | null>>({})
+  
+  // UI control state
   const [isCalculating, setIsCalculating] = useState(false)
+  const [isApplyingChanges, setIsApplyingChanges] = useState(false)
+  const [sectionVisibility, setSectionVisibility] = useState<SectionVisibility>({
+    metrics: true,
+    projectionModel: true,
+    revenueTrends: true,
+    profitabilitySimulator: true,
+    departmentRevenue: true,
+    whatIfScenario: true,
+    projectMetrics: false,
+    departmentAllocation: false,
+    projectTimeline: false,
+  })
 
-  // Calculate projected revenue
-  const monthlyRevenue = employeeCount * revenuePerEmployee
+  // TODO: Add actual data fetching when backend is connected
+  // const { data, isLoading: isHookLoading, error: revenueError } = useRevenueData();
+  const isHookLoading = false;
+  const revenueError = null;
+  
+  // Mock data for UI display - Replace with actual API data when backend is connected
+  const actualRevenue = mockRevenueData;
+  const departments = departmentData;
+  const revenueData = mockRevenueData;
+  const departmentRevenueData = mockDepartmentData;
+  const comparisonData = mockComparisonData;
+  const projectsList = mockProjects;
+  
+  // Calculate revenue metrics
+  const monthlyRevenue = (employeeCount || 0) * (revenuePerEmployee || 0)
   const annualRevenue = monthlyRevenue * 12
-  const projectedRevenue = annualRevenue * (1 + growthRate / 100)
+  const projectedRevenue = annualRevenue * (1 + (growthRate || 0) / 100)
+  const totalSalaries = (employeeCount || 0) * (averageSalary || 0)
+  const profitMargin = annualRevenue === 0 ? 0 : ((annualRevenue - totalSalaries) / annualRevenue) * 100
+  
+  // Initialize the department data
+  useEffect(() => {
+    // TODO: Replace with actual API data when backend is connected
+    setDepartmentData(mockDepartmentData);
+  }, [])
+  
+  // Update what-if scenarios when view mode or selected project changes
+  useEffect(() => {
+    if (viewMode === "project-based" && selectedProject) {
+      // Load project-specific scenarios
+      // TODO: Replace with actual API data when backend is connected
+      setWhatIfScenarios([
+        { id: "p1", name: `Project timeline delayed by 2 weeks`, impact: -85000, category: "timeline" },
+        { id: "p2", name: `Resource allocation increases by 15%`, impact: -45000, category: "resource" },
+        { id: "p3", name: `Client extends contract by 6 months`, impact: 180000, category: "contract" },
+        { id: "p4", name: `New feature scope added to deliverables`, impact: -30000, category: "scope" },
+        { id: "p5", name: `Team efficiency improves by 10%`, impact: 35000, category: "efficiency" },
+      ]);
+    } else {
+      // Load company-wide scenarios
+      setWhatIfScenarios(mockWhatIfScenarios);
+    }
+    
+    // Reset active scenarios when context changes
+    setActiveScenarios([]);
+  }, [viewMode, selectedProject]);
+  
+  // Handlers for projection model
+  const handleProjectionChange = (field: string, value: number | string) => {
+    // TODO: Add backend update when connected
+    if (field === 'employeeCount') {
+      setEmployeeCount(value as number)
+    } else if (field === 'averageSalary') {
+      setAverageSalary(value as number)
+    } else if (field === 'revenuePerEmployee') {
+      setRevenuePerEmployee(value as number)
+    } else if (field === 'growthRate') {
+      setGrowthRate(value as number)
+    } else if (field === 'projectionTimeframe') {
+      setProjectionTimeframe(value as string)
+    }
+  }
 
-  // Calculate profitability
-  const totalSalaries = employeeCount * avgSalary
-  const profitMargin = ((annualRevenue - totalSalaries) / annualRevenue) * 100
+  // Handle what-if scenario changes
+  const handleWhatIfChange = (field: string, value: number) => {
+    switch (field) {
+      case 'employeeGrowth':
+        setEmployeeGrowth(value);
+        break;
+      case 'salaryChange':
+        setSalaryChange(value);
+        break;
+      case 'revenuePerEmployeeChange':
+        setRevenuePerEmployeeChange(value);
+        break;
+      case 'growthRateChange':
+        setGrowthRateChange(value);
+        break;
+      case 'revenueChange':
+        setCustomScenarios(prev => ({ ...prev, revenueChange: value }));
+        break;
+      case 'marketingSpend':
+        setCustomScenarios(prev => ({ ...prev, marketingSpend: value }));
+        break;
+      case 'exchangeRate':
+        setCustomScenarios(prev => ({ ...prev, exchangeRate: value }));
+        break;
+      case 'paymentDelay':
+        setCustomScenarios(prev => ({ ...prev, paymentDelay: value }));
+        break;
+      case 'salaryIncrease':
+        setCustomScenarios(prev => ({ ...prev, salaryIncrease: value }));
+        break;
+    }
+  }
 
-  const handleCalculate = () => {
-    setIsCalculating(true)
+  // Toggle scenario active state
+  const toggleScenario = (scenarioId: string) => {
+    setActiveScenarios(prev => 
+      prev.includes(scenarioId)
+        ? prev.filter(id => id !== scenarioId)
+        : [...prev, scenarioId]
+    );
+  }
+
+  // Calculate what-if scenario metrics
+  const calculateWhatIfScenario = useMemo(() => {
+    const newEmployeeCount = Math.round(employeeCount * (1 + employeeGrowth / 100));
+    const newAverageSalary = averageSalary * (1 + salaryChange / 100);
+    const newRevenuePerEmployee = revenuePerEmployee * (1 + revenuePerEmployeeChange / 100);
+    const newGrowthRate = growthRate + growthRateChange;
+
+    const newMonthlyRevenue = newEmployeeCount * newRevenuePerEmployee;
+    const newAnnualRevenue = newMonthlyRevenue * 12;
+    const newProjectedRevenue = newAnnualRevenue * (1 + newGrowthRate / 100);
+    const newTotalSalaries = newEmployeeCount * newAverageSalary;
+    const newProfitMargin = newAnnualRevenue === 0 ? 0 : ((newAnnualRevenue - newTotalSalaries) / newAnnualRevenue) * 100;
+
+    return {
+      employee_count: newEmployeeCount,
+      average_salary: newAverageSalary,
+      revenue_per_employee: newRevenuePerEmployee,
+      growth_rate: newGrowthRate,
+      monthlyRevenue: newMonthlyRevenue,
+      annualRevenue: newAnnualRevenue,
+      projectedRevenue: newProjectedRevenue,
+      totalSalaries: newTotalSalaries,
+      profitMargin: newProfitMargin
+    };
+  }, [employeeCount, averageSalary, revenuePerEmployee, growthRate, employeeGrowth, salaryChange, revenuePerEmployeeChange, growthRateChange]);
+
+  // Calculate impact of active scenarios
+  const calculateScenarioImpact = useMemo(() => {
+    if (activeScenarios.length === 0) return 0;
+    
+    return whatIfScenarios
+      .filter(scenario => activeScenarios.includes(scenario.id))
+      .reduce((total, scenario) => total + scenario.impact, 0);
+  }, [activeScenarios, whatIfScenarios]);
+
+  // Calculate custom scenario impact
+  const calculateCustomScenarioImpact = useMemo(() => {
+    const baseRevenue = viewMode === "project-based" && selectedProject
+      ? projectsList.find(p => p.id === selectedProject)?.revenue || 0
+      : annualRevenue;
+    
+    let impact = 0;
+    
+    // Calculate revenue change impact (Q2 = 3 months)
+    const quarterlyRevenue = baseRevenue / 4;
+    impact += quarterlyRevenue * (customScenarios.revenueChange / 100) * -1;
+    
+    // Marketing spend impact
+    const estimatedMarketingBudget = baseRevenue * 0.15; // Assume 15% of revenue is marketing
+    impact += estimatedMarketingBudget * (customScenarios.marketingSpend / 100) * -1;
+    
+    // Exchange rate impact (assume 30% of revenue is affected by exchange rates)
+    const foreignRevenue = baseRevenue * 0.3;
+    impact += foreignRevenue * (customScenarios.exchangeRate / 100) * -1;
+    
+    // Payment delay impact (assume 5% APR cost of capital)
+    const monthlyPayables = baseRevenue * 0.4 / 12; // Assume 40% of revenue goes to vendors
+    impact += monthlyPayables * (customScenarios.paymentDelay / 30) * (0.05 / 12);
+    
+    // Salary increase impact
+    impact += totalSalaries * (customScenarios.salaryIncrease / 100) * -1;
+    
+    return impact;
+  }, [annualRevenue, totalSalaries, customScenarios, viewMode, selectedProject, projectsList]);
+
+  // Handle apply what-if scenario
+  const handleApplyWhatIfScenario = () => {
+    setEmployeeCount(calculateWhatIfScenario.employee_count);
+    setAverageSalary(calculateWhatIfScenario.average_salary);
+    setRevenuePerEmployee(calculateWhatIfScenario.revenue_per_employee);
+    setGrowthRate(calculateWhatIfScenario.growth_rate);
+    
+    // Reset what-if sliders
+    setEmployeeGrowth(0);
+    setSalaryChange(0);
+    setRevenuePerEmployeeChange(0);
+    setGrowthRateChange(0);
+
+    toast({
+      title: "Scenario Applied",
+      description: "The what-if scenario has been applied to your metrics.",
+    });
+  }
+
+  // Handle reset what-if scenario
+  const handleResetWhatIfScenario = () => {
+    setEmployeeGrowth(0);
+    setSalaryChange(0);
+    setRevenuePerEmployeeChange(0);
+    setGrowthRateChange(0);
+    setCustomScenarios({
+      revenueChange: 0,
+      marketingSpend: 0,
+      exchangeRate: 0,
+      paymentDelay: 0,
+      salaryIncrease: 0
+    });
+    setActiveScenarios([]);
+  }
+
+  // Handle department headcount changes
+  const handleHeadcountChange = (index: number, change: number) => {
+    const updatedData = [...departmentData];
+    const department = updatedData[index];
+    const newHeadcount = department.headcount + change;
+
+    if (newHeadcount >= 0) {
+      updatedData[index] = {
+        ...department,
+        headcount: newHeadcount,
+      };
+      setDepartmentData(updatedData);
+
+      // Calculate impacts
+      // TODO: Add actual impact calculation when backend is connected
+      setHeadcountImpacts(prev => ({
+        ...prev,
+        [department.name]: change * department.revenue_per_employee
+      }));
+    }
+  }
+
+  // Handle applying headcount changes
+  const handleApplyChanges = () => {
+    setIsApplyingChanges(true);
+    // TODO: Add backend update when connected
     setTimeout(() => {
-      setIsCalculating(false)
-    }, 1500)
+      setIsApplyingChanges(false);
+      setHeadcountImpacts({});
+      toast({
+        title: "Changes Applied",
+        description: "Headcount changes have been applied.",
+      });
+    }, 1000);
+  }
+
+  // Calculate total headcount impact
+  const totalImpact = useMemo(() => {
+    return Object.values(headcountImpacts).reduce((total, impact) => total + (impact || 0), 0);
+  }, [headcountImpacts]);
+
+  // Generate what-if chart data
+  const whatIfChartData = useMemo(() => {
+    const months = ["Month 1", "Month 2", "Month 3", "Month 4", "Month 5", "Month 6", 
+                    "Month 7", "Month 8", "Month 9", "Month 10", "Month 11", "Month 12"];
+    
+    return months.map((month, index) => {
+      const currentTrajectory = monthlyRevenue * Math.pow(1 + growthRate / 100 / 12, index);
+      const whatIfTrajectory = calculateWhatIfScenario.monthlyRevenue * 
+                               Math.pow(1 + calculateWhatIfScenario.growth_rate / 100 / 12, index);
+      
+      return {
+        month,
+        current: currentTrajectory,
+        projected: whatIfTrajectory
+      };
+    });
+  }, [monthlyRevenue, growthRate, calculateWhatIfScenario]);
+
+  // UI Components
+  const LoadingSpinner = ({ className = "h-8 w-8" }: { className?: string }) => (
+    <Loader2 className={`${className} animate-spin text-muted-foreground`} />
+  )
+
+  const EmptyState = ({ message }: { message: string }) => (
+    <div className="flex items-center justify-center h-[200px] border-2 border-dashed rounded-lg">
+      <div className="flex flex-col items-center gap-2 text-muted-foreground">
+        <p className="text-sm">{message}</p>
+      </div>
+    </div>
+  )
+
+  const Section = ({
+    id,
+    children,
+    className = ""
+  }: {
+    id: keyof SectionVisibility
+    children: React.ReactNode
+    className?: string
+  }) => {
+    if (!sectionVisibility[id]) return null
+
+    return (
+      <div className={`relative ${className}`}>
+        {children}
+      </div>
+    )
+  }
+
+  const isActiveTab = (tab: TabOption) => activeTab === tab
+
+  // Handle report generation
+  const handleGenerateReport = () => {
+    // TODO: Add backend integration when connected
+    toast({
+      title: "Report Generation",
+      description: "This feature will be available when backend is connected.",
+    });
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Revenue Forecasting</h1>
-        <p className="text-muted-foreground">Project future revenue based on workforce changes and growth trends.</p>
+    <div className="container px-4 py-6 space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Revenue Forecasting
+          </h1>
+          <p className="text-muted-foreground">
+            Track, analyze, and project your organization's revenue trends
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => {}}>
+            <RefreshCw size={16} className="mr-2" />
+            Refresh
+          </Button>
+          <Button size="sm" onClick={handleGenerateReport}>
+            <Download size={16} className="mr-2" />
+            Export Report
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${monthlyRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground flex items-center">
-              <TrendingUp className="mr-1 h-4 w-4 text-green-500" />
-              <span className="text-green-500">+{growthRate}%</span> projected growth
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Annual Revenue</CardTitle>
-            <BarChart2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${annualRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground flex items-center">Based on current workforce</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Projected Revenue</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${projectedRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground flex items-center">With {growthRate}% growth rate</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Profit Margin</CardTitle>
-            <Calculator className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{profitMargin.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground flex items-center">After salary expenses</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Revenue Projection Model</CardTitle>
-            <CardDescription>Adjust parameters to forecast revenue</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="employee-count">Employee Count</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="employee-count"
-                  type="number"
-                  value={employeeCount}
-                  onChange={(e) => setEmployeeCount(Number.parseInt(e.target.value) || 0)}
-                  className="flex-1"
-                />
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="avg-salary">Average Salary ($)</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="avg-salary"
-                  type="number"
-                  value={avgSalary}
-                  onChange={(e) => setAvgSalary(Number.parseInt(e.target.value) || 0)}
-                  className="flex-1"
-                />
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="revenue-per-employee">Monthly Revenue per Employee ($)</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="revenue-per-employee"
-                  type="number"
-                  value={revenuePerEmployee}
-                  onChange={(e) => setRevenuePerEmployee(Number.parseInt(e.target.value) || 0)}
-                  className="flex-1"
-                />
-                <Briefcase className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="growth-rate">Growth Rate (%)</Label>
-                <span className="text-sm">{growthRate}%</span>
-              </div>
-              <Slider
-                id="growth-rate"
-                min={0}
-                max={20}
-                step={0.5}
-                value={[growthRate]}
-                onValueChange={(value) => setGrowthRate(value[0])}
-                className="transition-all"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="timeframe">Projection Timeframe</Label>
-              <Select value={timeframe} onValueChange={setTimeframe}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select timeframe" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="6months">6 Months</SelectItem>
-                  <SelectItem value="12months">12 Months</SelectItem>
-                  <SelectItem value="24months">24 Months</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button
-              onClick={handleCalculate}
-              className="w-full transition-all duration-300 hover:translate-y-[-2px]"
-              disabled={isCalculating}
+      <div className="flex justify-between items-center">
+        <div className="w-full sm:w-auto">
+          {viewMode === "project-based" && (
+            <Select
+              value={selectedProject}
+              onValueChange={(value) => {
+                setSelectedProject(value);
+                // Optionally auto-switch to appropriate tab
+                if (value && activeTab !== "what-if" && activeTab !== "project-view") {
+                  setActiveTab("project-view");
+                }
+              }}
+              disabled={isHookLoading}
             >
-              {isCalculating ? (
+              <SelectTrigger className="w-full sm:w-[250px]">
+                <SelectValue placeholder="Select a project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="no-projects" disabled>No projects found</SelectItem>
+                {/* TODO: Replace with actual projects when backend is connected */}
+                {projectsList.map(project => (
+                  <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+        <Select
+            value={viewMode}
+            onValueChange={(value: ViewMode) => setViewMode(value)}
+            disabled={isHookLoading}
+        >
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Select view mode" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="company-wide">Company-wide</SelectItem>
+            <SelectItem value="project-based">Project-based</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex flex-wrap gap-2 border-b border-border">
+        <Button
+          variant={isActiveTab("current-view") ? "default" : "ghost"}
+          className="relative h-9 rounded-none border-b-2 border-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-none hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground"
+          onClick={() => setActiveTab("current-view")}
+          data-state={isActiveTab("current-view") ? "active" : ""}
+          disabled={isHookLoading}
+        >
+          Current View
+        </Button>
+        <Button
+          variant={isActiveTab("project-view") ? "default" : "ghost"}
+          className="relative h-9 rounded-none border-b-2 border-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-none hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground"
+          onClick={() => setActiveTab("project-view")}
+          data-state={isActiveTab("project-view") ? "active" : ""}
+          disabled={isHookLoading}
+        >
+          Project View
+        </Button>
+        <Button
+          variant={isActiveTab("comparison") ? "default" : "ghost"}
+          className="relative h-9 rounded-none border-b-2 border-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-none hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground"
+          onClick={() => setActiveTab("comparison")}
+          data-state={isActiveTab("comparison") ? "active" : ""}
+          disabled={isHookLoading}
+        >
+          Comparison
+        </Button>
+        <Button
+          variant={isActiveTab("what-if") ? "default" : "ghost"}
+          className="relative h-9 rounded-none border-b-2 border-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-none hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground"
+          onClick={() => setActiveTab("what-if")}
+          data-state={isActiveTab("what-if") ? "active" : ""}
+          disabled={isHookLoading}
+        >
+          What If
+        </Button>
+      </div>
+
+      {revenueError && (
+        <Card className="border-destructive bg-destructive/10">
+          <CardHeader>
+            <CardTitle className="text-destructive flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" /> Error
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-destructive">An error occurred while loading revenue data.</p>
+          </CardContent>
+          <CardFooter>
+            <Button variant="destructive" size="sm" onClick={() => {}}>
+              <RefreshCw className="mr-2 h-4 w-4" /> Retry
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
+
+      {!revenueError && (
+        <>
+          {activeTab === "current-view" && (
+            <>
+              {viewMode === "company-wide" ? (
                 <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Calculating...
+                  <Section id="metrics" className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{formatCurrency(monthlyRevenue)}</div>
+                        <p className="text-xs text-muted-foreground flex items-center">
+                          <TrendingUp className="mr-1 h-4 w-4 text-green-500" />
+                          <span className="text-green-500">+{formatPercentage(growthRate)}</span> projected growth
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Annual Revenue</CardTitle>
+                        <BarChart2 className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{formatCurrency(annualRevenue)}</div>
+                        <p className="text-xs text-muted-foreground flex items-center">Based on current workforce</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Projected Revenue</CardTitle>
+                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{formatCurrency(projectedRevenue)}</div>
+                        <p className="text-xs text-muted-foreground flex items-center">With {formatPercentage(growthRate)} growth rate</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Profit Margin</CardTitle>
+                        <Calculator className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{formatPercentage(profitMargin)}</div>
+                        <p className="text-xs text-muted-foreground flex items-center">After salary expenses</p>
+                      </CardContent>
+                    </Card>
+                  </Section>
+
+                  <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+                    <Section id="projectionModel">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Revenue Projection Model</CardTitle>
+                          <CardDescription>Adjust parameters to forecast revenue</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="employee-count">Employee Count</Label>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                id="employee-count"
+                                type="number"
+                                value={employeeCount}
+                                onChange={(e) => handleProjectionChange('employeeCount', Number.parseInt(e.target.value) || 0)}
+                                className="flex-1"
+                                min="0"
+                              />
+                              <Users className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="avg-salary">Average Salary ($)</Label>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                id="avg-salary"
+                                type="number"
+                                value={averageSalary}
+                                onChange={(e) => handleProjectionChange('averageSalary', Number.parseInt(e.target.value) || 0)}
+                                className="flex-1"
+                                min="0"
+                              />
+                              <DollarSign className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="revenue-per-employee">Monthly Revenue per Employee ($)</Label>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                id="revenue-per-employee"
+                                type="number"
+                                value={revenuePerEmployee}
+                                onChange={(e) => handleProjectionChange('revenuePerEmployee', Number.parseInt(e.target.value) || 0)}
+                                className="flex-1"
+                                min="0"
+                              />
+                              <Briefcase className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="growth-rate">Growth Rate (%)</Label>
+                              <span className="text-sm">{formatPercentage(growthRate)}</span>
+                            </div>
+                            <Slider
+                              id="growth-rate"
+                              min={0}
+                              max={20}
+                              step={0.5}
+                              value={[growthRate]}
+                              onValueChange={(value) => handleProjectionChange('growthRate', value[0])}
+                              className="transition-all"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="timeframe">Projection Timeframe</Label>
+                            <Select value={projectionTimeframe} onValueChange={(value) => handleProjectionChange('projectionTimeframe', value)}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select timeframe" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="6months">6 Months</SelectItem>
+                                <SelectItem value="12months">12 Months</SelectItem>
+                                <SelectItem value="24months">24 Months</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Section>
+
+                    <Section id="revenueTrends">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Revenue Trends</CardTitle>
+                          <CardDescription>Actual vs. projected revenue</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="h-[300px]">
+                            {revenueData.length === 0 ? (
+                              <EmptyState message="No revenue data available." />
+                            ) : (
+                              <ChartContainer
+                                config={{
+                                  actual: { label: "Actual", color: "hsl(var(--chart-1))" },
+                                  projected: { label: "Projected", color: "hsl(var(--chart-2))" },
+                                }}
+                                className="h-[300px]"
+                              >
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart data={revenueData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
+                                    <YAxis
+                                      fontSize={12}
+                                      tickLine={false}
+                                      axisLine={false}
+                                      tickFormatter={(value) => `$${(value / 1000).toLocaleString()}k`}
+                                    />
+                                    <Tooltip
+                                      formatter={(value: number, name: string) => [formatCurrency(value), name === 'actual' ? 'Actual' : 'Projected']}
+                                      contentStyle={{
+                                        backgroundColor: "hsl(var(--background))",
+                                        border: "1px solid hsl(var(--border))",
+                                        borderRadius: "6px",
+                                      }}
+                                    />
+                                    <Legend />
+                                    <Line
+                                      type="monotone"
+                                      dataKey="actual"
+                                      stroke="var(--color-actual)"
+                                      strokeWidth={2}
+                                      activeDot={{ r: 8 }}
+                                      connectNulls
+                                    />
+                                    <Line
+                                      type="monotone"
+                                      dataKey="projected"
+                                      stroke="var(--color-projected)"
+                                      strokeWidth={2}
+                                      strokeDasharray="5 5"
+                                      connectNulls
+                                    />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              </ChartContainer>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Section>
+                  </div>
+
+                  <Section id="profitabilitySimulator" className="overflow-x-auto">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Profitability Simulator</CardTitle>
+                        <CardDescription>Adjust hiring/firing decisions and see revenue impact in real time</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b">
+                                <th className="text-left py-3 px-4 font-semibold">Department</th>
+                                <th className="text-center py-3 px-4 font-semibold">Current Headcount</th>
+                                <th className="text-center py-3 px-4 font-semibold">Revenue per Employee</th>
+                                <th className="text-center py-3 px-4 font-semibold">Total Revenue</th>
+                                <th className="text-center py-3 px-4 font-semibold">Adjust Headcount</th>
+                                <th className="text-center py-3 px-4 font-semibold">Projected Impact</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {departmentData.map((dept, index) => {
+                                const impact = headcountImpacts[dept.name] ?? null;
+
+                                return (
+                                  <tr key={dept.id} className="border-b hover:bg-muted/50 transition-colors">
+                                    <td className="py-3 px-4 font-medium">{dept.name}</td>
+                                    <td className="text-center py-3 px-4">{dept.headcount}</td>
+                                    <td className="text-center py-3 px-4">{formatCurrency(dept.revenue_per_employee)}</td>
+                                    <td className="text-center py-3 px-4">{formatCurrency(dept.total_revenue)}</td>
+                                    <td className="text-center py-3 px-4">
+                                      <div className="flex items-center justify-center gap-2">
+                                        <Button
+                                          variant="outline"
+                                          size="icon"
+                                          className="h-8 w-8"
+                                          onClick={() => handleHeadcountChange(index, -1)}
+                                          disabled={dept.headcount <= 0 || isApplyingChanges}
+                                        >
+                                          -
+                                        </Button>
+                                        <span className="w-8 text-center font-medium">{dept.headcount}</span>
+                                        <Button
+                                          variant="outline"
+                                          size="icon"
+                                          className="h-8 w-8"
+                                          onClick={() => handleHeadcountChange(index, 1)}
+                                          disabled={isApplyingChanges}
+                                        >
+                                          +
+                                        </Button>
+                                      </div>
+                                    </td>
+                                    <td className="text-center py-3 px-4">
+                                      <Badge
+                                        className={cn(
+                                          "ml-2",
+                                          impact !== null && impact !== undefined && impact > 0
+                                            ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-400/10 dark:text-emerald-400"
+                                            : impact !== null && impact !== undefined && impact < 0
+                                            ? "bg-rose-100 text-rose-800 hover:bg-rose-100 dark:bg-rose-400/10 dark:text-rose-400"
+                                            : "bg-gray-100 text-gray-800 hover:bg-gray-100 dark:bg-gray-400/10 dark:text-gray-400"
+                                        )}
+                                        variant="outline"
+                                      >
+                                        {impact !== null && impact !== undefined ? (
+                                          <>
+                                            {impact > 0 ? "+" : ""}
+                                            {formatCurrency(impact)}
+                                          </>
+                                        ) : (
+                                          "N/A"
+                                        )}
+                                      </Badge>
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </CardContent>
+                      <CardFooter className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">Total Projected Impact:</span>
+                          <Badge
+                            variant={totalImpact === 0 ? "outline" : (totalImpact > 0 ? "default" : "destructive")}
+                            className={`transition-all ${totalImpact === 0 ? "opacity-50" : ""} ${totalImpact > 0 ? "bg-green-500/20 text-green-500 hover:bg-green-500/30" : totalImpact < 0 ? "hover:bg-red-500/30" : ""}`}
+                          >
+                            {`${totalImpact > 0 ? "+" : ""}${formatCurrency(totalImpact)}`}
+                          </Badge>
+                        </div>
+                        <Button onClick={handleApplyChanges} disabled={isApplyingChanges || totalImpact === 0}>
+                          {isApplyingChanges && <LoadingSpinner className="mr-2 h-4 w-4" />}
+                          Apply Changes
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  </Section>
+
+                  <Section id="departmentRevenue">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Revenue by Department</CardTitle>
+                        <CardDescription>Breakdown of revenue contribution by department</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-[300px]">
+                          <ChartContainer
+                            config={{
+                              revenue: { label: "Revenue", color: "hsl(var(--chart-1))" },
+                            }}
+                            className="h-[300px]"
+                          >
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={departmentRevenueData} layout="vertical" margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                                <XAxis type="number" hide />
+                                <YAxis
+                                  dataKey="name"
+                                  type="category"
+                                  tickLine={false}
+                                  axisLine={false}
+                                  tickMargin={10}
+                                  width={100}
+                                  fontSize={12}
+                                />
+                                <Tooltip
+                                  formatter={(value: number) => [formatCurrency(value), "Total Revenue"]}
+                                  cursor={{ fill: "hsl(var(--muted))", opacity: 0.5 }}
+                                  contentStyle={{
+                                    backgroundColor: "hsl(var(--background))",
+                                    border: "1px solid hsl(var(--border))",
+                                    borderRadius: "6px",
+                                  }}
+                                />
+                                <Legend />
+                                <Bar dataKey="total_revenue" name="Revenue" fill="var(--color-revenue)" radius={[0, 4, 4, 0]} />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </ChartContainer>
+                        </div>
+                      </CardContent>
+                      <CardFooter>
+                        <Button variant="outline" className="ml-auto">
+                          <Download className="mr-2 h-4 w-4" />
+                          Export Data
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  </Section>
                 </>
               ) : (
-                <>
-                  <Calculator className="mr-2 h-4 w-4" />
-                  Calculate Projections
-                </>
+                <div className="grid gap-6">
+                  {selectedProject ? (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>
+                          {projectsList.find(p => p.id === selectedProject)?.name || 'Project Details'}
+                        </CardTitle>
+                        <CardDescription>Project-specific revenue data</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {/* TODO: Add project-specific metrics when backend is connected */}
+                        <p className="text-sm text-muted-foreground">
+                          Project details will be shown here when backend is connected.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <EmptyState message="Select a project to view detailed metrics" />
+                  )}
+                </div>
               )}
-            </Button>
-          </CardContent>
-        </Card>
+            </>
+          )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Revenue Trends</CardTitle>
-            <CardDescription>Actual vs. projected revenue</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ChartContainer
-                config={{
-                  actual: {
-                    label: "Actual",
-                    color: "hsl(var(--chart-1))",
-                  },
-                  projected: {
-                    label: "Projected",
-                    color: "hsl(var(--chart-2))",
-                  },
-                }}
-                className="h-[300px]"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={revenueData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="actual"
-                      stroke="var(--color-actual)"
-                      strokeWidth={2}
-                      activeDot={{ r: 8 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="projected"
-                      stroke="var(--color-projected)"
-                      strokeWidth={2}
-                      strokeDasharray="5 5"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          {activeTab === "project-view" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Projects Overview</CardTitle>
+                <CardDescription>Revenue breakdown by project</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {projectsList.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-3 px-4 font-semibold">Project Name</th>
+                          <th className="text-center py-3 px-4 font-semibold">Status</th>
+                          <th className="text-right py-3 px-4 font-semibold">Revenue</th>
+                          <th className="text-right py-3 px-4 font-semibold">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {projectsList.map((project) => (
+                          <tr key={project.id} className="border-b hover:bg-muted/50 transition-colors">
+                            <td className="py-3 px-4 font-medium">{project.name}</td>
+                            <td className="text-center py-3 px-4">
+                              <Badge 
+                                variant={project.status === "Active" ? "default" : 
+                                        project.status === "Planning" ? "secondary" : "outline"}
+                              >
+                                {project.status}
+                              </Badge>
+                            </td>
+                            <td className="text-right py-3 px-4">{formatCurrency(project.revenue)}</td>
+                            <td className="text-right py-3 px-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedProject(project.id);
+                                  setActiveTab("what-if");
+                                }}
+                              >
+                                What If Analysis
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <EmptyState message="No projects available" />
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Profitability Simulator</CardTitle>
-          <CardDescription>Adjust hiring/firing decisions and see revenue impact in real time</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4">Department</th>
-                  <th className="text-center py-3 px-4">Headcount</th>
-                  <th className="text-center py-3 px-4">Revenue per Employee</th>
-                  <th className="text-center py-3 px-4">Total Revenue</th>
-                  <th className="text-center py-3 px-4">Adjust Headcount</th>
-                  <th className="text-center py-3 px-4">Impact</th>
-                </tr>
-              </thead>
-              <tbody>
-                {departmentRevenueData.map((dept, index) => (
-                  <tr key={index} className="border-b hover:bg-muted/50 transition-colors">
-                    <td className="py-3 px-4 font-medium">{dept.department}</td>
-                    <td className="text-center py-3 px-4">{dept.headcount}</td>
-                    <td className="text-center py-3 px-4">${dept.revenuePerEmployee.toLocaleString()}</td>
-                    <td className="text-center py-3 px-4">${dept.revenue.toLocaleString()}</td>
-                    <td className="text-center py-3 px-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <Button variant="outline" size="icon" className="h-8 w-8">
-                          -
-                        </Button>
-                        <span className="w-8 text-center">{dept.headcount}</span>
-                        <Button variant="outline" size="icon" className="h-8 w-8">
-                          +
-                        </Button>
+          {activeTab === "comparison" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Metric Comparison</CardTitle>
+                <CardDescription>Compare metrics across different periods</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Time Period</Label>
+                    <Select
+                      value={comparisonPeriod}
+                      onValueChange={(value: ComparisonPeriod) => setComparisonPeriod(value)}
+                      disabled={isHookLoading}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Select time period" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="quarterly">Quarterly</SelectItem>
+                        <SelectItem value="yearly">Yearly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Compare data across different time periods</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Metric</Label>
+                    <Select
+                      value={comparisonMetric}
+                      onValueChange={(value: ComparisonMetric) => setComparisonMetric(value)}
+                      disabled={isHookLoading}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Select metric" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="revenue">Revenue</SelectItem>
+                        <SelectItem value="growth">Growth Rate (%)</SelectItem>
+                        <SelectItem value="profitability">Profitability (%)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Choose which metric to analyze</p>
+                  </div>
+                </div>
+
+                <div className="h-[400px]">
+                  <ChartContainer
+                    config={{
+                      current: { label: "Current Period", color: "hsl(var(--chart-1))" },
+                      previous: { label: "Previous Period", color: "hsl(var(--chart-2))" },
+                    }}
+                    className="h-[400px]"
+                  >
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={comparisonData} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="period" fontSize={12} tickLine={false} axisLine={false}/>
+                        <YAxis
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={(value) =>
+                            comparisonMetric === "revenue"
+                              ? `$${(value / 1000).toLocaleString()}k`
+                              : `${value.toFixed(0)}%`
+                          }
+                        />
+                        <Tooltip
+                          formatter={(value: number, name: string) => [
+                            comparisonMetric === "revenue"
+                              ? formatCurrency(value)
+                              : formatPercentage(value),
+                            name === "current" ? "Current" : "Previous"
+                          ]}
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--background))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "6px",
+                          }}
+                        />
+                        <Legend />
+                        <Bar dataKey="current" name="Current Period" fill="var(--color-current)" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="previous" name="Previous Period" fill="var(--color-previous)" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                </div>
+                <div className="flex justify-end">
+                  <Button onClick={handleGenerateReport}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Generate Report
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* What If Tab */}
+          {activeTab === "what-if" && (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    What If Scenario Builder
+                    {viewMode === "project-based" && selectedProject && (
+                      <span className="ml-2 text-sm font-normal text-muted-foreground">
+                        (Project: {projectsList.find(p => p.id === selectedProject)?.name})
+                      </span>
+                    )}
+                  </CardTitle>
+                  <CardDescription>
+                    {viewMode === "project-based" && selectedProject 
+                      ? "Explore the financial impact of various project scenarios" 
+                      : "Explore the financial impact of various business scenarios"}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="border-b pb-4">
+                    <h3 className="text-lg font-semibold mb-2">Predefined Scenarios</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Select scenarios to see their projected impact on your revenue
+                    </p>
+                    
+                    <div className="space-y-2">
+                      {whatIfScenarios.map(scenario => (
+                        <div key={scenario.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="checkbox" 
+                              id={`scenario-${scenario.id}`}
+                              checked={activeScenarios.includes(scenario.id)}
+                              onChange={() => toggleScenario(scenario.id)}
+                              className="h-4 w-4 rounded border-gray-300"
+                            />
+                            <label htmlFor={`scenario-${scenario.id}`} className="text-sm font-medium cursor-pointer">
+                              {scenario.name}
+                            </label>
+                          </div>
+                          <Badge
+                            className={cn(
+                              scenario.impact > 0
+                                ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-400/10 dark:text-emerald-400"
+                                : "bg-rose-100 text-rose-800 hover:bg-rose-100 dark:bg-rose-400/10 dark:text-rose-400"
+                            )}
+                            variant="outline"
+                          >
+                            {formatCurrency(scenario.impact)}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+
+                    {activeScenarios.length > 0 && (
+                      <div className="mt-4 p-4 border rounded-lg bg-muted/50">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">Total Impact:</span>
+                          <Badge
+                            className={cn(
+                              calculateScenarioImpact > 0
+                                ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-400/10 dark:text-emerald-400"
+                                : "bg-rose-100 text-rose-800 hover:bg-rose-100 dark:bg-rose-400/10 dark:text-rose-400"
+                            )}
+                            variant="outline"
+                          >
+                            {formatCurrency(calculateScenarioImpact)}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between items-center mt-2">
+                          <span className="font-medium">New Projected Revenue:</span>
+                          <span className="font-medium">
+                            {formatCurrency((viewMode === "project-based" && selectedProject 
+                              ? (projectsList.find(p => p.id === selectedProject)?.revenue || 0)
+                              : projectedRevenue) + calculateScenarioImpact)}
+                          </span>
+                        </div>
                       </div>
-                    </td>
-                    <td className="text-center py-3 px-4">
-                      <Badge className="bg-green-500">+$0</Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Projected Impact:</span>
-            <Badge className="bg-green-500">+$0 Revenue</Badge>
-          </div>
-          <Button>Apply Changes</Button>
-        </CardFooter>
-      </Card>
+                    )}
+                  </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Revenue by Department</CardTitle>
-          <CardDescription>Breakdown of revenue contribution by department</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px]">
-            <ChartContainer
-              config={{
-                revenue: {
-                  label: "Revenue",
-                  color: "hsl(var(--chart-1))",
-                },
-              }}
-              className="h-[300px]"
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={departmentRevenueData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="department" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
-                  <Legend />
-                  <Bar dataKey="revenue" fill="var(--color-revenue)" />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button variant="outline" className="ml-auto">
-            <Download className="mr-2 h-4 w-4" />
-            Export Data
-          </Button>
-        </CardFooter>
-      </Card>
+                  <div className="border-b pb-4">
+                    <h3 className="text-lg font-semibold mb-2">Custom Scenarios</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Create and test your own custom scenarios
+                    </p>
+                    
+                    <div className="grid gap-6 md:grid-cols-2">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="revenue-change">Revenue drops by X% in Q2</Label>
+                            <span className="text-sm font-medium">
+                              {customScenarios.revenueChange.toFixed(1)}%
+                            </span>
+                          </div>
+                          <Slider
+                            id="revenue-change"
+                            min={0}
+                            max={30}
+                            step={1}
+                            value={[customScenarios.revenueChange]}
+                            onValueChange={(value) => handleWhatIfChange('revenueChange', value[0])}
+                            className="transition-all"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="marketing-spend">Marketing spend increases by X%</Label>
+                            <span className="text-sm font-medium">
+                              {customScenarios.marketingSpend.toFixed(1)}%
+                            </span>
+                          </div>
+                          <Slider
+                            id="marketing-spend"
+                            min={0}
+                            max={50}
+                            step={1}
+                            value={[customScenarios.marketingSpend]}
+                            onValueChange={(value) => handleWhatIfChange('marketingSpend', value[0])}
+                            className="transition-all"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="exchange-rate">Exchange rate shifts by X%</Label>
+                            <span className="text-sm font-medium">
+                              {customScenarios.exchangeRate.toFixed(1)}%
+                            </span>
+                          </div>
+                          <Slider
+                            id="exchange-rate"
+                            min={0}
+                            max={20}
+                            step={0.5}
+                            value={[customScenarios.exchangeRate]}
+                            onValueChange={(value) => handleWhatIfChange('exchangeRate', value[0])}
+                            className="transition-all"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="payment-delay">Vendor payments delayed by X days</Label>
+                            <span className="text-sm font-medium">
+                              {customScenarios.paymentDelay.toFixed(0)} days
+                            </span>
+                          </div>
+                          <Slider
+                            id="payment-delay"
+                            min={0}
+                            max={60}
+                            step={1}
+                            value={[customScenarios.paymentDelay]}
+                            onValueChange={(value) => handleWhatIfChange('paymentDelay', value[0])}
+                            className="transition-all"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="salary-increase">All salaries increase by X%</Label>
+                            <span className="text-sm font-medium">
+                              {customScenarios.salaryIncrease.toFixed(1)}%
+                            </span>
+                          </div>
+                          <Slider
+                            id="salary-increase"
+                            min={0}
+                            max={15}
+                            step={0.5}
+                            value={[customScenarios.salaryIncrease]}
+                            onValueChange={(value) => handleWhatIfChange('salaryIncrease', value[0])}
+                            className="transition-all"
+                          />
+                        </div>
+                        
+                        <div className="mt-8 p-4 border rounded-lg bg-muted/50">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">Custom Scenario Impact:</span>
+                            <Badge
+                              className={cn(
+                                calculateCustomScenarioImpact > 0
+                                  ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-400/10 dark:text-emerald-400"
+                                  : "bg-rose-100 text-rose-800 hover:bg-rose-100 dark:bg-rose-400/10 dark:text-rose-400"
+                              )}
+                              variant="outline"
+                            >
+                              {formatCurrency(calculateCustomScenarioImpact)}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Total Scenario Impact</h3>
+                    <div className="p-4 border rounded-lg">
+                      <div className="grid grid-cols-2 gap-6">
+                        <div>
+                          <div className="text-sm text-muted-foreground">Predefined Scenarios Impact</div>
+                          <div className="text-lg font-semibold">{formatCurrency(calculateScenarioImpact)}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">Custom Scenarios Impact</div>
+                          <div className="text-lg font-semibold">{formatCurrency(calculateCustomScenarioImpact)}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">Current Projected Revenue</div>
+                          <div className="text-lg font-semibold">
+                            {formatCurrency(viewMode === "project-based" && selectedProject 
+                              ? (projectsList.find(p => p.id === selectedProject)?.revenue || 0)
+                              : projectedRevenue)}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">New Projected Revenue</div>
+                          <div className="text-lg font-semibold">
+                            {formatCurrency((viewMode === "project-based" && selectedProject 
+                              ? (projectsList.find(p => p.id === selectedProject)?.revenue || 0)
+                              : projectedRevenue) + calculateScenarioImpact + calculateCustomScenarioImpact)}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 pt-4 border-t">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">Revenue Impact:</span>
+                          <span className={`font-medium ${(calculateScenarioImpact + calculateCustomScenarioImpact) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {(calculateScenarioImpact + calculateCustomScenarioImpact) >= 0 ? '+' : ''}
+                            {formatCurrency(calculateScenarioImpact + calculateCustomScenarioImpact)}
+                            {' '}
+                            ({(calculateScenarioImpact + calculateCustomScenarioImpact) >= 0 ? '+' : ''}
+                            {((calculateScenarioImpact + calculateCustomScenarioImpact) / 
+                              (viewMode === "project-based" && selectedProject 
+                                ? (projectsList.find(p => p.id === selectedProject)?.revenue || 1)
+                                : projectedRevenue || 1) * 100).toFixed(2)}%)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <Button variant="outline" onClick={handleResetWhatIfScenario}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Reset All Scenarios
+                  </Button>
+                  <Button onClick={() => {
+                    // TODO: Add backend integration when connected
+                    toast({
+                      title: "Scenarios Applied",
+                      description: "This feature will be available when backend is connected.",
+                    });
+                  }}>
+                    Apply Scenarios to Projections
+                  </Button>
+                </CardFooter>
+              </Card>
+            </>
+          )}
+        </>
+      )}
     </div>
   )
 }
-
