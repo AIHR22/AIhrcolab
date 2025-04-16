@@ -1,12 +1,13 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
-import { DollarSign, TrendingUp, BarChart2, Download, RefreshCw, Calculator, Users, Briefcase, Loader2, AlertCircle } from "lucide-react"
+import { ChartContainer } from "@/components/ChartContainer"
+import { AlertCircle, Download, RefreshCw, DollarSign, TrendingUp, EyeOff, Eye, History, X, Loader2, Users, Briefcase, CalculatorIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Slider } from "@/components/ui/slider"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChartContainer } from "@/components/ui/chart"
 import {
   ResponsiveContainer,
   LineChart,
@@ -19,7 +20,6 @@ import {
   Tooltip,
   Legend,
 } from "recharts"
-import { Slider } from "@/components/ui/slider"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
@@ -29,6 +29,23 @@ import { toast } from "@/components/ui/use-toast"
 // Type definitions
 type ViewMode = "company-wide" | "project-based"
 type TabOption = "current-view" | "project-view" | "comparison" | "what-if" // Added what-if tab
+
+// Backend API response type - Placeholder for future implementation
+type DepartmentRevenueApiResponse = {
+  departments: Array<{
+    id: string;
+    name: string;
+    currentRevenue: number;
+    previousRevenue: number;
+    percentChange: number;
+  }>;
+  metrics: {
+    totalRevenue: number;
+    projectedGrowth: number;
+    topPerformer: string;
+    quickStats: Record<string, number>;
+  };
+}
 type ComparisonPeriod = "monthly" | "quarterly" | "yearly"
 type ComparisonMetric = "revenue" | "growth" | "profitability"
 
@@ -49,7 +66,7 @@ interface SectionVisibility {
   whatIfScenario: boolean
   projectMetrics: boolean
   departmentAllocation: boolean
-  projectTimeline: boolean
+  projectTimeline: boolean;
 }
 
 // Mock data for revenue forecasting
@@ -121,6 +138,40 @@ const formatPercentage = (value: number | null | undefined, decimals = 1) => {
   return `${value.toFixed(decimals)}%`;
 }
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload || !payload.length) return null;
+  
+  const currentValue = payload[0].value;
+  const previousValue = payload[1]?.value;
+  const percentChange = previousValue ? ((currentValue - previousValue) / previousValue * 100).toFixed(1) : 'N/A';
+  
+  return (
+    <div className="bg-white p-3 rounded-lg shadow-md border min-w-[200px]">
+      <p className="font-medium mb-1">{label}</p>
+      <div className="space-y-1">
+        <p className="text-sm text-muted-foreground flex justify-between">
+          <span>Current:</span>
+          <span className="font-medium">{formatCurrency(currentValue)}</span>
+        </p>
+        {previousValue && (
+          <>
+            <p className="text-sm text-muted-foreground flex justify-between">
+              <span>Previous:</span>
+              <span className="font-medium">{formatCurrency(previousValue)}</span>
+            </p>
+            <p className="text-sm flex justify-between">
+              <span>Change:</span>
+              <span className={`font-medium ${percentChange !== 'N/A' && parseFloat(percentChange) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {percentChange}%
+              </span>
+            </p>
+        </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function RevenuePage() {
   // TODO: Add actual data fetching when backend is connected
   // const { data: revenueData, isLoading, error } = useRevenueData();
@@ -148,13 +199,58 @@ export default function RevenuePage() {
   return <RevenueForecasting />;
 }
 
+// Placeholder for backend API calls - to be replaced with actual implementation later
+const getRevenueForecast = async (): Promise<DepartmentRevenueApiResponse | null> => {
+  // This is a placeholder function that simulates an API call
+  // TODO: Replace with actual API call when backend is connected
+  console.log('Simulating API call to fetch revenue forecast data');
+  try {
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Return mock data structure that matches what the backend will provide
+    return {
+      departments: mockDepartmentData.map(dept => ({
+        id: dept.id,
+        name: dept.name,
+        currentRevenue: dept.total_revenue,
+        previousRevenue: dept.total_revenue * 0.9, // Simulate 10% growth from previous period
+        percentChange: 10
+      })),
+      metrics: {
+        totalRevenue: mockDepartmentData.reduce((sum, dept) => sum + dept.total_revenue, 0),
+        projectedGrowth: 5.2,
+        topPerformer: 'Engineering',
+        quickStats: {
+          monthlyAverage: 150000,
+          quarterlyGrowth: 4.7,
+          yearlyProjection: 2000000
+        }
+      }
+    };
+  } catch (error) {
+    console.error('Error fetching revenue forecast:', error);
+    return null;
+  }
+};
+
 export function RevenueForecasting() {
   // UI state
   const [viewMode, setViewMode] = useState<ViewMode>("company-wide")
-  const [activeTab, setActiveTab] = useState<TabOption>("current-view")
+  const [activeTab, setActiveTab] = useState('current-view');
+  const [showKPIPanel, setShowKPIPanel] = useState(true);
+  const [showScrollKPIPanel, setShowScrollKPIPanel] = useState(false); // New state for scroll-dependent KPI panel
+  const [scrollPosition, setScrollPosition] = useState(0); // Track scroll position
+  const [viewType, setViewType] = useState<'historical' | 'forecast'>('historical');
+  const [growthRateAdjustment, setGrowthRateAdjustment] = useState(5.0);
   const [selectedProject, setSelectedProject] = useState<string | undefined>()
   const [comparisonPeriod, setComparisonPeriod] = useState<ComparisonPeriod>("monthly")
   const [comparisonMetric, setComparisonMetric] = useState<ComparisonMetric>("revenue")
+  
+  // Backend data state - Placeholder for future backend integration
+  const [forecastData, setForecastData] = useState<DepartmentRevenueApiResponse | null>(null);
+  const [isLoadingForecast, setIsLoadingForecast] = useState(false);
+  const [forecastError, setForecastError] = useState<Error | null>(null);
   
   // Revenue projection model state
   const [employeeCount, setEmployeeCount] = useState(100)
@@ -186,7 +282,7 @@ export function RevenueForecasting() {
 
   // Department simulator state
   const [departmentData, setDepartmentData] = useState<Department[]>(mockDepartmentData)
-  const [headcountImpacts, setHeadcountImpacts] = useState<Record<string, number | null>>({})
+  const [headcountImpacts, setHeadcountImpacts] = useState<Record<string, number>>({});
   
   // UI control state
   const [isCalculating, setIsCalculating] = useState(false)
@@ -207,6 +303,46 @@ export function RevenueForecasting() {
   // const { data, isLoading: isHookLoading, error: revenueError } = useRevenueData();
   const isHookLoading = false;
   const revenueError = null;
+  
+  // Effect hook to fetch data from backend API (placeholder for now)
+  useEffect(() => {
+    // This effect hook will be used to connect to the real backend API in the future
+    const fetchForecastData = async () => {
+      try {
+        setIsLoadingForecast(true);
+        const data = await getRevenueForecast();
+        setForecastData(data);
+        setIsLoadingForecast(false);
+      } catch (error) {
+        console.error('Error fetching forecast data:', error);
+        setForecastError(error instanceof Error ? error : new Error('Unknown error'));
+        setIsLoadingForecast(false);
+      }
+    };
+    
+    // Call the fetch function
+    fetchForecastData();
+    
+    // Setup scroll listener for KPI panel
+    const handleScroll = () => {
+      const position = window.scrollY;
+      setScrollPosition(position);
+      
+      // Show floating KPI panel when we scroll past the top panel
+      if (position > 300 && !showScrollKPIPanel) {
+        setShowScrollKPIPanel(true);
+      } else if (position <= 300 && showScrollKPIPanel) {
+        setShowScrollKPIPanel(false);
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [showScrollKPIPanel]);
   
   // Mock data for UI display - Replace with actual API data when backend is connected
   const actualRevenue = mockRevenueData;
@@ -445,27 +581,57 @@ export function RevenueForecasting() {
   }
 
   // Calculate total headcount impact
-  const totalImpact = useMemo(() => {
-    return Object.values(headcountImpacts).reduce((total, impact) => total + (impact || 0), 0);
+  const totalImpact = useMemo((): number => {
+    return Object.values(headcountImpacts).reduce((total, impact) => total + (typeof impact === 'number' ? impact : 0), 0);
   }, [headcountImpacts]);
 
   // Generate what-if chart data
   const whatIfChartData = useMemo(() => {
-    const months = ["Month 1", "Month 2", "Month 3", "Month 4", "Month 5", "Month 6", 
-                    "Month 7", "Month 8", "Month 9", "Month 10", "Month 11", "Month 12"];
+    // Use real month names instead of generic Month 1, Month 2, etc.
+    const date = new Date();
+    const currentMonth = date.getMonth();
+    const months = [];
     
-    return months.map((month, index) => {
-      const currentTrajectory = monthlyRevenue * Math.pow(1 + growthRate / 100 / 12, index);
-      const whatIfTrajectory = calculateWhatIfScenario.monthlyRevenue * 
-                               Math.pow(1 + calculateWhatIfScenario.growth_rate / 100 / 12, index);
+    for (let i = 0; i < 12; i++) {
+      const monthDate = new Date(date.getFullYear(), currentMonth + i, 1);
+      months.push(monthDate.toLocaleString('default', { month: 'short', year: 'numeric' }));
+    }
+    
+    if (viewMode === "project-based" && selectedProject) {
+      // Project-specific chart data
+      const projectData = projectsList.find(p => p.id === selectedProject);
+      const baseRevenue = projectData?.revenue || 0;
+      const monthlyBaseRevenue = baseRevenue / 12;
       
-      return {
-        month,
-        current: currentTrajectory,
-        projected: whatIfTrajectory
-      };
-    });
-  }, [monthlyRevenue, growthRate, calculateWhatIfScenario]);
+      return months.map((month, index) => {
+        // Current project trajectory (simple linear projection)
+        const currentTrajectory = monthlyBaseRevenue * (1 + (index * 0.02)); // 2% monthly growth
+        
+        // Calculate the impact of active scenarios + custom scenarios
+        const scenarioImpact = (calculateScenarioImpact + calculateCustomScenarioImpact) / 12;
+        const whatIfTrajectory = currentTrajectory + (scenarioImpact * (index / 11)); // Progressive impact
+        
+        return {
+          month,
+          current: currentTrajectory,
+          whatIf: whatIfTrajectory
+        };
+      });
+    } else {
+      // Company-wide chart data
+      return months.map((month, index) => {
+        const currentTrajectory = monthlyRevenue * Math.pow(1 + growthRate / 100 / 12, index);
+        const whatIfTrajectory = calculateWhatIfScenario.monthlyRevenue * 
+                                 Math.pow(1 + calculateWhatIfScenario.growth_rate / 100 / 12, index);
+        
+        return {
+          month,
+          current: currentTrajectory,
+          whatIf: whatIfTrajectory
+        };
+      });
+    }
+  }, [monthlyRevenue, growthRate, calculateWhatIfScenario, viewMode, selectedProject, projectsList, calculateScenarioImpact, calculateCustomScenarioImpact]);
 
   // UI Components
   const LoadingSpinner = ({ className = "h-8 w-8" }: { className?: string }) => (
@@ -511,7 +677,89 @@ export function RevenueForecasting() {
 
   return (
     <div className="container px-4 py-6 space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      {/* Floating KPI panel that appears when scrolling */}
+      {showScrollKPIPanel && (
+        <div className="fixed right-4 top-4 bg-white p-4 rounded-lg shadow-lg border z-50 w-64 transition-all duration-300 ease-in-out">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="font-semibold text-sm">Department Revenue</h3>
+            <Button variant="ghost" size="sm" onClick={() => setShowScrollKPIPanel(false)}>
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+          <div className="space-y-3">
+            {/* Display actual metrics from backend when available */}
+            {forecastData ? (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-xs text-muted-foreground">Total Revenue</span>
+                  <span className="text-xs font-medium">{formatCurrency(forecastData.metrics.totalRevenue)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-xs text-muted-foreground">Projected Growth</span>
+                  <span className="text-xs font-medium">{forecastData.metrics.projectedGrowth}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-xs text-muted-foreground">Top Department</span>
+                  <span className="text-xs font-medium">{forecastData.metrics.topPerformer}</span>
+                </div>
+              </>
+            ) : isLoadingForecast ? (
+              <div className="flex justify-center py-2">
+                <LoadingSpinner className="h-4 w-4" />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-xs text-muted-foreground">Total Revenue</span>
+                  <span className="text-xs font-medium">{formatCurrency(monthlyRevenue * 12)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-xs text-muted-foreground">Growth Rate</span>
+                  <span className="text-xs font-medium">{growthRateAdjustment}%</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative">
+        {showKPIPanel && (
+          <div className="absolute right-0 top-16 bg-white p-4 rounded-lg shadow-lg border z-10 w-64">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-semibold">Key Metrics</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowKPIPanel(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Total Revenue</span>
+                  <span className="font-medium">{formatCurrency(monthlyRevenue * 12)}</span>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Growth Rate</span>
+                    <span className="font-medium">{growthRateAdjustment}%</span>
+                  </div>
+                  <Slider
+                    value={[growthRateAdjustment]}
+                    onValueChange={([value]) => setGrowthRateAdjustment(value)}
+                    min={-20}
+                    max={50}
+                    step={0.5}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Projected ROI</span>
+                <span className="font-medium">{((monthlyRevenue * 12 * (1 + growthRateAdjustment/100)) / (monthlyRevenue * 12) * 100 - 100).toFixed(1)}%</span>
+              </div>
+            </div>
+          </div>
+        )}
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
             Revenue Forecasting
@@ -521,6 +769,14 @@ export function RevenueForecasting() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowKPIPanel(!showKPIPanel)}>
+            {showKPIPanel ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+            {showKPIPanel ? 'Hide Metrics' : 'Show Metrics'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setViewType(viewType === 'historical' ? 'forecast' : 'historical')}>
+            {viewType === 'historical' ? <History className="h-4 w-4 mr-2" /> : <TrendingUp className="h-4 w-4 mr-2" />}
+            {viewType === 'historical' ? 'Historical' : 'Forecast'}
+          </Button>
           <Button variant="outline" size="sm" onClick={() => {}}>
             <RefreshCw size={16} className="mr-2" />
             Refresh
@@ -654,7 +910,7 @@ export function RevenueForecasting() {
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Annual Revenue</CardTitle>
-                        <BarChart2 className="h-4 w-4 text-muted-foreground" />
+                        <BarChart className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold">{formatCurrency(annualRevenue)}</div>
@@ -674,7 +930,7 @@ export function RevenueForecasting() {
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Profit Margin</CardTitle>
-                        <Calculator className="h-4 w-4 text-muted-foreground" />
+                        <CalculatorIcon className="h-4 w-4 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
                         <div className="text-2xl font-bold">{formatPercentage(profitMargin)}</div>
@@ -778,44 +1034,78 @@ export function RevenueForecasting() {
                             ) : (
                               <ChartContainer
                                 config={{
-                                  actual: { label: "Actual", color: "hsl(var(--chart-1))" },
-                                  projected: { label: "Projected", color: "hsl(var(--chart-2))" },
+                                  current: {
+                                    label: 'Actual',
+                                    color: 'hsl(var(--chart-1))',
+                                  },
+                                  previous: {
+                                    label: 'Projected',
+                                    color: 'hsl(var(--chart-2))',
+                                  },
                                 }}
                                 className="h-[300px]"
                               >
                                 <ResponsiveContainer width="100%" height="100%">
-                                  <LineChart data={revenueData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
+                                  <LineChart data={revenueData} margin={{ top: 20, right: 30, left: 0, bottom: 30 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} stroke="#e2e8f0" />
+                                    <XAxis 
+                                      dataKey="month" 
+                                      fontSize={12} 
+                                      tickLine={false} 
+                                      axisLine={true} 
+                                      padding={{ left: 20, right: 20 }}
+                                      angle={-30}
+                                      textAnchor="end"
+                                      height={60}
+                                      tick={{ fill: '#64748b' }}
+                                      stroke="#e2e8f0"
+                                    />
                                     <YAxis
                                       fontSize={12}
                                       tickLine={false}
-                                      axisLine={false}
+                                      axisLine={true}
                                       tickFormatter={(value) => `$${(value / 1000).toLocaleString()}k`}
+                                      tick={{ fill: '#64748b' }}
+                                      stroke="#e2e8f0"
                                     />
                                     <Tooltip
-                                      formatter={(value: number, name: string) => [formatCurrency(value), name === 'actual' ? 'Actual' : 'Projected']}
+                                      formatter={(value: number, name: string) => [formatCurrency(value), name]}
+                                      labelFormatter={(label) => `${label}`}
                                       contentStyle={{
-                                        backgroundColor: "hsl(var(--background))",
-                                        border: "1px solid hsl(var(--border))",
+                                        backgroundColor: "white",
+                                        border: "1px solid #e2e8f0",
                                         borderRadius: "6px",
+                                        padding: "10px 14px",
+                                        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
                                       }}
                                     />
-                                    <Legend />
+                                    <Legend 
+                                      verticalAlign="bottom" 
+                                      height={36} 
+                                      iconType="circle"
+                                      wrapperStyle={{
+                                        paddingTop: "20px"
+                                      }}
+                                    />
                                     <Line
                                       type="monotone"
                                       dataKey="actual"
-                                      stroke="var(--color-actual)"
-                                      strokeWidth={2}
-                                      activeDot={{ r: 8 }}
+                                      name="Actual"
+                                      stroke="#3b82f6"
+                                      strokeWidth={2.5}
+                                      dot={{ r: 4, fill: "#3b82f6" }}
+                                      activeDot={{ r: 6, fill: "#3b82f6" }}
                                       connectNulls
                                     />
                                     <Line
                                       type="monotone"
                                       dataKey="projected"
-                                      stroke="var(--color-projected)"
-                                      strokeWidth={2}
+                                      name="Projected"
+                                      stroke="#1d4ed8"
+                                      strokeWidth={2.5}
                                       strokeDasharray="5 5"
+                                      dot={{ r: 4, fill: "#1d4ed8" }}
+                                      activeDot={{ r: 6, fill: "#1d4ed8" }}
                                       connectNulls
                                     />
                                   </LineChart>
@@ -849,7 +1139,7 @@ export function RevenueForecasting() {
                             </thead>
                             <tbody>
                               {departmentData.map((dept, index) => {
-                                const impact = headcountImpacts[dept.name] ?? null;
+                                const impact = headcountImpacts[dept.name] ?? 0;
 
                                 return (
                                   <tr key={dept.id} className="border-b hover:bg-muted/50 transition-colors">
@@ -929,49 +1219,130 @@ export function RevenueForecasting() {
 
                   <Section id="departmentRevenue">
                     <Card>
-                      <CardHeader>
-                        <CardTitle>Revenue by Department</CardTitle>
-                        <CardDescription>Breakdown of revenue contribution by department</CardDescription>
+                      <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                          <CardTitle>Revenue by Department</CardTitle>
+                          <CardDescription>Breakdown of revenue contribution by department</CardDescription>
+                        </div>
+                        {forecastData && (
+                          <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700 border-blue-200">
+                            Total: {formatCurrency(forecastData.metrics.totalRevenue)}
+                          </Badge>
+                        )}
                       </CardHeader>
                       <CardContent>
                         <div className="h-[300px]">
                           <ChartContainer
                             config={{
-                              revenue: { label: "Revenue", color: "hsl(var(--chart-1))" },
+                              current: {
+                                label: 'Revenue',
+                                color: 'hsl(var(--chart-1))',
+                              },
+                              previous: {
+                                label: 'Previous Revenue',
+                                color: 'hsl(var(--chart-2))',
+                              },
                             }}
                             className="h-[300px]"
                           >
                             <ResponsiveContainer width="100%" height="100%">
-                              <BarChart data={departmentRevenueData} layout="vertical" margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                                <XAxis type="number" hide />
+                              {/* When API is connected, replace this with forecastData?.departments */}
+                              <BarChart 
+                                data={departmentRevenueData.map(dept => ({
+                                  name: dept.name,
+                                  currentRevenue: dept.total_revenue,
+                                  previousRevenue: dept.total_revenue * 0.9 // Simulate previous period
+                                }))} 
+                                layout="vertical" 
+                                margin={{ top: 10, right: 25, left: 20, bottom: 10 }}
+                              >
+                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" opacity={0.6} />
+                                <XAxis 
+                                  type="number" 
+                                  tickLine={false}
+                                  axisLine={true}
+                                  stroke="#e2e8f0"
+                                  tick={{ fill: '#64748b' }}
+                                  tickFormatter={(value) => `$${(value / 1000).toLocaleString()}k`}
+                                  tickCount={5}
+                                />
                                 <YAxis
                                   dataKey="name"
                                   type="category"
                                   tickLine={false}
                                   axisLine={false}
                                   tickMargin={10}
-                                  width={100}
+                                  width={90}
                                   fontSize={12}
+                                  tick={{ fill: '#64748b' }}
                                 />
                                 <Tooltip
-                                  formatter={(value: number) => [formatCurrency(value), "Total Revenue"]}
-                                  cursor={{ fill: "hsl(var(--muted))", opacity: 0.5 }}
+                                  formatter={(value: number, name: string, props: any) => {
+                                    // Get the department name from original data
+                                    const departmentName = props.payload.name;
+                                    // Match the names with the ChartConfig naming convention
+                                    const displayName = name === "Current Revenue" ? "Current Revenue" : "Previous Revenue";
+                                    return [formatCurrency(value), `${displayName} (${departmentName})`];
+                                  }}
+                                  labelFormatter={(label) => null} // Hide the category label as we're showing it in the formatter
+                                  cursor={{ fill: "#f8fafc", opacity: 0.3 }}
                                   contentStyle={{
-                                    backgroundColor: "hsl(var(--background))",
-                                    border: "1px solid hsl(var(--border))",
+                                    backgroundColor: "white",
+                                    border: "1px solid #e2e8f0",
                                     borderRadius: "6px",
+                                    padding: "10px 14px",
+                                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
                                   }}
                                 />
-                                <Legend />
-                                <Bar dataKey="total_revenue" name="Revenue" fill="var(--color-revenue)" radius={[0, 4, 4, 0]} />
+                                <Legend 
+                                  iconType="circle"
+                                  wrapperStyle={{
+                                    paddingTop: "15px",
+                                    paddingBottom: "5px"
+                                  }}
+                                  formatter={(value) => <span style={{ color: '#64748b', fontSize: '12px', marginLeft: '4px' }}>{value}</span>}
+                                />
+                                <Bar 
+                                  dataKey="currentRevenue" 
+                                  name="Current Revenue" 
+                                  fill="hsl(var(--chart-1))" 
+                                  radius={[0, 4, 4, 0]} 
+                                  barSize={28} 
+                                  animationDuration={800}
+                                />
+                                {/* Uncomment when previous period data is available from API */}
+                                {/* <Bar 
+                                  dataKey="previousRevenue" 
+                                  name="Previous Revenue" 
+                                  fill="hsl(var(--chart-2))" 
+                                  radius={[0, 4, 4, 0]} 
+                                  barSize={28}
+                                  animationDuration={800} 
+                                /> */}
                               </BarChart>
                             </ResponsiveContainer>
                           </ChartContainer>
                         </div>
                       </CardContent>
-                      <CardFooter>
-                        <Button variant="outline" className="ml-auto">
+                      <CardFooter className="flex justify-between items-center">
+                        <div>
+                          {isLoadingForecast ? (
+                            <span className="text-sm text-muted-foreground flex items-center">
+                              <LoadingSpinner className="mr-2 h-4 w-4" />
+                              Loading data...
+                            </span>
+                          ) : forecastError ? (
+                            <span className="text-sm text-red-500">
+                              Error loading forecast data
+                            </span>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">
+                              {/* When real backend is connected, display last updated time here */}
+                              Last updated: {new Date().toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                        <Button variant="outline">
                           <Download className="mr-2 h-4 w-4" />
                           Export Data
                         </Button>
@@ -1074,7 +1445,9 @@ export function RevenueForecasting() {
                       onValueChange={(value: ComparisonPeriod) => setComparisonPeriod(value)}
                       disabled={isHookLoading}
                     >
-                      <SelectTrigger><SelectValue placeholder="Select time period" /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select time period" />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="monthly">Monthly</SelectItem>
                         <SelectItem value="quarterly">Quarterly</SelectItem>
@@ -1090,7 +1463,9 @@ export function RevenueForecasting() {
                       onValueChange={(value: ComparisonMetric) => setComparisonMetric(value)}
                       disabled={isHookLoading}
                     >
-                      <SelectTrigger><SelectValue placeholder="Select metric" /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select metric" />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="revenue">Revenue</SelectItem>
                         <SelectItem value="growth">Growth Rate (%)</SelectItem>
@@ -1104,8 +1479,14 @@ export function RevenueForecasting() {
                 <div className="h-[400px]">
                   <ChartContainer
                     config={{
-                      current: { label: "Current Period", color: "hsl(var(--chart-1))" },
-                      previous: { label: "Previous Period", color: "hsl(var(--chart-2))" },
+                      current: {
+                        label: 'Current Period',
+                        color: 'hsl(var(--chart-1))',
+                      },
+                      previous: {
+                        label: 'Previous Period',
+                        color: 'hsl(var(--chart-2))',
+                      },
                     }}
                     className="h-[400px]"
                   >
@@ -1137,8 +1518,8 @@ export function RevenueForecasting() {
                           }}
                         />
                         <Legend />
-                        <Bar dataKey="current" name="Current Period" fill="var(--color-current)" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="previous" name="Previous Period" fill="var(--color-previous)" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="current" name="Current Period" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="previous" name="Previous Period" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </ChartContainer>
@@ -1354,7 +1735,81 @@ export function RevenueForecasting() {
                     </div>
                   </div>
                   
-                  <div>
+                  <div className="mt-6">
+                    <h3 className="text-lg font-semibold mb-4">Revenue Forecast Chart</h3>
+                    <div className="h-[300px] mb-6">
+                      <ChartContainer
+                        config={{
+                          current: {
+                            label: 'Current Trajectory',
+                            color: 'hsl(var(--chart-1))',
+                          },
+                          previous: {
+                            label: 'What-If Scenario',
+                            color: 'hsl(var(--chart-2))',
+                          },
+                        }}
+                        className="h-[300px]"
+                      >
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={whatIfChartData} margin={{ top: 10, right: 20, left: 10, bottom: 25 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={true} opacity={0.2} />
+                            <XAxis 
+                              dataKey="month" 
+                              fontSize={12} 
+                              tickLine={false} 
+                              axisLine={true} 
+                              padding={{ left: 10, right: 10 }}
+                              angle={-25}
+                              textAnchor="end"
+                              height={50}
+                              label={{ value: 'Time Period', position: 'insideBottom', offset: -10 }}
+                            />
+                            <YAxis
+                              fontSize={12}
+                              tickLine={false}
+                              axisLine={true}
+                              tickFormatter={(value) => `$${(value / 1000).toLocaleString()}k`}
+                              label={{ value: 'Revenue ($)', angle: -90, position: 'insideLeft', offset: 10 }}
+                            />
+                            <Tooltip
+                              formatter={(value: number, name: string) => [
+                                formatCurrency(value),
+                                name === 'current' ? 'Current Trajectory' : 'What-If Scenario'
+                              ]}
+                              labelFormatter={(label) => `${label}`}
+                              contentStyle={{
+                                backgroundColor: "hsl(var(--background))",
+                                border: "1px solid hsl(var(--border))",
+                                borderRadius: "6px",
+                                padding: "8px 12px"
+                              }}
+                            />
+                            <Legend verticalAlign="top" height={36} />
+                            <Line
+                              type="monotone"
+                              dataKey="current"
+                              name="Current Trajectory"
+                              stroke="hsl(var(--chart-1))"
+                              strokeWidth={2}
+                              dot={{ r: 3 }}
+                              activeDot={{ r: 6 }}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="whatIf"
+                              name="What-If Scenario"
+                              stroke="hsl(var(--chart-2))"
+                              strokeWidth={2}
+                              strokeDasharray="5 5"
+                              dot={{ r: 3 }}
+                              activeDot={{ r: 6 }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </ChartContainer>
+                    </div>
+                  
                     <h3 className="text-lg font-semibold mb-2">Total Scenario Impact</h3>
                     <div className="p-4 border rounded-lg">
                       <div className="grid grid-cols-2 gap-6">
