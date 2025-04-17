@@ -8,9 +8,10 @@ interface Notification {
   id: string
   title: string
   message: string
-  type: string
-  read: boolean
-  created_at: string
+  type: 'info' | 'warning' | 'success' | 'error'
+  timestamp: string
+  isRead: boolean
+  link?: string
 }
 
 interface NotificationPreferences {
@@ -26,12 +27,12 @@ interface NotificationPreferences {
 interface NotificationContextType {
   notifications: Notification[]
   unreadCount: number
-  preferences: NotificationPreferences
-  markAsRead: (notificationId: string) => Promise<void>
+  markAsRead: (id: string) => void
+  markAllAsRead: () => void
   updatePreferences: (preferences: Partial<NotificationPreferences>) => Promise<void>
 }
 
-const NotificationContext = createContext<NotificationContextType | undefined>(undefined)
+const NotificationContext = createContext<NotificationContextType | null>(null)
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -80,7 +81,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         event: 'INSERT',
         schema: 'public',
         table: 'notifications',
-      }, (payload) => {
+      }, async (payload) => {
         setNotifications(prev => [payload.new as Notification, ...prev])
         
         // Handle in-app notifications
@@ -93,17 +94,21 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
         // Handle email notifications
         if (preferences.email_notifications) {
-          const { data: userData } = await supabase.auth.getUser()
-          if (userData?.user?.email) {
-            const emailService = (await import('@/lib/email-service')).emailService
-            await emailService.sendEmail({
-              to: userData.user.email,
-              subject: payload.new.title,
-              html: emailService.templates.notification({
-                title: payload.new.title,
-                message: payload.new.message,
-              }),
-            })
+          try {
+            const { data: userData } = await supabase.auth.getUser()
+            if (userData?.user?.email) {
+              const emailService = (await import('@/lib/email-service')).emailService
+              await emailService.sendEmail({
+                to: userData.user.email,
+                subject: payload.new.title,
+                html: emailService.templates.notification({
+                  title: payload.new.title,
+                  message: payload.new.message,
+                }),
+              })
+            }
+          } catch (error) {
+            console.error('Error sending email notification:', error)
           }
         }
       })
@@ -114,23 +119,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }
   }, [supabase, toast, preferences.in_app_notifications])
 
-  const markAsRead = async (notificationId: string) => {
-    const { error } = await supabase
-      .from('notifications')
-      .update({ read: true })
-      .eq('id', notificationId)
+  const markAsRead = (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+    )
+  }
 
-    if (error) {
-      console.error('Error marking notification as read:', error)
-      return
-    }
-
-    setNotifications(prev =>
-      prev.map(notification =>
-        notification.id === notificationId
-          ? { ...notification, read: true }
-          : notification
-      )
+  const markAllAsRead = () => {
+    setNotifications((prev) =>
+      prev.map((n) => ({ ...n, isRead: true }))
     )
   }
 
@@ -150,15 +147,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     setPreferences(prev => ({ ...prev, ...newPreferences }))
   }
 
-  const unreadCount = notifications.filter(n => !n.read).length
+  const unreadCount = notifications.filter((n) => !n.isRead).length
 
   return (
     <NotificationContext.Provider
       value={{
         notifications,
         unreadCount,
-        preferences,
         markAsRead,
+        markAllAsRead,
         updatePreferences,
       }}
     >
@@ -169,7 +166,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
 export function useNotifications() {
   const context = useContext(NotificationContext)
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useNotifications must be used within a NotificationProvider')
   }
   return context

@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -14,8 +15,38 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { IntegrationsTab } from "@/components/settings/integrations-tab"
 import { IntegrationProvider } from "@/contexts/integration-context"
 
+interface Settings {
+  company_name?: string
+  logo_url?: string
+  primary_color?: string
+  secondary_color?: string
+  notifications_onboarding?: boolean
+  notifications_payroll?: boolean
+  notifications_reviews?: boolean
+  notifications_desktop?: boolean
+  notifications_sound?: boolean
+  [key: string]: any
+}
+
+const defaultSettings: Settings = {
+  company_name: '',
+  logo_url: '',
+  primary_color: '#3b82f6',
+  secondary_color: '#10b981',
+  notifications_onboarding: true,
+  notifications_payroll: true,
+  notifications_reviews: true,
+  notifications_desktop: false,
+  notifications_sound: false
+}
+
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<any>(null)
+  // All hooks at the top
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const defaultTab = searchParams.get('tab') || 'general'
+  const [activeTab, setActiveTab] = useState(defaultTab)
+  const [settings, setSettings] = useState<Settings>(defaultSettings)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -24,7 +55,7 @@ export default function SettingsPage() {
     async function fetchSettings() {
       try {
         const data = await getCompanySettings()
-        setSettings(data)
+        setSettings({ ...defaultSettings, ...data })
       } catch (err) {
         console.error("Error fetching company settings:", err)
         setError("Failed to load company settings")
@@ -36,11 +67,26 @@ export default function SettingsPage() {
     fetchSettings()
   }, [])
 
+  // Update URL when tab changes
+  const handleTabChange = (value: string) => {
+    setActiveTab(value)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', value)
+    router.push(`?${params.toString()}`)
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setSettings((prev) => ({
+    const { name, value, type, checked } = e.target
+    setSettings((prev: Settings) => ({
       ...prev,
-      [name]: value,
+      [name]: type === 'checkbox' ? checked : value,
+    }))
+  }
+
+  const handleCheckboxChange = (name: string, checked: boolean) => {
+    setSettings((prev: Settings) => ({
+      ...prev,
+      [name]: checked,
     }))
   }
 
@@ -68,7 +114,7 @@ export default function SettingsPage() {
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold">Settings</h1>
-        <Tabs defaultValue="general">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="branding">Branding</TabsTrigger>
@@ -108,7 +154,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Settings</h1>
-      <Tabs defaultValue="general">
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="grid grid-cols-6 w-full">
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="branding">Branding</TabsTrigger>
@@ -232,11 +278,91 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Notification Settings</CardTitle>
-              <CardDescription>Manage your notification preferences</CardDescription>
+              <CardDescription>Manage your notification preferences and alerts</CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Notification settings will be implemented in a future update.</p>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Email Notifications</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Employee Onboarding</Label>
+                      <p className="text-sm text-muted-foreground">Receive notifications about new employee onboarding</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      name="notifications_onboarding"
+                      checked={settings?.notifications_onboarding}
+                      onChange={(e) => handleCheckboxChange(e.target.name, e.target.checked)}
+                      className="h-6 w-6"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Payroll Processing</Label>
+                      <p className="text-sm text-muted-foreground">Get alerts when payroll processing is complete</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      name="notifications_payroll"
+                      checked={settings?.notifications_payroll}
+                      onChange={(e) => handleCheckboxChange(e.target.name, e.target.checked)}
+                      className="h-6 w-6"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Performance Reviews</Label>
+                      <p className="text-sm text-muted-foreground">Notifications about upcoming and completed reviews</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      name="notifications_reviews"
+                      checked={settings?.notifications_reviews}
+                      onChange={(e) => handleCheckboxChange(e.target.name, e.target.checked)}
+                      className="h-6 w-6"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">In-App Notifications</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Desktop Notifications</Label>
+                      <p className="text-sm text-muted-foreground">Show notifications on your desktop</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      name="notifications_desktop"
+                      checked={settings?.notifications_desktop}
+                      onChange={(e) => handleCheckboxChange(e.target.name, e.target.checked)}
+                      className="h-6 w-6"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Sound Alerts</Label>
+                      <p className="text-sm text-muted-foreground">Play a sound when receiving notifications</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      name="notifications_sound"
+                      checked={settings?.notifications_sound}
+                      onChange={(e) => handleCheckboxChange(e.target.name, e.target.checked)}
+                      className="h-6 w-6"
+                    />
+                  </div>
+                </div>
+              </div>
             </CardContent>
+            <CardFooter>
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? "Saving..." : "Save Changes"}
+              </Button>
+            </CardFooter>
           </Card>
         </TabsContent>
 

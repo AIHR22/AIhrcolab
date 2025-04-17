@@ -1,10 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Bell, Menu, Search, Settings, User } from "lucide-react"
+import { Bell, Menu, Settings, User } from "lucide-react"
 import { TenantSelector } from "@/components/tenant-selector"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { SearchBar } from "@/components/search/search-bar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,27 +17,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { ModeToggle } from "@/components/mode-toggle"
 import Link from "next/link"
+import { useNotifications } from "@/contexts/notification-provider"
 
 interface TopBarProps {
   onToggleSidebar: () => void
 }
 
 export function TopBar({ onToggleSidebar }: TopBarProps) {
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: "New employee onboarding", read: false },
-    { id: 2, title: "Payroll processing complete", read: false },
-    { id: 3, title: "Performance review due", read: false },
-  ])
-
-  const unreadCount = notifications.filter((n) => !n.read).length
-
-  const markAsRead = (id: number) => {
-    setNotifications(notifications.map((n) => (n.id === id ? { ...n, read: true } : n)))
-  }
-
-  const markAllAsRead = () => {
-    setNotifications(notifications.map((n) => ({ ...n, read: true })))
-  }
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-6">
@@ -47,12 +34,9 @@ export function TopBar({ onToggleSidebar }: TopBarProps) {
       </Button>
 
       <div className="flex-1 md:flex-initial">
-        <form className="hidden md:block">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input type="search" placeholder="Search..." className="w-[300px] pl-8 bg-background" />
-          </div>
-        </form>
+        <div className="hidden md:block w-[300px]">
+          <SearchBar />
+        </div>
       </div>
 
       <div className="flex flex-1 items-center justify-end gap-4">
@@ -83,30 +67,39 @@ export function TopBar({ onToggleSidebar }: TopBarProps) {
               Notifications
               {unreadCount > 0 && (
                 <Button variant="ghost" size="sm" onClick={markAllAsRead}>
-                  Mark all as read
+                  Clear all
                 </Button>
               )}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {notifications.length === 0 ? (
-              <div className="p-4 text-center text-muted-foreground">No notifications</div>
-            ) : (
-              notifications.map((notification) => (
-                <DropdownMenuItem
-                  key={notification.id}
-                  className={`flex flex-col items-start p-4 ${notification.read ? "opacity-60" : "font-medium"}`}
-                  onClick={() => markAsRead(notification.id)}
-                >
-                  <div className="flex w-full justify-between">
-                    <span>{notification.title}</span>
-                    {!notification.read && (
-                      <Badge variant="outline" className="ml-2 h-2 w-2 rounded-full bg-primary p-0" />
-                    )}
-                  </div>
-                  <span className="text-xs text-muted-foreground">Just now</span>
-                </DropdownMenuItem>
-              ))
-            )}
+            <div className="max-h-[400px] overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="p-4 text-center text-muted-foreground">No new notifications</div>
+              ) : (
+                notifications.map((notification) => (
+                  <Link href={notification.link || '#'} key={notification.id}>
+                    <DropdownMenuItem
+                      className={`flex flex-col items-start p-4 ${notification.isRead ? "text-muted-foreground" : "font-medium"}`}
+                      onClick={() => markAsRead(notification.id)}
+                    >
+                      <div className="flex w-full justify-between">
+                        <span>{notification.message}</span>
+                        {!notification.isRead && (
+                          <Badge variant="outline" className="ml-2 h-2 w-2 rounded-full bg-primary p-0" />
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">Just now</span>
+                    </DropdownMenuItem>
+                  </Link>
+                ))
+              )}
+            </div>
+            <DropdownMenuSeparator />
+            <Link href="/dashboard/notifications" className="block">
+              <DropdownMenuItem className="text-center text-sm text-primary w-full">
+                View all notifications
+              </DropdownMenuItem>
+            </Link>
           </DropdownMenuContent>
         </DropdownMenu>
 

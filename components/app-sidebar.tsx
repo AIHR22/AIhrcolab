@@ -106,7 +106,7 @@ export function AppSidebar({ className, isCollapsed = false }: SidebarProps) {
           />
           <SidebarItem
             icon={Settings}
-            title="Settings"
+            title="Company Settings"
             href="/dashboard/settings"
             isActive={pathname.startsWith("/dashboard/settings")}
             isCollapsed={isCollapsed}

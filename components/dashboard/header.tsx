@@ -1,10 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Bell, Search, Menu, X } from "lucide-react"
+import { Bell, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { SearchBar } from "@/components/search/search-bar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,10 +26,7 @@ export function Header() {
       </div>
 
       <div className="hidden md:flex items-center w-1/3">
-        <div className="relative w-full">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search..." className="pl-8 w-full" />
-        </div>
+        <SearchBar />
       </div>
 
       <div className="flex items-center space-x-4">

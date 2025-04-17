@@ -90,6 +90,7 @@
     "react-organizational-chart": "latest",
     "react-resizable-panels": "^2.1.7",
     "recharts": "latest",
+    "resend": "^4.3.0",
     "sonner": "^1.7.1",
     "swr": "latest",
     "tailwind-merge": "^2.5.5",

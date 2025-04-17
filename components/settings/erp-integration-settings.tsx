@@ -8,6 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SchemaInference } from './schema-inference';
 import { toast } from '@/components/ui/use-toast';
 
+interface EmployeeMapping {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  department: string;
+}
+
 interface ERPIntegration {
   id: string;
   name: string;
@@ -39,10 +47,19 @@ const ERPIntegrationSettings = () => {
   });
 
   const handleMappingConfirmed = (mapping: Record<string, string>) => {
+    // Transform the flat mapping into our expected EmployeeMapping structure
+    const employeeMapping: EmployeeMapping = {
+      id: mapping['id'] || 'employee_id',
+      firstName: mapping['firstName'] || 'first_name',
+      lastName: mapping['lastName'] || 'last_name',
+      email: mapping['email'] || 'email',
+      department: mapping['department'] || 'department_id'
+    };
+
     setFormData(prev => ({
       ...prev,
       mapping: {
-        employees: mapping
+        employees: employeeMapping
       }
     }));
     setShowSchemaInference(false);

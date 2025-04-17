@@ -35,6 +35,9 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
       setIsPlatformAdmin(tenantContext.role === 'platform_admin');
 
       // Get user's accessible tenants
+      if (!supabaseAdmin) {
+        throw new Error('Supabase Admin client is not initialized');
+      }
       const { data: { user } } = await supabaseAdmin.auth.getUser();
       if (!user) return;
 
