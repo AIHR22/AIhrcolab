@@ -31,7 +31,7 @@ export async function GET(
     }
 
     const { data, error } = await supabaseAdmin
-      .from("revenue")
+      .from("revenue_data")
       .select("*")
       .eq("id", id)
       .single();
@@ -84,12 +84,19 @@ export async function PUT(
       );
     }
 
+    interface RevenueData {
+      id: string;
+      department_id?: string;
+      period_type?: string;
+      period_date?: string;
+    }
+
     // Check if entry exists
     const { data: exists, error: checkError } = await supabaseAdmin
-      .from("revenue")
-      .select("id")
+      .from("revenue_data")
+      .select("id, department_id, period_type, period_date")
       .eq("id", id)
-      .maybeSingle();
+      .maybeSingle() as { data: RevenueData | null, error: any };
 
     if (checkError || !exists) {
       return NextResponse.json(
@@ -101,11 +108,34 @@ export async function PUT(
       );
     }
 
+    // Update revenue_data
     const { data, error } = await supabaseAdmin
-      .from("revenue")
+      .from("revenue_data")
       .update(body)
       .eq("id", id)
       .select();
+
+    // If this is department revenue, also update department_revenue
+    if (data?.[0]?.department_id) {
+      const deptData = {
+        department_id: data[0].department_id,
+        period_type: data[0].period_type,
+        period_date: data[0].period_date,
+        amount: data[0].amount,
+        is_projected: data[0].is_projected,
+        growth_rate: data[0].growth_rate
+      }
+
+      const { error: deptError } = await supabaseAdmin
+        .from("department_revenue")
+        .upsert(deptData, {
+          onConflict: 'department_id,period_type,period_date'
+        })
+
+      if (deptError) {
+        console.error("Error updating department revenue:", deptError)
+      }
+    }
 
     if (error) {
       throw error;
@@ -145,12 +175,19 @@ export async function DELETE(
       );
     }
 
+    interface RevenueData {
+      id: string;
+      department_id?: string;
+      period_type?: string;
+      period_date?: string;
+    }
+
     // Check if entry exists
     const { data: exists, error: checkError } = await supabaseAdmin
-      .from("revenue")
-      .select("id")
+      .from("revenue_data")
+      .select("id, department_id, period_type, period_date")
       .eq("id", id)
-      .maybeSingle();
+      .maybeSingle() as { data: RevenueData | null, error: any };
 
     if (checkError || !exists) {
       return NextResponse.json(
@@ -162,10 +199,25 @@ export async function DELETE(
       );
     }
 
+    // Delete from revenue_data
     const { error } = await supabaseAdmin
-      .from("revenue")
+      .from("revenue_data")
       .delete()
       .eq("id", id);
+
+    // If this was department revenue, also delete from department_revenue
+    if (exists?.department_id) {
+      const { error: deptError } = await supabaseAdmin
+        .from("department_revenue")
+        .delete()
+        .eq("department_id", exists.department_id)
+        .eq("period_type", exists.period_type)
+        .eq("period_date", exists.period_date)
+
+      if (deptError) {
+        console.error("Error deleting department revenue:", deptError)
+      }
+    }
 
     if (error) {
       throw error;

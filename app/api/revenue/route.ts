@@ -8,16 +8,37 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseKey)
 
 export async function GET(request: Request) {
   try {
-    const { data, error } = await supabaseAdmin
-      .from("revenue")
+    const { searchParams } = new URL(request.url)
+    const periodType = searchParams.get('periodType') || 'monthly'
+    const departmentId = searchParams.get('departmentId')
+    const projectId = searchParams.get('projectId')
+    const isProjected = searchParams.get('projected') === 'true'
+
+    let query = supabaseAdmin
+      .from("revenue_data")
       .select("*")
-      .order("date", { ascending: false })
+      .eq('period_type', periodType)
+      .eq('is_projected', isProjected)
+      .order("period_date", { ascending: false })
+
+    if (departmentId) {
+      query = query.eq('department_id', departmentId)
+    }
+
+    if (projectId) {
+      query = query.eq('project_id', projectId)
+    }
+
+    const { data, error } = await query
 
     if (error) {
       throw error
     }
 
-    return NextResponse.json(data)
+    return NextResponse.json({
+      success: true,
+      data,
+    })
   } catch (error: any) {
     console.error("Error fetching revenue data:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
@@ -27,14 +48,23 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { amount, date, source, description, department_id } = body
+    const { 
+      amount, 
+      period_date, 
+      period_type = 'monthly',
+      is_projected = false,
+      growth_rate,
+      company_wide = true,
+      department_id,
+      project_id
+    } = body
 
-    // Only require the essential fields
-    if (!amount || !date || !source) {
+    // Validate required fields
+    if (!amount || !period_date) {
       return NextResponse.json(
         {
           success: false,
-          error: "Required fields: amount, date, source",
+          error: "Required fields: amount, period_date",
         },
         { status: 400 }
       )
@@ -43,19 +73,42 @@ export async function POST(request: Request) {
     // Create a new revenue entry
     const revenueData = {
       amount,
-      date,
-      source,
-      description: description || '',
+      period_date,
+      period_type,
+      is_projected,
+      growth_rate,
+      company_wide,
       department_id,
+      project_id
     }
 
     const { data, error } = await supabaseAdmin
-      .from("revenue")
+      .from("revenue_data")
       .insert(revenueData)
       .select()
 
     if (error) {
       throw error
+    }
+
+    // If this is department revenue, also create an entry in department_revenue
+    if (department_id) {
+      const departmentRevenueData = {
+        department_id,
+        period_type,
+        period_date,
+        amount,
+        is_projected,
+        growth_rate
+      }
+
+      const { error: deptError } = await supabaseAdmin
+        .from("department_revenue")
+        .insert(departmentRevenueData)
+
+      if (deptError) {
+        console.error("Error creating department revenue entry:", deptError)
+      }
     }
 
     return NextResponse.json({

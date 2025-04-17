@@ -1,0 +1,96 @@
+{
+  "summary": {
+    "totalEndpoints": 7,
+    "successfulTests": 1,
+    "failedTests": 6,
+    "successRate": "14.3%",
+    "timestamp": "2025-04-17T14:47:24.197Z",
+    "duration": "5.21s"
+  },
+  "results": [
+    {
+      "route": "revenue/forecast",
+      "method": "POST",
+      "url": "http://localhost:3000/api/revenue/forecast",
+      "success": false,
+      "status": 500,
+      "statusText": "Internal Server Error",
+      "response": "{\"success\":false,\"error\":\"column department_revenue.is_projected does not exist\"}",
+      "error": "column department_revenue.is_projected does not exist",
+      "duration": 1788,
+      "extractedId": null
+    },
+    {
+      "route": "revenue/metrics?periodType=monthly&date=2025-04-01",
+      "method": "GET",
+      "url": "http://localhost:3000/api/revenue/metrics?periodType=monthly&date=2025-04-01",
+      "success": false,
+      "status": 500,
+      "statusText": "Internal Server Error",
+      "response": "{\"success\":false,\"error\":\"column department_revenue.period_date does not exist\"}",
+      "error": "column department_revenue.period_date does not exist",
+      "duration": 1494,
+      "extractedId": null
+    },
+    {
+      "route": "revenue",
+      "method": "GET",
+      "url": "http://localhost:3000/api/revenue",
+      "success": true,
+      "status": 200,
+      "statusText": "OK",
+      "response": "{\"success\":true,\"data\":[]}",
+      "error": null,
+      "duration": 446,
+      "extractedId": null
+    },
+    {
+      "route": "revenue",
+      "method": "POST",
+      "url": "http://localhost:3000/api/revenue",
+      "success": false,
+      "status": 500,
+      "statusText": "Internal Server Error",
+      "response": "{\"success\":false,\"error\":\"insert or update on table \\\"revenue_data\\\" violates foreign key constraint \\\"revenue_data_tenant_id_fkey\\\"\"}",
+      "error": "insert or update on table \"revenue_data\" violates foreign key constraint \"revenue_data_tenant_id_fkey\"",
+      "duration": 513,
+      "extractedId": null
+    },
+    {
+      "route": "revenue/[id]",
+      "method": "GET",
+      "url": "http://localhost:3000/api/revenue/[id]",
+      "success": false,
+      "status": 400,
+      "statusText": "Bad Request",
+      "response": "{\"success\":false,\"error\":\"Invalid ID format. Expected UUID.\"}",
+      "error": "Invalid ID format. Expected UUID.",
+      "duration": 214,
+      "extractedId": null
+    },
+    {
+      "route": "revenue/[id]",
+      "method": "PUT",
+      "url": "http://localhost:3000/api/revenue/[id]",
+      "success": false,
+      "status": 400,
+      "statusText": "Bad Request",
+      "response": "{\"success\":false,\"error\":\"Invalid ID format. Expected UUID.\"}",
+      "error": "Invalid ID format. Expected UUID.",
+      "duration": 182,
+      "extractedId": null
+    },
+    {
+      "route": "revenue/[id]",
+      "method": "DELETE",
+      "url": "http://localhost:3000/api/revenue/[id]",
+      "success": false,
+      "status": 400,
+      "statusText": "Bad Request",
+      "response": "{\"success\":false,\"error\":\"Invalid ID format. Expected UUID.\"}",
+      "error": "Invalid ID format. Expected UUID.",
+      "duration": 189,
+      "extractedId": null
+    }
+  ]
+}

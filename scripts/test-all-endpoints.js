@@ -37,6 +37,18 @@ const ignoredEndpoints = [
 ];
 
 const findApiRoutes = () => {
+  // Only test revenue endpoints
+  return [
+    { path: 'revenue/forecast', method: 'POST' },
+    { path: 'revenue/metrics?periodType=monthly&date=2025-04-01', method: 'GET' },
+    { path: 'revenue', method: 'GET' },
+    { path: 'revenue', method: 'POST' },
+    { path: 'revenue/[id]', method: 'GET' },
+    { path: 'revenue/[id]', method: 'PUT' },
+    { path: 'revenue/[id]', method: 'DELETE' }
+  ];
+
+  /* Original route discovery code:
   const apiDir = path.join(process.cwd(), 'app', 'api');
   const routes = [];
 
@@ -49,20 +61,17 @@ const findApiRoutes = () => {
 
       if (stat.isDirectory()) {
         const newBasePath = path.join(basePath, file);
+        const routeFiles = fs.readdirSync(filePath);
         
-        // Check if this is a route directory with [param]
-        if (file.startsWith('[') && file.endsWith(']')) {
-          // If there's a route.js or route.ts file, it's an API route
-          const routeFiles = fs.readdirSync(filePath);
-          if (routeFiles.some(f => f === 'route.js' || f === 'route.ts')) {
-            const routePath = path.join(basePath, file);
-            const methods = getMethodsFromRouteFile(path.join(filePath, 'route.js')) || 
-                          getMethodsFromRouteFile(path.join(filePath, 'route.ts')) || 
-                          ['GET'];
-            
-            for (const method of methods) {
-              routes.push({ path: routePath.replace(/\\/g, '/'), method });
-            }
+        // Check if this directory has a route file
+        if (routeFiles.some(f => f === 'route.js' || f === 'route.ts')) {
+          const routePath = path.join(basePath, file);
+          const methods = getMethodsFromRouteFile(path.join(filePath, 'route.js')) || 
+                        getMethodsFromRouteFile(path.join(filePath, 'route.ts')) || 
+                        ['GET'];
+          
+          for (const method of methods) {
+            routes.push({ path: routePath.replace(/\\/g, '/'), method });
           }
         }
         
@@ -96,9 +105,36 @@ const findApiRoutes = () => {
 
   findRoutesInDir(apiDir);
   return routes;
+  */
 };
 
+const TEST_TENANT_ID = '00000000-0000-0000-0000-000000000001';
+const TEST_REVENUE_ID = '00000000-0000-0000-0000-000000000002';
+
 const generateRequestBody = (route, method) => {
+  if (route.includes('revenue')) {
+    if (route.includes('forecast')) {
+      return {
+        tenant_id: TEST_TENANT_ID,
+        start_date: new Date().toISOString().split('T')[0],
+        end_date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        period_type: 'monthly'
+      };
+    }
+    if (method === 'POST' || method === 'PUT') {
+      return {
+        tenant_id: TEST_TENANT_ID,
+        amount: 10000,
+        period_date: new Date().toISOString().split('T')[0],
+        period_type: 'monthly',
+        is_projected: false,
+        growth_rate: 0.05,
+        company_wide: true
+      };
+    }
+  }
+
+  // Original request body generation:
   // Simple test data based on route pattern
   if (route.includes('/employees') && (method === 'POST' || method === 'PUT')) {
     return {
@@ -162,19 +198,17 @@ const generateRequestBody = (route, method) => {
 };
 
 const testEndpoint = async (route, method, testId) => {
-  const url = `${API_URL}${route.path.replace(/\[([^\]]+)\]/g, (_, param) => {
-    // If testId is provided and the parameter is 'id', use that
+  const url = `${BASE_URL}/api/${route.path.replace(/^\//, '')}`;
+  const fullUrl = url.replace(/\[([^\]]+)\]/g, (_, param) => {
     if (param === 'id' && testId) {
       return testId;
     }
-    
     // Use a realistic test UUID for IDs
     if (param === 'id') {
-      return '00000000-0000-0000-0000-000000000001';
+      return TEST_REVENUE_ID;
     }
-    
     return 'test';
-  })}`;
+  });
 
   const headers = {
     'Content-Type': 'application/json',

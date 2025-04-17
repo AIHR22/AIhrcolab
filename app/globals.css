@@ -13,10 +13,11 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 221.2 83.2% 53.3%;
+    /* Admin System Colors */
+    --primary: 240 82% 54%; /* Deep Blue: #3A36DB */
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 210 40% 96.1%;
+    --secondary: 228 98% 98%; /* Light Blue-Gray: #F0F4FD */
     --secondary-foreground: 222.2 47.4% 11.2%;
 
     --muted: 210 40% 96.1%;
@@ -25,8 +26,14 @@
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 0 84.2% 60.2%;
+    /* Admin Status Colors */
+    --success: 162 93% 43%; /* Mint Green: #06D6A0 */
+    --warning: 42 100% 70%; /* Amber Yellow: #FFD166 */
+    --destructive: 0 84.2% 60.2%; /* Coral Red: #FF6B6B */
     --destructive-foreground: 210 40% 98%;
+    --inactive: 217 17% 62%; /* Slate Gray: #8D99AE */
+    --trial: 196 83% 38%; /* Teal Blue: #118AB2 */
+    --expired: 348 89% 61%; /* Raspberry: #EF476F */
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;

@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
-import { generateJsonWithLlama3 } from "@/lib/together"
+import { createClient } from '@supabase/supabase-js'
+import { generateWithLlama3 } from "@/lib/together"
+
+// Initialize Supabase client with environment variables
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const supabaseAdmin = createClient(supabaseUrl, supabaseKey)
 
 interface ForecastData {
   year: number;
@@ -21,13 +26,24 @@ export async function POST(request: Request) {
 
     // Get historical revenue data
     const { data: historicalData, error: histError } = await supabaseAdmin
-      .from("revenue")
+      .from("revenue_data")
       .select("*")
-      .order("year", { ascending: true })
-      .order("month", { ascending: true })
+      .eq('is_projected', false)
+      .order("period_date", { ascending: true })
 
     if (histError) {
       throw histError
+    }
+
+    // Get department revenue data for correlation analysis
+    const { data: deptRevenueData, error: deptError } = await supabaseAdmin
+      .from("department_revenue")
+      .select("*")
+      .eq('is_projected', false)
+      .order("period_date", { ascending: true })
+
+    if (deptError) {
+      throw deptError
     }
 
     // Get historical payroll data
@@ -42,32 +58,35 @@ export async function POST(request: Request) {
 
     // Calculate monthly totals
     const monthlyTotals = historicalData.reduce((acc: any, curr) => {
-      const key = `${curr.year}-${curr.month}`
+      const date = new Date(curr.period_date)
+      const key = `${date.getFullYear()}-${date.getMonth() + 1}`
       if (!acc[key]) {
         acc[key] = {
-          year: curr.year,
-          month: curr.month,
+          year: date.getFullYear(),
+          month: date.getMonth() + 1,
           total_revenue: 0,
-          total_payroll: 0,
+          department_revenue: {},
+          growth_rate: curr.growth_rate || 0
         }
       }
       acc[key].total_revenue += curr.amount
       return acc
     }, {})
 
-    // Add payroll data to monthly totals
-    payrollData.forEach((payroll) => {
-      const date = new Date(payroll.payment_date)
+    // Add department revenue data
+    deptRevenueData.forEach((dept) => {
+      const date = new Date(dept.period_date)
       const key = `${date.getFullYear()}-${date.getMonth() + 1}`
       if (!monthlyTotals[key]) {
         monthlyTotals[key] = {
           year: date.getFullYear(),
           month: date.getMonth() + 1,
           total_revenue: 0,
-          total_payroll: 0,
+          department_revenue: {},
+          growth_rate: dept.growth_rate || 0
         }
       }
-      monthlyTotals[key].total_payroll += payroll.net_salary
+      monthlyTotals[key].department_revenue[dept.department_id] = dept.amount
     })
 
     // Convert to array and sort
@@ -86,7 +105,7 @@ export async function POST(request: Request) {
       ${monthlyData
         .map(
           (d: any) =>
-            `${d.year}-${d.month}: Revenue: $${d.total_revenue.toFixed(2)}, Payroll: $${d.total_payroll.toFixed(2)}`
+            `${d.year}-${d.month}: Revenue: $${d.total_revenue.toFixed(2)}, Growth Rate: ${d.growth_rate}%`
         )
         .join("\n")}
       
@@ -119,12 +138,13 @@ export async function POST(request: Request) {
     // Generate forecasts using Llama 3
     let forecasts: ForecastData[];
     try {
-      forecasts = await generateJsonWithLlama3<ForecastData[]>(
+      const aiResponse = await generateWithLlama3(
         prompt,
         systemPrompt,
         0.2,
         2000
       );
+      forecasts = JSON.parse(aiResponse) as ForecastData[];
     } catch (e) {
       console.error("Error parsing AI response:", e)
       forecasts = [
@@ -143,18 +163,23 @@ export async function POST(request: Request) {
       ]
     }
 
-    // Store the forecasts
+    // Store the forecasts in revenue_data table
     const { data: savedForecasts, error: saveError } = await supabaseAdmin
-      .from("revenue_forecasts")
+      .from("revenue_data")
       .upsert(
-        forecasts.map((f: ForecastData) => ({
-          year: f.year,
-          month: f.month,
-          predicted_amount: f.predicted_amount,
-          confidence_score: f.confidence_score,
-          factors: f.factors,
-        })),
-        { onConflict: "year,month" }
+        forecasts.map((f: ForecastData) => {
+          const periodDate = new Date(f.year, f.month - 1, 1)
+          return {
+            period_date: periodDate.toISOString().split('T')[0],
+            period_type: 'monthly',
+            amount: f.predicted_amount,
+            is_projected: true,
+            growth_rate: f.factors.historical_trend,
+            company_wide: true,
+            factors: f.factors
+          }
+        }),
+        { onConflict: "period_date,period_type,is_projected" }
       )
       .select()
 

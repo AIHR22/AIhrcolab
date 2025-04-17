@@ -21,13 +21,66 @@ export async function POST() {
   try {
     console.log("Starting database seeding...")
 
+    // Insert test tenant
+    console.log("Inserting test tenant...")
+    const { error: tenantError } = await supabaseAdmin.from("tenants").upsert([
+      { id: '00000000-0000-0000-0000-000000000001', name: 'Test Company', domain: 'test.com' }
+    ])
+
+    if (tenantError) {
+      console.error("Error inserting tenant:", tenantError)
+      throw tenantError
+    }
+
     // Insert departments
     console.log("Inserting departments...")
     const { error: deptError } = await supabaseAdmin.from("departments").upsert([
-      { id: 'd1b23c45-6789-0abc-def1-234567890123', name: 'Engineering', description: 'Software Development and Infrastructure' },
-      { id: 'd2c34d56-789a-bcde-f012-345678901234', name: 'Product', description: 'Product Management and Design' },
-      { id: 'd3d45e67-89ab-cdef-0123-456789012345', name: 'Design', description: 'UI/UX and Visual Design' }
-    ])
+      { id: 'd1b23c45-6789-0abc-def1-234567890123', tenant_id: '00000000-0000-0000-0000-000000000001', name: 'Engineering', description: 'Software Development and Infrastructure' },
+      { id: 'd2c34d56-789a-bcde-f012-345678901234', tenant_id: '00000000-0000-0000-0000-000000000001', name: 'Product', description: 'Product Management and Design' },
+      { id: 'd3d45e67-89ab-cdef-0123-456789012345', tenant_id: '00000000-0000-0000-0000-000000000001', name: 'Design', description: 'UI/UX and Visual Design' }
+    ], { onConflict: 'id' })
+
+    if (deptError) {
+      console.error("Error inserting departments:", deptError)
+      throw deptError
+    }
+
+    // Insert some test revenue data
+    console.log("Inserting test revenue data...")
+    const { error: revenueError } = await supabaseAdmin.from("revenue_data").upsert([
+      {
+        tenant_id: '00000000-0000-0000-0000-000000000001',
+        period_type: 'monthly',
+        period_date: '2025-01-01',
+        amount: 100000,
+        is_projected: false,
+        growth_rate: 5,
+        company_wide: true
+      },
+      {
+        tenant_id: '00000000-0000-0000-0000-000000000001',
+        period_type: 'monthly',
+        period_date: '2025-02-01',
+        amount: 110000,
+        is_projected: false,
+        growth_rate: 10,
+        company_wide: true
+      },
+      {
+        tenant_id: '00000000-0000-0000-0000-000000000001',
+        period_type: 'monthly',
+        period_date: '2025-03-01',
+        amount: 120000,
+        is_projected: false,
+        growth_rate: 9,
+        company_wide: true
+      }
+    ], { onConflict: 'tenant_id,period_type,period_date' })
+
+    if (revenueError) {
+      console.error("Error inserting revenue data:", revenueError)
+      throw revenueError
+    }
 
     if (deptError) {
       console.error("Error inserting departments:", deptError)
