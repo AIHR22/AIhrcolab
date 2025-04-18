@@ -175,7 +175,7 @@ export async function getCompanySettings() {
     data || {
       company_name: "HR Suite",
       logo_url: null,
-      primary_color: "#0070f3",
+      primary_color: "#4A90E2",
       secondary_color: "#0070f3",
       contact_email: "contact@example.com",
       contact_phone: "+1 (555) 123-4567",
@@ -196,7 +196,7 @@ export async function updateCompanySettingsOld(updates: Database["public"]["Tabl
 }
 
 // Function to update company settings
-export async function updateCompanySettings(settings) {
+export async function updateCompanySettings(settings: Database['public']['Tables']['company_settings']['Update']) {
   const supabase = createClient()
 
   const { data, error } = await supabase.from("company_settings").upsert(settings).select().single()

@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server"
-import { createClient } from '@supabase/supabase-js'
-import { generateWithLlama3 } from "@/lib/together"
+import { withErrorHandler, withAuth, supabase } from '../../middleware'
 
-// Initialize Supabase client with environment variables
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabaseAdmin = createClient(supabaseUrl, supabaseKey)
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY!
 
 interface ForecastData {
   year: number;
@@ -20,12 +16,44 @@ interface ForecastData {
   };
 }
 
-export async function POST(request: Request) {
+export const GET = withErrorHandler(async (request: Request) => {
+  const { tenantId } = await withAuth(request)
+  const { searchParams } = new URL(request.url)
+  const months = parseInt(searchParams.get('months') || '12')
+
+  const { data, error } = await supabase
+    .from('revenue_data')
+    .select(`
+      amount,
+      period_date,
+      period_type,
+      factors
+    `)
+    .eq('tenant_id', tenantId)
+    .eq('is_projected', true)
+    .order('period_date', { ascending: true })
+    .limit(months)
+
+  if (error) throw error
+
+  return NextResponse.json({
+    forecasts: data.map(d => ({
+      amount: d.amount,
+      date: d.period_date,
+      periodType: d.period_type,
+      factors: d.factors
+    }))
+  })
+})
+
+export const POST = withErrorHandler(async (request: Request) => {
   try {
     const { months = 12 } = await request.json()
 
     // Get historical revenue data
-    const { data: historicalData, error: histError } = await supabaseAdmin
+    const { tenantId } = await withAuth(request)
+
+    const { data: historicalData, error: histError } = await supabase
       .from("revenue_data")
       .select("*")
       .eq('is_projected', false)
@@ -36,7 +64,7 @@ export async function POST(request: Request) {
     }
 
     // Get department revenue data for correlation analysis
-    const { data: deptRevenueData, error: deptError } = await supabaseAdmin
+    const { data: deptRevenueData, error: deptError } = await supabase
       .from("department_revenue")
       .select("*")
       .eq('is_projected', false)
@@ -47,7 +75,7 @@ export async function POST(request: Request) {
     }
 
     // Get historical payroll data
-    const { data: payrollData, error: payrollError } = await supabaseAdmin
+    const { data: payrollData, error: payrollError } = await supabase
       .from("payroll")
       .select("*")
       .order("payment_date", { ascending: true })
@@ -57,7 +85,15 @@ export async function POST(request: Request) {
     }
 
     // Calculate monthly totals
-    const monthlyTotals = historicalData.reduce((acc: any, curr) => {
+    type MonthlyTotal = {
+      year: number
+      month: number
+      total_revenue: number
+      department_revenue: Record<string, number>
+      growth_rate: number
+    }
+
+    const monthlyTotals = historicalData.reduce<Record<string, MonthlyTotal>>((acc, curr) => {
       const date = new Date(curr.period_date)
       const key = `${date.getFullYear()}-${date.getMonth() + 1}`
       if (!acc[key]) {
@@ -90,81 +126,74 @@ export async function POST(request: Request) {
     })
 
     // Convert to array and sort
-    const monthlyData = Object.values(monthlyTotals).sort((a: any, b: any) => {
+    const monthlyData = Object.values(monthlyTotals).sort((a, b) => {
       if (a.year === b.year) {
         return a.month - b.month
       }
       return a.year - b.year
     })
 
-    // Use Llama 3 to generate revenue forecasts
-    const prompt = `
-      I need to forecast revenue for the next ${months} months based on the following historical data:
-      
-      Monthly Revenue and Payroll Data:
-      ${monthlyData
-        .map(
-          (d: any) =>
-            `${d.year}-${d.month}: Revenue: $${d.total_revenue.toFixed(2)}, Growth Rate: ${d.growth_rate}%`
-        )
-        .join("\n")}
-      
-      Based on this information, please provide:
-      1. Revenue predictions for the next ${months} months
-      2. Confidence score for each prediction (0-100%)
-      3. Key factors influencing the forecast
-      4. A JSON array with the following structure for each month:
-      [
-        {
-          "year": number,
-          "month": number,
-          "predicted_amount": number,
-          "confidence_score": number,
-          "factors": {
-            "historical_trend": number,
-            "seasonal_factors": number,
-            "market_conditions": number,
-            "other_factors": string
-          }
-        },
-        ...
-      ]
-      
-      Only return the JSON array, nothing else.
-    `
-
-    const systemPrompt = "You are a financial analyst AI specializing in revenue forecasting. You provide accurate predictions based on historical data. Your response should ONLY be valid JSON without any explanation or markdown.";
-
-    // Generate forecasts using Llama 3
+    // Generate forecasts using OpenRouter's DeepSeek-v3
     let forecasts: ForecastData[];
     try {
-      const aiResponse = await generateWithLlama3(
-        prompt,
-        systemPrompt,
-        0.2,
-        2000
-      );
-      forecasts = JSON.parse(aiResponse) as ForecastData[];
-    } catch (e) {
-      console.error("Error parsing AI response:", e)
-      forecasts = [
-        {
-          year: new Date().getFullYear(),
-          month: new Date().getMonth() + 1,
-          predicted_amount: 0,
-          confidence_score: 0,
-          factors: {
-            historical_trend: 0,
-            seasonal_factors: 0,
-            market_conditions: 0,
-            other_factors: "Error generating forecast. Please try again.",
-          },
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
         },
-      ]
+        body: JSON.stringify({
+          model: 'deepseek-ai/deepseek-math-7b-base',
+          messages: [
+            {
+              role: 'user',
+              content: JSON.stringify({
+                historical_data: monthlyData,
+                forecast_parameters: {
+                  growth_rate_trend: monthlyData.reduce((acc, curr) => acc + (curr.growth_rate || 0), 0) / monthlyData.length,
+                  seasonality: monthlyData.map(d => ({ month: d.month, factor: d.total_revenue || 0 })),
+                  market_conditions: 'stable'
+                },
+                prediction_months: months
+              })
+            }
+          ]
+        })
+      });
+
+      const aiResponse = await response.json();
+      const predictions = JSON.parse(aiResponse.choices[0].message.content);
+      
+      forecasts = predictions.map((p: any) => ({
+        year: p.year,
+        month: p.month,
+        predicted_amount: p.amount,
+        confidence_score: p.confidence,
+        factors: {
+          historical_trend: p.factors.trend,
+          seasonal_factors: p.factors.seasonal,
+          market_conditions: p.factors.market,
+          other_factors: p.factors.notes
+        }
+      }));
+    } catch (e) {
+      console.error("Error generating forecast:", e)
+      forecasts = [{
+        year: new Date().getFullYear(),
+        month: new Date().getMonth() + 1,
+        predicted_amount: 0,
+        confidence_score: 0,
+        factors: {
+          historical_trend: 0,
+          seasonal_factors: 0,
+          market_conditions: 0,
+          other_factors: "Error generating forecast. Please try again."
+        }
+      }]
     }
 
     // Store the forecasts in revenue_data table
-    const { data: savedForecasts, error: saveError } = await supabaseAdmin
+    const { data: savedForecasts, error: saveError } = await supabase
       .from("revenue_data")
       .upsert(
         forecasts.map((f: ForecastData) => {
@@ -202,4 +231,4 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
-} 
+})

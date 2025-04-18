@@ -141,7 +141,7 @@ async function seedDatabase() {
     const companySettings = {
       name: "Acme Corporation",
       logo_url: "https://via.placeholder.com/150",
-      primary_color: "#3b82f6",
+      primary_color: "#4A90E2",
       secondary_color: "#10b981",
       address: "123 Main St, San Francisco, CA 94105",
       phone: "(555) 123-4567",

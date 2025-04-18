@@ -5,12 +5,14 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { FileText } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { getCompanySettings, updateCompanySettings } from "@/lib/supabase/api"
 import { toast } from "@/hooks/use-toast"
+import { supabase } from "@/lib/supabaseClient"
 import { Skeleton } from "@/components/ui/skeleton"
 import { IntegrationsTab } from "@/components/settings/integrations-tab"
 import { IntegrationProvider } from "@/contexts/integration-context"
@@ -33,7 +35,7 @@ interface Settings {
 const defaultSettings: Settings = {
   company_name: '',
   logo_url: '',
-  primary_color: '#3b82f6',
+  primary_color: '#4A90E2',
   secondary_color: '#10b981',
   notifications_onboarding: true,
   notifications_payroll: true,
@@ -265,17 +267,154 @@ export default function SettingsPage() {
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="logo_url">Logo URL</Label>
-                    <Input 
-                      id="logo_url" 
-                      name="logo_url" 
-                      value={settings.logo_url || ""} 
-                      onChange={handleChange} 
-                      placeholder="https://example.com/logo.png"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Enter a URL to your company logo (transparent PNG or SVG recommended).
-                    </p>
+                    <Label htmlFor="logo_upload">Company Logo</Label>
+                    <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-center w-full">
+                          <label
+                            htmlFor="logo-upload"
+                            className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                              {settings.logo_url ? (
+                                <img 
+                                  src={settings.logo_url} 
+                                  alt="Company logo" 
+                                  className="max-h-20 max-w-full mb-2" 
+                                />
+                              ) : (
+                                <>
+                                  <FileText className="w-8 h-8 mb-3 text-gray-400" />
+                                  <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+                                    <span className="font-semibold">Click to upload</span> or drag and drop
+                                  </p>
+                                </>  
+                              )}
+                              <p className="text-xs text-gray-500 dark:text-gray-400">PNG or SVG (MAX. 2MB)</p>
+                            </div>
+                            <input 
+                              id="logo-upload" 
+                              type="file" 
+                              className="hidden"
+                              accept="image/png,image/svg+xml" 
+                              onChange={async (e) => {
+                                const files = e.target.files;
+                                if (!files || files.length === 0) return;
+                                
+                                const file = files[0];
+                                
+                                // Validate file type
+                                if (!file.type.match(/^image\/(png|svg\+xml)$/)) {
+                                  toast({
+                                    title: "Invalid file type",
+                                    description: "Please upload a PNG or SVG file",
+                                    variant: "destructive"
+                                  });
+                                  return;
+                                }
+                                
+                                // Validate file size
+                                if (file.size > 2 * 1024 * 1024) {
+                                  toast({
+                                    title: "File too large",
+                                    description: "Logo file must be less than 2MB",
+                                    variant: "destructive"
+                                  });
+                                  return;
+                                }
+                                
+                                try {
+                                  // Delete old logo if exists
+                                  if (settings.logo_url) {
+                                    const oldPath = settings.logo_url.split('/').pop();
+                                    if (oldPath) {
+                                      await supabase.storage
+                                        .from("logos")
+                                        .remove([oldPath]);
+                                    }
+                                  }
+
+                                  // Upload to Supabase storage
+                                  const { data, error: uploadError } = await supabase.storage
+                                    .from("logos")
+                                    .upload(`${Date.now()}_${file.name}`, file, {
+                                      cacheControl: '3600',
+                                      upsert: false
+                                    });
+                                  
+                                  if (uploadError) throw uploadError;
+                                  
+                                  // Get public URL
+                                  const { data: { publicUrl }} = supabase.storage
+                                    .from("logos")
+                                    .getPublicUrl(data.path);
+                                  
+                                  // Update settings with the new URL
+                                  setSettings({
+                                    ...settings,
+                                    logo_url: publicUrl
+                                  });
+                                  
+                                  toast({
+                                    title: "Logo uploaded",
+                                    description: "Your company logo has been uploaded successfully."
+                                  });
+                                } catch (error) {
+                                  console.error("Error uploading logo:", error);
+                                  toast({
+                                    title: "Upload failed",
+                                    description: "There was an error uploading your logo.",
+                                    variant: "destructive"
+                                  });
+                                }
+                              }}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col gap-2 justify-center">
+                        {settings.logo_url && (
+                          <Button
+                            variant="destructive"
+                            onClick={() => {
+                              setSettings({
+                                ...settings,
+                                logo_url: ''
+                              });
+                              toast({
+                                title: "Logo removed",
+                                description: "Your company logo has been removed."
+                              });
+                            }}
+                          >
+                            Remove Logo
+                          </Button>
+                        )}
+                        <p className="text-sm font-medium">Logo Requirements:</p>
+                        <ul className="text-xs text-muted-foreground list-disc list-inside space-y-1">
+                          <li>Use transparent PNG or SVG format</li>
+                          <li>Maximum file size: 2MB</li>
+                          <li>Recommended dimensions: 300x150px</li>
+                          <li>Will be displayed in the sidebar and header</li>
+                        </ul>
+                        {settings.logo_url && (
+                          <Button 
+                            variant="outline" 
+                            className="mt-2" 
+                            size="sm"
+                            onClick={() => {
+                              setSettings({
+                                ...settings,
+                                logo_url: ""
+                              });
+                            }}
+                          >
+                            Remove Logo
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-2">

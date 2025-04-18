@@ -18,6 +18,7 @@ import {
   Layers,
   MessageSquare,
   BarChart2,
+  LineChart,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -83,7 +84,7 @@ export function AppSidebar({ className, isCollapsed = false }: SidebarProps) {
             isCollapsed={isCollapsed}
           />
           <SidebarItem
-            icon={TrendingUp}
+            icon={BarChart2}
             title="Revenue Forecasting"
             href="/dashboard/revenue"
             isActive={pathname.startsWith("/dashboard/revenue")}

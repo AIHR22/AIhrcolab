@@ -25,10 +25,11 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/components/ui/use-toast"
+import { ChatInput } from "@/components/ui/chat-input"
 
 // Type definitions
 type ViewMode = "company-wide" | "project-based"
-type TabOption = "current-view" | "project-view" | "comparison" | "what-if" // Added what-if tab
+type TabOption = "current-view" | "project-view" | "comparison" | "what-if" | "History" // Added History tab
 
 // Backend API response type - Placeholder for future implementation
 type DepartmentRevenueApiResponse = {
@@ -134,8 +135,24 @@ const formatCurrency = (value: number | null | undefined) => {
 }
 
 const formatPercentage = (value: number | null | undefined, decimals = 1) => {
-  if (value === null || value === undefined) return "0.0%";
-  return `${value.toFixed(decimals)}%`;
+  if (value === null || value === undefined) return "--"
+  return `${value.toFixed(decimals)}%`
+}
+
+const formatDate = (date: Date) => {
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
+const replayScenario = (scenario: { id: string; date: Date; summary: string; impact: number }) => {
+  // TODO: Implement scenario replay logic using existing handlers
+  toast({
+    title: "Replaying Scenario",
+    description: `Replaying scenario from ${formatDate(scenario.date)}`,
+  })
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -237,7 +254,8 @@ const getRevenueForecast = async (): Promise<DepartmentRevenueApiResponse | null
 export function RevenueForecasting() {
   // UI state
   const [viewMode, setViewMode] = useState<ViewMode>("company-wide")
-  const [activeTab, setActiveTab] = useState('current-view');
+  const [activeTab, setActiveTab] = useState<TabOption>("current-view")
+  const [history, setHistory] = useState<Array<{ id: string; date: Date; summary: string; impact: number }>>([]);
   const [showKPIPanel, setShowKPIPanel] = useState(true);
   const [showScrollKPIPanel, setShowScrollKPIPanel] = useState(false); // New state for scroll-dependent KPI panel
   const [scrollPosition, setScrollPosition] = useState(0); // Track scroll position
@@ -266,19 +284,15 @@ export function RevenueForecasting() {
   const [growthRateChange, setGrowthRateChange] = useState(0)
   const [whatIfScenarios, setWhatIfScenarios] = useState(mockWhatIfScenarios)
   const [activeScenarios, setActiveScenarios] = useState<string[]>([])
-  const [customScenarios, setCustomScenarios] = useState<{
-    revenueChange: number;
-    marketingSpend: number;
-    exchangeRate: number;
-    paymentDelay: number;
-    salaryIncrease: number;
-  }>({
+  const [customScenarios, setCustomScenarios] = useState({
     revenueChange: 0,
     marketingSpend: 0,
     exchangeRate: 0,
     paymentDelay: 0,
     salaryIncrease: 0
   })
+  const [parsedParams, setParsedParams] = useState<Array<{name: string, label: string, value: number|string, unit: string}>>([])
+  const [customImpact, setCustomImpact] = useState<number>(0)
 
   // Department simulator state
   const [departmentData, setDepartmentData] = useState<Department[]>(mockDepartmentData)
@@ -310,7 +324,11 @@ export function RevenueForecasting() {
     const fetchForecastData = async () => {
       try {
         setIsLoadingForecast(true);
-        const data = await getRevenueForecast();
+        const { data: forecastData } = await getRevenueForecast();
+        if (viewMode === 'project' && selectedProject) {
+          const { data: history } = await fetch(`/api/scenarios/history?project_id=${selectedProject}`);
+          setHistory(history || []);
+        }
         setForecastData(data);
         setIsLoadingForecast(false);
       } catch (error) {
@@ -342,7 +360,7 @@ export function RevenueForecasting() {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [showScrollKPIPanel]);
+  }, [showScrollKPIPanel, selectedProject]);
   
   // Mock data for UI display - Replace with actual API data when backend is connected
   const actualRevenue = mockRevenueData;
@@ -680,47 +698,47 @@ export function RevenueForecasting() {
       {/* Floating KPI panel that appears when scrolling */}
       {showScrollKPIPanel && (
         <div className="fixed right-4 top-4 bg-white p-4 rounded-lg shadow-lg border z-50 w-64 transition-all duration-300 ease-in-out">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="font-semibold text-sm">Department Revenue</h3>
-            <Button variant="ghost" size="sm" onClick={() => setShowScrollKPIPanel(false)}>
-              <X className="h-3 w-3" />
-            </Button>
-          </div>
-          <div className="space-y-3">
-            {/* Display actual metrics from backend when available */}
-            {forecastData ? (
-              <>
-                <div className="flex justify-between">
-                  <span className="text-xs text-muted-foreground">Total Revenue</span>
-                  <span className="text-xs font-medium">{formatCurrency(forecastData.metrics.totalRevenue)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-xs text-muted-foreground">Projected Growth</span>
-                  <span className="text-xs font-medium">{forecastData.metrics.projectedGrowth}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-xs text-muted-foreground">Top Department</span>
-                  <span className="text-xs font-medium">{forecastData.metrics.topPerformer}</span>
-                </div>
-              </>
-            ) : isLoadingForecast ? (
-              <div className="flex justify-center py-2">
-                <LoadingSpinner className="h-4 w-4" />
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-xs text-muted-foreground">Total Revenue</span>
-                  <span className="text-xs font-medium">{formatCurrency(monthlyRevenue * 12)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-xs text-muted-foreground">Growth Rate</span>
-                  <span className="text-xs font-medium">{growthRateAdjustment}%</span>
-                </div>
-              </div>
-            )}
-          </div>
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="font-semibold text-sm">Department Revenue</h3>
+          <Button variant="ghost" size="sm" onClick={() => setShowScrollKPIPanel(false)}>
+            <X className="h-3 w-3" />
+          </Button>
         </div>
+        <div className="space-y-3">
+          {/* Display actual metrics from backend when available */}
+          {forecastData ? (
+            <>
+              <div className="flex justify-between">
+                <span className="text-xs text-muted-foreground">Total Revenue</span>
+                <span className="text-xs font-medium">{formatCurrency(forecastData.metrics.totalRevenue)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-xs text-muted-foreground">Projected Growth</span>
+                <span className="text-xs font-medium">{forecastData.metrics.projectedGrowth}%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-xs text-muted-foreground">Top Department</span>
+                <span className="text-xs font-medium">{forecastData.metrics.topPerformer}</span>
+              </div>
+            </>
+          ) : isLoadingForecast ? (
+            <div className="flex justify-center py-2">
+              <LoadingSpinner className="h-4 w-4" />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-xs text-muted-foreground">Total Revenue</span>
+                <span className="text-xs font-medium">{formatCurrency(monthlyRevenue * 12)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-xs text-muted-foreground">Growth Rate</span>
+                <span className="text-xs font-medium">{growthRateAdjustment}%</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
       )}
       
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative">
@@ -866,6 +884,15 @@ export function RevenueForecasting() {
           disabled={isHookLoading}
         >
           What If
+        </Button>
+        <Button
+          variant={isActiveTab("History") ? "default" : "ghost"}
+          className="relative h-9 rounded-none border-b-2 border-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-none hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground"
+          onClick={() => setActiveTab("History")}
+          data-state={isActiveTab("History") ? "active" : ""}
+          disabled={isHookLoading}
+        >
+          History
         </Button>
       </div>
 
@@ -1555,65 +1582,35 @@ export function RevenueForecasting() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="border-b pb-4">
-                    <h3 className="text-lg font-semibold mb-2">Predefined Scenarios</h3>
+                    <h3 className="text-lg font-semibold mb-2">What-If Scenario Builder</h3>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Select scenarios to see their projected impact on your revenue
+                      Type in your scenario to see its projected impact on revenue
                     </p>
                     
-                    <div className="space-y-2">
-                      {whatIfScenarios.map(scenario => (
-                        <div key={scenario.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                          <div className="flex items-center gap-2">
-                            <input 
-                              type="checkbox" 
-                              id={`scenario-${scenario.id}`}
-                              checked={activeScenarios.includes(scenario.id)}
-                              onChange={() => toggleScenario(scenario.id)}
-                              className="h-4 w-4 rounded border-gray-300"
-                            />
-                            <label htmlFor={`scenario-${scenario.id}`} className="text-sm font-medium cursor-pointer">
-                              {scenario.name}
-                            </label>
-                          </div>
-                          <Badge
-                            className={cn(
-                              scenario.impact > 0
-                                ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-400/10 dark:text-emerald-400"
-                                : "bg-rose-100 text-rose-800 hover:bg-rose-100 dark:bg-rose-400/10 dark:text-rose-400"
-                            )}
-                            variant="outline"
-                          >
-                            {formatCurrency(scenario.impact)}
-                          </Badge>
+                    <div className="space-y-4">
+                      <ChatInput
+                        placeholder="Type a scenario (e.g. 'raise marketing by 10% in Q3')"
+                        onSend={async text => {
+                          const res = await fetch('/api/scenarios/parse', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ text, viewMode, projectId: selectedProject })
+                          });
+                          const { parameters, impact } = await res.json();
+                          setParsedParams(parameters);
+                          setCustomImpact(impact);
+                        }}
+                      />
+                      {parsedParams.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {parsedParams.map(p => (
+                            <span key={p.name} className="px-2 py-1 bg-card text-card-foreground rounded">
+                              {p.label}: {p.value}{p.unit}
+                            </span>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
-
-                    {activeScenarios.length > 0 && (
-                      <div className="mt-4 p-4 border rounded-lg bg-muted/50">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium">Total Impact:</span>
-                          <Badge
-                            className={cn(
-                              calculateScenarioImpact > 0
-                                ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-400/10 dark:text-emerald-400"
-                                : "bg-rose-100 text-rose-800 hover:bg-rose-100 dark:bg-rose-400/10 dark:text-rose-400"
-                            )}
-                            variant="outline"
-                          >
-                            {formatCurrency(calculateScenarioImpact)}
-                          </Badge>
-                        </div>
-                        <div className="flex justify-between items-center mt-2">
-                          <span className="font-medium">New Projected Revenue:</span>
-                          <span className="font-medium">
-                            {formatCurrency((viewMode === "project-based" && selectedProject 
-                              ? (projectsList.find(p => p.id === selectedProject)?.revenue || 0)
-                              : projectedRevenue) + calculateScenarioImpact)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   <div className="border-b pb-4">
@@ -1874,6 +1871,29 @@ export function RevenueForecasting() {
                 </CardFooter>
               </Card>
             </>
+          )}
+          {activeTab === 'History' && (
+            <div className="mt-6 p-6 bg-card rounded-lg">
+              <h3 className="text-xl font-semibold mb-4">Scenario History</h3>
+              <table className="w-full text-left">
+                <thead>
+                  <tr>
+                    <th className="pb-2">Date</th>
+                    <th className="pb-2">Summary</th>
+                    <th className="pb-2">Impact</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.map(h => (
+                    <tr key={h.id} className="hover:bg-muted" onClick={() => replayScenario(h)}>
+                      <td className="py-2">{formatDate(h.date)}</td>
+                      <td className="py-2">{h.summary}</td>
+                      <td className="py-2">{formatCurrency(h.impact)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </>
       )}
