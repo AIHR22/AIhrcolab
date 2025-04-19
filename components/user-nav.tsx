@@ -61,6 +61,7 @@ export function UserNav() {
           <DropdownMenuItem
             onClick={() => {
               router.push('/profile')
+              router.refresh()
             }}
           >
             Profile

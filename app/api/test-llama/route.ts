@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { generateWithLlama3, generateJsonWithLlama3 } from "@/lib/together"
+import { generateWithLlama4, generateJsonWithLlama4 } from "@/lib/openrouter"
 
 // A simple test object to verify JSON parsing
 interface TestObject {
@@ -15,7 +15,7 @@ interface TestObject {
 export async function GET() {
   try {
     // Simple test of the basic text generation
-    const textResult = await generateWithLlama3(
+    const textResult = await generateWithLlama4(
       "What is the capital of France?",
       "You are a helpful assistant that provides concise and accurate answers.",
       0.7,
@@ -23,22 +23,20 @@ export async function GET() {
     );
 
     // Test the JSON generation
-    const jsonResult = await generateJsonWithLlama3<TestObject>(
+    const jsonResult = await generateJsonWithLlama4<TestObject>(
       "Create a JSON object with the following fields: message, success (boolean), timestamp (current date), and data object with a value (number) and items (array of strings)",
-      "You are a helpful assistant that only responds with valid JSON.",
-      0.2,
-      500
+      "You are a helpful assistant that only responds with valid JSON."
     );
 
     return NextResponse.json({
       success: true,
       text_result: textResult,
       json_result: jsonResult,
-      api_key_provided: !!process.env.TOGETHER_API_KEY,
-      api_url: process.env.TOGETHER_API_URL
+      api_key_provided: !!process.env.OPENROUTER_API_KEY,
+      api_url: process.env.OPENROUTER_API_URL
     });
   } catch (error: any) {
-    console.error("Error testing Llama 3 API:", error);
+    console.error("Error testing Llama 4 API:", error);
     return NextResponse.json(
       {
         success: false,

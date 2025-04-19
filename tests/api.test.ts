@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 import { expect, describe, test, beforeAll } from '@jest/globals';
 
 // Base URL for API requests
-const BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api';
+const BASE_URL = process.env.API_BASE_URL || 'http://localhost:3001/api';
 
 // Authentication token (if needed)
 let authToken: string | null = null;
@@ -25,6 +25,14 @@ const endpointTests: TestConfig[] = [
     endpoint: '/auth/test', 
     method: 'GET',
     needsAuth: false,
+    validateResponse: async () => {
+      try {
+        await makeRequest('/auth/test', 'GET');
+        throw new Error('Expected 401 response');
+      } catch (error: any) {
+        expect(error.message).toContain('401');
+      }
+    }
   },
   
   // Department endpoints
@@ -107,14 +115,82 @@ const endpointTests: TestConfig[] = [
     requestBody: {
       project_name: "Test Project",
       required_skills: ["JavaScript", "React"],
-      estimated_duration: 3,
-      deadline: "2023-12-31"
+      start_date: "2025-05-01",
+      end_date: "2025-07-31"
     },
     validateResponse: (data: any) => {
       expect(data).toHaveProperty('feasibility_analysis');
     }
   },
   
+  // Scenario endpoints
+  {
+    name: 'Get Company Predefined Scenarios',
+    endpoint: '/scenarios/company/predefined',
+    method: 'GET',
+    needsAuth: true,
+    validateResponse: (data: any) => {
+      expect(data).toHaveProperty('scenarios');
+      expect(Array.isArray(data.scenarios)).toBe(true);
+      if (data.scenarios.length > 0) {
+        expect(data.scenarios[0]).toHaveProperty('id');
+        expect(data.scenarios[0]).toHaveProperty('name');
+        expect(data.scenarios[0]).toHaveProperty('impact_amount');
+      }
+    }
+  },
+
+  {
+    name: 'Get Project Predefined Scenarios',
+    endpoint: '/scenarios/project/predefined?project_id=test-project',
+    method: 'GET',
+    needsAuth: true,
+    validateResponse: (data: any) => {
+      expect(data).toHaveProperty('scenarios');
+      expect(Array.isArray(data.scenarios)).toBe(true);
+      if (data.scenarios.length > 0) {
+        expect(data.scenarios[0]).toHaveProperty('id');
+        expect(data.scenarios[0]).toHaveProperty('name');
+        expect(data.scenarios[0]).toHaveProperty('impact_amount');
+      }
+    }
+  },
+
+  {
+    name: 'Calculate Company Custom Scenario',
+    endpoint: '/scenarios/company/custom',
+    method: 'POST',
+    needsAuth: true,
+    requestBody: {
+      parameters: {
+        salary_increase: 10,
+        headcount_change: 5
+      }
+    },
+    validateResponse: (data: any) => {
+      expect(data).toHaveProperty('impact');
+      expect(typeof data.impact).toBe('number');
+    }
+  },
+
+  {
+    name: 'Calculate Project Custom Scenario',
+    endpoint: '/scenarios/project/custom',
+    method: 'POST',
+    needsAuth: true,
+    requestBody: {
+      project_id: 'test-project',
+      parameters: {
+        timeline_extension: 2,
+        resource_change: -1
+      }
+    },
+    validateResponse: (data: any) => {
+      expect(data).toHaveProperty('impact');
+      expect(typeof data.impact).toBe('number');
+    }
+  },
+
   // Llama test
   { 
     name: 'Test Llama API', 
@@ -122,7 +198,7 @@ const endpointTests: TestConfig[] = [
     method: 'GET',
     needsAuth: false,
   },
-  
+
   // Add more endpoints here as needed
 ];
 
@@ -157,9 +233,10 @@ async function makeRequest(endpoint: string, method: string, body?: any) {
     
     // Handle error responses
     let errorBody;
-    try {
+    const contentType = response.headers.get('content-type');
+    if (contentType?.includes('application/json')) {
       errorBody = await response.json();
-    } catch {
+    } else {
       errorBody = await response.text();
     }
     

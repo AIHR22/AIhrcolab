@@ -1,0 +1,408 @@
+{
+  "info": {
+    "name": "HR Suite - Account Management Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Tests for HR Suite Account Management features including profile and user settings"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has access_token\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.session).to.be.an('object');",
+                  "    pm.expect(jsonData.session.access_token).to.be.a('string');",
+                  "    pm.collectionVariables.set(\"access_token\", jsonData.session.access_token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{user_email}}\",\n    \"password\": \"{{user_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/sign-in",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "sign-in"]
+            },
+            "description": "Sign in to the application and get an access token"
+          }
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.collectionVariables.unset(\"access_token\");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/sign-out",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "sign-out"]
+            },
+            "description": "Sign out from the application"
+          }
+        }
+      ],
+      "description": "Authentication related tests"
+    },
+    {
+      "name": "Profile",
+      "item": [
+        {
+          "name": "Get Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Profile data is valid\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.be.a('string');",
+                  "    pm.expect(jsonData.name).to.exist;",
+                  "    pm.expect(jsonData.email).to.exist;",
+                  "    pm.expect(jsonData.role).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "profile"]
+            },
+            "description": "Retrieve the user's profile information"
+          }
+        },
+        {
+          "name": "Update Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Profile update success message\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.exist;",
+                  "    pm.expect(jsonData.message).to.include('Profile updated successfully');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Updated Name\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "profile"]
+            },
+            "description": "Update the user's profile information"
+          }
+        }
+      ],
+      "description": "Profile management tests"
+    },
+    {
+      "name": "User Settings",
+      "item": [
+        {
+          "name": "Get User Settings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Settings response structure is valid\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    // If this is a first-time access, the response might be empty",
+                  "    if(Object.keys(jsonData).length > 0) {",
+                  "        if(jsonData.email_notifications !== undefined) {",
+                  "            pm.expect(jsonData.email_notifications).to.be.a('boolean');",
+                  "        }",
+                  "        if(jsonData.timezone !== undefined) {",
+                  "            pm.expect(jsonData.timezone).to.be.a('string');",
+                  "        }",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/user-settings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user-settings"]
+            },
+            "description": "Retrieve the user's settings"
+          }
+        },
+        {
+          "name": "Update User Settings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Settings updated successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.message).to.include('Settings saved successfully');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email_notifications\": true,\n    \"notification_frequency\": \"daily\",\n    \"timezone\": \"America/New_York\",\n    \"dark_mode\": false,\n    \"language\": \"en\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/user-settings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user-settings"]
+            },
+            "description": "Update the user's settings"
+          }
+        },
+        {
+          "name": "Toggle Dark Mode",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Dark mode updated successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"dark_mode\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/user-settings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user-settings"]
+            },
+            "description": "Toggle the dark mode preference"
+          }
+        },
+        {
+          "name": "Update Language Preference",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Language preference updated successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"language\": \"es\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/user-settings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user-settings"]
+            },
+            "description": "Update the language preference to Spanish"
+          }
+        }
+      ],
+      "description": "User settings management tests"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "user_email",
+      "value": "test@example.com",
+      "type": "string"
+    },
+    {
+      "key": "user_password",
+      "value": "password123",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    }
+  ]
+}
