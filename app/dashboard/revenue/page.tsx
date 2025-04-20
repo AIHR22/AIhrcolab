@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/components/ui/use-toast"
 import { ChatInput } from "@/components/ui/chat-input"
+import { ScenarioChat } from "@/components/ui/scenario-chat"
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // Type definitions
@@ -528,7 +529,8 @@ export function RevenueForecasting() {
 
   // State for custom scenario impact
   const [isLoadingCustomImpact, setIsLoadingCustomImpact] = useState(false);
-  const [customImpactError, setCustomImpactError] = useState<any>(null);
+  const [customImpactError, setCustomImpactError] = useState<Error | null>(null);
+  const [isProcessingScenario, setIsProcessingScenario] = useState(false);
   const [customScenarioImpact, setCustomScenarioImpact] = useState<number | null>(null);
 
   // Function to fetch custom scenario impact
@@ -745,6 +747,50 @@ export function RevenueForecasting() {
       description: "The what-if scenario has been applied to your metrics.",
     });
   }
+
+  // Handle scenario submission from chat
+  const handleScenarioSubmit = async (scenario: string) => {
+    setIsProcessingScenario(true);
+    try {
+      const endpoint = viewMode === 'company-wide' 
+        ? '/api/scenarios/company/custom' 
+        : '/api/scenarios/project/custom';
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer test_token`
+        },
+        body: JSON.stringify({
+          scenario,
+          ...(viewMode === 'project-based' && selectedProject ? { projectId: selectedProject } : {})
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setCustomScenarioImpact(data.impact);
+      
+      toast({
+        title: "Scenario Processed",
+        description: `Impact: ${formatCurrency(data.impact)}`,
+      });
+    } catch (err: any) {
+      console.error("Error processing scenario:", err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to process scenario",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessingScenario(false);
+    }
+  };
 
   // Handle reset what-if scenario
   const handleResetWhatIfScenario = () => {
@@ -1048,53 +1094,39 @@ export function RevenueForecasting() {
         </Select>
       </div>
 
-      <div className="flex flex-wrap gap-2 border-b border-border">
-        <Button
-          variant={isActiveTab("current-view") ? "default" : "ghost"}
-          className="relative h-9 rounded-none border-b-2 border-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-none hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground"
-          onClick={() => setActiveTab("current-view")}
-          data-state={isActiveTab("current-view") ? "active" : ""}
-          disabled={isHookLoading}
-        >
-          Current View
-        </Button>
-        <Button
-          variant={isActiveTab("project-view") ? "default" : "ghost"}
-          className="relative h-9 rounded-none border-b-2 border-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-none hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground"
-          onClick={() => setActiveTab("project-view")}
-          data-state={isActiveTab("project-view") ? "active" : ""}
-          disabled={isHookLoading}
-        >
-          Project View
-        </Button>
-        <Button
-          variant={isActiveTab("comparison") ? "default" : "ghost"}
-          className="relative h-9 rounded-none border-b-2 border-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-none hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground"
-          onClick={() => setActiveTab("comparison")}
-          data-state={isActiveTab("comparison") ? "active" : ""}
-          disabled={isHookLoading}
-        >
-          Comparison
-        </Button>
-        <Button
-          variant={isActiveTab("what-if") ? "default" : "ghost"}
-          className="relative h-9 rounded-none border-b-2 border-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-none hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground"
-          onClick={() => setActiveTab("what-if")}
-          data-state={isActiveTab("what-if") ? "active" : ""}
-          disabled={isHookLoading}
-        >
-          What If
-        </Button>
-        <Button
-          variant={isActiveTab("History") ? "default" : "ghost"}
-          className="relative h-9 rounded-none border-b-2 border-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-none hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground"
-          onClick={() => setActiveTab("History")}
-          data-state={isActiveTab("History") ? "active" : ""}
-          disabled={isHookLoading}
-        >
-          History
-        </Button>
-      </div>
+      {/* Define all possible tabs */}
+      {(() => {
+        const allTabs = [
+          { id: 'current-view', label: 'Current View' },
+          { id: 'project-view', label: 'Project View' },
+          { id: 'comparison', label: 'Comparison' },
+          { id: 'what-if', label: 'What If' },
+          { id: 'History', label: 'History' }
+        ];
+
+        // Filter tabs based on viewMode
+        const tabsToShow = allTabs.filter(tab => 
+          !(tab.id === 'project-view' && viewMode === 'company-wide')
+        );
+
+        return (
+          <div className="flex flex-wrap gap-2 border-b border-border">
+            {tabsToShow.map(tab => (
+              <Button
+                key={tab.id}
+                variant={isActiveTab(tab.id as TabOption) ? "default" : "ghost"}
+                className="relative h-9 rounded-none border-b-2 border-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground transition-none hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-foreground"
+                onClick={() => setActiveTab(tab.id as TabOption)}
+                data-state={isActiveTab(tab.id as TabOption) ? "active" : ""}
+                disabled={isHookLoading}
+              >
+                {tab.label}
+              </Button>
+            ))}
+          </div>
+        );
+      })()}
+
 
       {revenueError && (
         <Card className="border-destructive bg-destructive/10">

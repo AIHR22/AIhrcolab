@@ -11,7 +11,7 @@ interface SuccessionPlanningRequest {
   include_development_plans?: boolean
 }
 
-export async function POST(request: Request) {
+export const POST = async (request: Request) => {
   try {
     const body: SuccessionPlanningRequest = await request.json()
     
@@ -420,36 +420,42 @@ export async function POST(request: Request) {
             // Try to enhance with AI if score below 85
             if (candidate.total_score < 85) {
               try {
-                const promptContext = `
-                  Candidate Name: ${candidate.employee_name}
-                  Current Position: ${candidate.position_title}
-                  Target Position: ${position.position_title}
-                  Performance Score: ${candidate.performance_score}/100
-                  Tenure: ${candidate.tenure_months} months
-                  Skill Match Score: ${candidate.skill_match_score}/100
-                  Department Match: ${candidate.department_match_score === 100 ? 'Same department' : 'Different department'}
-                  Readiness Level: ${candidate.readiness_level}
+                // Define an async function to handle AI development plan generation
+                const generateAIDevelopmentPlan = async () => {
+                  const promptContext = `
+                    Candidate Name: ${candidate.employee_name}
+                    Current Position: ${candidate.position_title}
+                    Target Position: ${position.position_title}
+                    Performance Score: ${candidate.performance_score}/100
+                    Tenure: ${candidate.tenure_months} months
+                    Skill Match Score: ${candidate.skill_match_score}/100
+                    Department Match: ${candidate.department_match_score === 100 ? 'Same department' : 'Different department'}
+                    Readiness Level: ${candidate.readiness_level}
+                    
+                    Key Skills: ${candidate.key_skills?.map((s: any) => 
+                      `${s.skill_name} (Level ${s.proficiency})`
+                    ).join(', ') || 'No skills data available'}
+                  `
                   
-                  Key Skills: ${candidate.key_skills?.map((s: any) => 
-                    `${s.skill_name} (Level ${s.proficiency})`
-                  ).join(', ') || 'No skills data available'}
-                `
+                  const prompt = `
+                    Create a development plan for a potential succession candidate with the following profile:
+                    
+                    ${promptContext}
+                    
+                    Return ONLY a JSON array of 4-5 specific and actionable development recommendations 
+                    for this candidate to prepare for the target position. No explanation or other text.
+                  `
+                  
+                  return await generateWithLlama3(
+                    prompt, 
+                    "You are an HR talent development expert specializing in succession planning.",
+                    0.2,
+                    1000
+                  )
+                }
                 
-                const prompt = `
-                  Create a development plan for a potential succession candidate with the following profile:
-                  
-                  ${promptContext}
-                  
-                  Return ONLY a JSON array of 4-5 specific and actionable development recommendations 
-                  for this candidate to prepare for the target position. No explanation or other text.
-                `
-                
-                const aiResponse = await generateWithLlama3(
-                  prompt, 
-                  "You are an HR talent development expert specializing in succession planning.",
-                  0.2,
-                  1000
-                )
+                // Call the async function to get the AI response
+                const aiResponse = await generateAIDevelopmentPlan()
                 
                 try {
                   const aiRecommendations = JSON.parse(aiResponse)
