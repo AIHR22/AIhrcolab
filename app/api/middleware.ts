@@ -35,19 +35,28 @@ export async function withAuth(request: Request) {
 
   const token = authHeader.replace('Bearer ', '')
   
-  // Use test values in test/development environment
-  if ((process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') && token === 'test_token') {
-    return {
-      user: { id: 'test_user' },
-      tenantId: 'test_tenant'
+  try {
+    // The token is already a JWT, no need to parse it
+    const actualToken = token;
+    console.log('Using token:', actualToken);
+    
+    // Use test values in test/development environment
+    if ((process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') && actualToken === 'test_token') {
+      return {
+        user: { id: 'test_user' },
+        tenantId: 'test_tenant'
+      }
     }
-  }
 
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+    console.log('Calling Supabase getUser...');
+    const { data, error } = await supabaseAdmin.auth.getUser(actualToken)
+    console.log('Supabase response:', { data, error });
   
-  if (error || !user) {
-    throw { status: 401, message: 'Invalid authorization token' }
-  }
+    if (error || !data?.user) {
+      console.error('Auth error:', error)
+      throw { status: 401, message: error?.message || 'Invalid authorization token' }
+    }
+    const { user } = data;
 
   const { data: tenant } = await supabaseAdmin
     .from('tenants')
@@ -55,11 +64,22 @@ export async function withAuth(request: Request) {
     .eq('user_id', user.id)
     .single()
 
-  if (!tenant) {
-    throw { status: 403, message: 'User not associated with a tenant' }
-  }
+    if (!tenant) {
+      console.error('No tenant found for user:', user.id)
+      throw { status: 403, message: 'User not associated with a tenant' }
+    }
 
-  return { user, tenantId: tenant.id }
+    return { user, tenantId: tenant.id }
+  } catch (error) {
+    console.error('Error in withAuth:', error)
+    if (error instanceof Error && error.message.includes('supabase')) {
+      throw { status: 401, message: 'Invalid Supabase token' }
+    }
+    if (error instanceof Error) {
+      throw { status: 401, message: error.message }
+    }
+    throw { status: 401, message: 'Invalid token format' }
+  }
 }
 
 export const supabase = supabaseAdmin

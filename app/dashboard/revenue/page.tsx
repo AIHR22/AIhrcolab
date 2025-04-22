@@ -872,7 +872,7 @@ export function RevenueForecasting() {
         const currentTrajectory = monthlyBaseRevenue * (1 + (index * 0.02)); // 2% monthly growth
         
         // Calculate the impact of active scenarios + custom scenarios
-        const scenarioImpact = (calculateScenarioImpact + calculateCustomScenarioImpact) / 12;
+        const scenarioImpact = (calculateScenarioImpact + (calculateCustomScenarioImpact ?? 0)) / 12;
         const whatIfTrajectory = currentTrajectory + (scenarioImpact * (index / 11)); // Progressive impact
         
         return {
@@ -895,7 +895,7 @@ export function RevenueForecasting() {
         };
       });
     }
-  }, [monthlyRevenue, growthRate, calculateWhatIfScenario, viewMode, selectedProject, projectsList, calculateScenarioImpact, calculateCustomScenarioImpact]);
+  }, [monthlyRevenue, growthRate, calculateWhatIfScenario, viewMode, selectedProject, projectsList, calculateScenarioImpact, (calculateCustomScenarioImpact ?? 0)]);
 
   // UI Components
   const LoadingSpinner = ({ className = "h-8 w-8" }: { className?: string }) => (
@@ -2072,7 +2072,7 @@ export function RevenueForecasting() {
                         </div>
                         <div>
                           <div className="text-sm text-muted-foreground">Custom Scenarios Impact</div>
-                          <div className="text-lg font-semibold">{formatCurrency(calculateCustomScenarioImpact)}</div>
+                          <div className="text-lg font-semibold">{formatCurrency((calculateCustomScenarioImpact ?? 0))}</div>
                         </div>
                         <div>
                           <div className="text-sm text-muted-foreground">Current Projected Revenue</div>
@@ -2087,7 +2087,7 @@ export function RevenueForecasting() {
                           <div className="text-lg font-semibold">
                             {formatCurrency((viewMode === "project-based" && selectedProject 
                               ? (projectsList.find(p => p.id === selectedProject)?.revenue || 0)
-                              : projectedRevenue) + calculateScenarioImpact + calculateCustomScenarioImpact)}
+                              : projectedRevenue) + calculateScenarioImpact + (calculateCustomScenarioImpact ?? 0))}
                           </div>
                         </div>
                       </div>
@@ -2095,12 +2095,12 @@ export function RevenueForecasting() {
                       <div className="mt-4 pt-4 border-t">
                         <div className="flex justify-between items-center">
                           <span className="font-medium">Revenue Impact:</span>
-                          <span className={`font-medium ${(calculateScenarioImpact + calculateCustomScenarioImpact) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {(calculateScenarioImpact + calculateCustomScenarioImpact) >= 0 ? '+' : ''}
-                            {formatCurrency(calculateScenarioImpact + calculateCustomScenarioImpact)}
+                          <span className={`font-medium ${(calculateScenarioImpact + (calculateCustomScenarioImpact ?? 0)) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {(calculateScenarioImpact + (calculateCustomScenarioImpact ?? 0)) >= 0 ? '+' : ''}
+                            {formatCurrency(calculateScenarioImpact + (calculateCustomScenarioImpact ?? 0))}
                             {' '}
-                            ({(calculateScenarioImpact + calculateCustomScenarioImpact) >= 0 ? '+' : ''}
-                            {((calculateScenarioImpact + calculateCustomScenarioImpact) / 
+                            ({(calculateScenarioImpact + (calculateCustomScenarioImpact ?? 0)) >= 0 ? '+' : ''}
+                            {((calculateScenarioImpact + (calculateCustomScenarioImpact ?? 0)) / 
                               (viewMode === "project-based" && selectedProject 
                                 ? (projectsList.find(p => p.id === selectedProject)?.revenue || 1)
                                 : projectedRevenue || 1) * 100).toFixed(2)}%)
