@@ -1,0 +1,57 @@
+{
+  "id": "org-1",
+  "name": "CEO",
+  "title": "CEO",
+  "department": "Executive",
+  "children": [
+    {
+      "id": "3dacb585-366e-48b4-8627-aa1f4d0db8e4",
+      "name": "Brad Pitt",
+      "title": "Software Engineer",
+      "department": "Marketing",
+      "children": [],
+      "metadata": {
+        "employeeCount": 0,
+        "budget": 0
+      }
+    },
+    {
+      "id": "dept-3c137e35-6900-4dde-ac38-fb2bca51fd16",
+      "name": "Engineering",
+      "title": "Engineering Department",
+      "department": "Engineering",
+      "children": [
+        {
+          "id": "f9e7ab7f-e1fb-4d26-970c-447ed04b5639",
+          "name": "Farzana Fathima",
+          "title": "Secretary",
+          "department": "Engineering",
+          "children": []
+        }
+      ],
+      "metadata": {
+        "employeeCount": 3,
+        "budget": 300000
+      }
+    },
+    {
+      "id": "dept-11db9649-884d-4851-b223-0227364e1a22",
+      "name": "Product",
+      "title": "Product Department",
+      "department": "Product",
+      "children": [
+        {
+          "id": "9972204a-ca0e-4a1e-bdc2-08873bc0d7e0",
+          "name": "Jane Smith",
+          "title": "Product Manager",
+          "department": "Product",
+          "children": []
+        }
+      ],
+      "metadata": {
+        "employeeCount": 1,
+        "budget": 100000
+      }
+    }
+  ]
+}

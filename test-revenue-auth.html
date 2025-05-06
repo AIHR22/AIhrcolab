@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Revenue API Authentication</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+        button { padding: 8px 16px; background: #4CAF50; color: white; border: none; cursor: pointer; margin: 10px 0; }
+        #output { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Test Revenue API Authentication</h1>
+    <p>This page tests the /api/revenue/trends endpoint with credentials: 'include'</p>
+    
+    <div>
+        <label>Months to fetch:</label>
+        <select id="months">
+            <option value="6">6 Months</option>
+            <option value="12" selected>12 Months</option>
+            <option value="24">24 Months</option>
+        </select>
+    </div>
+    
+    <button id="testButton">Test Revenue Trends API</button>
+    <div id="output"></div>
+    
+    <script>
+        document.getElementById('testButton').addEventListener('click', async () => {
+            const output = document.getElementById('output');
+            output.innerHTML = 'Loading...';
+            
+            try {
+                const months = parseInt(document.getElementById('months').value);
+                
+                const response = await fetch('/api/revenue/trends', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ months }),
+                    credentials: 'include'
+                });
+                
+                output.innerHTML = `<p>Response status: ${response.status}</p>`;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    output.innerHTML += `<p>Data received successfully!</p>`;
+                    output.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    const errorText = await response.text();
+                    output.innerHTML += `<p>Error response:</p>`;
+                    output.innerHTML += `<pre>${errorText}</pre>`;
+                }
+                
+                // Also show request headers
+                output.innerHTML += `<h3>Request details:</h3>`;
+                output.innerHTML += `<p>URL: /api/revenue/trends</p>`;
+                output.innerHTML += `<p>Method: POST</p>`;
+                output.innerHTML += `<p>Credentials: include</p>`;
+                output.innerHTML += `<p>Body: { "months": ${months} }</p>`;
+                
+            } catch (error) {
+                output.innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,303 @@
+{
+  "info": {
+    "name": "Revenue Forecasting API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Revenue Endpoints",
+      "item": [
+        {
+          "name": "Get Current Revenue",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/revenue/current",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "revenue", "current"]
+            }
+          },
+          "test": [
+            "pm.test('Status code is 200', function() {",
+            "  pm.response.to.have.status(200);",
+            "});",
+            "pm.test('Has amount field', function() {",
+            "  const response = pm.response.json();",
+            "  pm.expect(response).to.have.property('amount');",
+            "});"
+          ]
+        },
+        {
+          "name": "Get Revenue Trends",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/revenue/trends",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "revenue", "trends"]
+            }
+          }
+        },
+        {
+          "name": "Get Revenue Model",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/revenue/model",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "revenue", "model"]
+            }
+          }
+        },
+        {
+          "name": "Get Projects",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/revenue/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "revenue", "projects"]
+            }
+          }
+        },
+        {
+          "name": "Get Project Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/revenue/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "revenue", "projects", "{{projectId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Departments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/revenue/departments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "revenue", "departments"]
+            }
+          }
+        },
+        {
+          "name": "Get Revenue Comparison",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/revenue/comparison?timeFrame=monthly&metric=revenue",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "revenue", "comparison"],
+              "query": [
+                {
+                  "key": "timeFrame",
+                  "value": "monthly"
+                },
+                {
+                  "key": "metric",
+                  "value": "revenue"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Historical Revenue",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/revenue/historical",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "revenue", "historical"]
+            }
+          }
+        },
+        {
+          "name": "Get Revenue Forecast",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/revenue/forecast",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "revenue", "forecast"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Scenario Endpoints",
+      "item": [
+        {
+          "name": "Get Company Predefined Scenarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios/company/predefined",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scenarios", "company", "predefined"]
+            }
+          }
+        },
+        {
+          "name": "Create Company Custom Scenario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scenario_ids\": [\"scenario-1\"],\n  \"parameters\": {\n    \"start_date\": \"2025-01-01\",\n    \"end_date\": \"2025-12-31\",\n    \"impact_factor\": 1.2\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios/company/custom",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scenarios", "company", "custom"]
+            }
+          }
+        },
+        {
+          "name": "Get Project Predefined Scenarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios/project/{{projectId}}/predefined",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scenarios", "project", "{{projectId}}", "predefined"]
+            }
+          }
+        },
+        {
+          "name": "Create Project Custom Scenario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scenario_ids\": [\"scenario-1\"],\n  \"parameters\": {\n    \"start_date\": \"2025-01-01\",\n    \"end_date\": \"2025-12-31\",\n    \"impact_factor\": 1.2\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/scenarios/project/{{projectId}}/custom",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scenarios", "project", "{{projectId}}", "custom"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "authToken",
+      "value": "your-auth-token"
+    },
+    {
+      "key": "projectId",
+      "value": "test-project-id"
+    }
+  ]
+}

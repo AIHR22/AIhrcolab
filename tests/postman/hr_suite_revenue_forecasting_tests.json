@@ -1,0 +1,735 @@
+{
+  "info": {
+    "name": "HR Suite - Revenue Forecasting Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Tests for HR Suite Revenue Forecasting module including fetching, generating and analyzing forecasts"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has access_token\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.session).to.be.an('object');",
+                  "    pm.expect(jsonData.session.access_token).to.be.a('string');",
+                  "    pm.collectionVariables.set(\"access_token\", jsonData.session.access_token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{user_email}}\",\n    \"password\": \"{{user_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/sign-in",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "sign-in"]
+            },
+            "description": "Sign in to the application and get an access token for revenue forecasting tests"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Revenue Data",
+      "item": [
+        {
+          "name": "Get Revenue Overview",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Revenue overview data is valid\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    if(jsonData.totalRevenue !== undefined) {",
+                  "        pm.expect(jsonData.totalRevenue).to.be.a('number');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/revenue/current",
+              "host": ["{{base_url}}"],
+              "path": ["api", "revenue", "current"]
+            },
+            "description": "Get current revenue overview"
+          }
+        },
+        {
+          "name": "Get Historical Revenue",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Historical revenue data is valid\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    if(jsonData.data !== undefined) {",
+                  "        pm.expect(jsonData.data).to.be.an('array');",
+                  "        if(jsonData.data.length > 0) {",
+                  "            pm.expect(jsonData.data[0].amount).to.exist;",
+                  "            pm.expect(jsonData.data[0].period_date).to.exist;",
+                  "        }",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/revenue/historical?months=12",
+              "host": ["{{base_url}}"],
+              "path": ["api", "revenue", "historical"],
+              "query": [
+                {
+                  "key": "months",
+                  "value": "12"
+                }
+              ]
+            },
+            "description": "Get historical revenue data for the past 12 months"
+          }
+        },
+        {
+          "name": "Get Revenue Trends",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Revenue trends data is valid\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    if(jsonData.trends !== undefined) {",
+                  "        pm.expect(jsonData.trends).to.be.an('array');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/revenue/trends",
+              "host": ["{{base_url}}"],
+              "path": ["api", "revenue", "trends"]
+            },
+            "description": "Get revenue trends analysis"
+          }
+        },
+        {
+          "name": "Get Revenue by Department",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Department revenue data is valid\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    if(jsonData.departments !== undefined) {",
+                  "        pm.expect(jsonData.departments).to.be.an('array');",
+                  "        if(jsonData.departments.length > 0) {",
+                  "            pm.expect(jsonData.departments[0].name).to.exist;",
+                  "            pm.expect(jsonData.departments[0].revenue).to.exist;",
+                  "        }",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/revenue/departments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "revenue", "departments"]
+            },
+            "description": "Get revenue breakdown by department"
+          }
+        }
+      ],
+      "description": "Tests for retrieving revenue data"
+    },
+    {
+      "name": "Revenue Forecasting",
+      "item": [
+        {
+          "name": "Get Existing Forecasts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Forecasts data structure is valid\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    if(jsonData.forecasts !== undefined) {",
+                  "        pm.expect(jsonData.forecasts).to.be.an('array');",
+                  "        if(jsonData.forecasts.length > 0) {",
+                  "            pm.expect(jsonData.forecasts[0].amount).to.exist;",
+                  "            pm.expect(jsonData.forecasts[0].date).to.exist;",
+                  "        }",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/revenue/forecast?months=12",
+              "host": ["{{base_url}}"],
+              "path": ["api", "revenue", "forecast"],
+              "query": [
+                {
+                  "key": "months",
+                  "value": "12"
+                }
+              ]
+            },
+            "description": "Get existing revenue forecasts for the next 12 months"
+          }
+        },
+        {
+          "name": "Generate New Forecasts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Forecast generation is successful\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.forecasts).to.be.an('array');",
+                  "    if(jsonData.forecasts.length > 0) {",
+                  "        var forecast = jsonData.forecasts[0];",
+                  "        pm.expect(forecast.year).to.exist;",
+                  "        pm.expect(forecast.month).to.exist;",
+                  "        pm.expect(forecast.predicted_amount).to.exist;",
+                  "        pm.expect(forecast.confidence_score).to.exist;",
+                  "        pm.expect(forecast.factors).to.be.an('object');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"months\": 6\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/revenue/forecast",
+              "host": ["{{base_url}}"],
+              "path": ["api", "revenue", "forecast"]
+            },
+            "description": "Generate new revenue forecasts for the next 6 months"
+          }
+        },
+        {
+          "name": "Get Revenue Comparison",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Comparison data is valid\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    if(jsonData.comparison !== undefined) {",
+                  "        pm.expect(jsonData.comparison).to.be.an('object');",
+                  "        pm.expect(jsonData.comparison.actual).to.exist;",
+                  "        pm.expect(jsonData.comparison.projected).to.exist;",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/revenue/comparison",
+              "host": ["{{base_url}}"],
+              "path": ["api", "revenue", "comparison"]
+            },
+            "description": "Get comparison between actual and projected revenue"
+          }
+        },
+        {
+          "name": "Get Revenue Metrics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Metrics data is valid\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    if(jsonData.metrics !== undefined) {",
+                  "        pm.expect(jsonData.metrics).to.be.an('object');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/revenue/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "revenue", "metrics"]
+            },
+            "description": "Get key revenue metrics and KPIs"
+          }
+        }
+      ],
+      "description": "Tests for revenue forecasting functionality"
+    },
+    {
+      "name": "Project Revenue",
+      "item": [
+        {
+          "name": "Get All Projects",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Projects data is valid\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    if(jsonData.projects !== undefined) {",
+                  "        pm.expect(jsonData.projects).to.be.an('array');",
+                  "        if(jsonData.projects.length > 0) {",
+                  "            pm.expect(jsonData.projects[0].id).to.exist;",
+                  "            pm.expect(jsonData.projects[0].name).to.exist;",
+                  "            // Save the first project ID for the next test",
+                  "            pm.collectionVariables.set(\"project_id\", jsonData.projects[0].id);",
+                  "        }",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/revenue/projects",
+              "host": ["{{base_url}}"],
+              "path": ["api", "revenue", "projects"]
+            },
+            "description": "Get all revenue-generating projects"
+          }
+        },
+        {
+          "name": "Get Project Details",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Project details data is valid\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData.id).to.exist;",
+                  "    pm.expect(jsonData.name).to.exist;",
+                  "    pm.expect(jsonData.revenue).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/revenue/projects/{{project_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "revenue", "projects", "{{project_id}}"]
+            },
+            "description": "Get details of a specific revenue-generating project"
+          }
+        }
+      ],
+      "description": "Tests for project-specific revenue data"
+    },
+    {
+      "name": "Scenario API Tests",
+      "item": [
+        {
+          "name": "Get Predefined Company Scenarios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Predefined company scenarios data is valid\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    if(jsonData.length > 0) {",
+                  "        pm.expect(jsonData[0].id).to.exist;",
+                  "        pm.expect(jsonData[0].name).to.exist;",
+                  "        pm.expect(jsonData[0].description).to.exist;",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/scenarios/company/predefined",
+              "host": ["{{base_url}}"],
+              "path": ["api", "scenarios", "company", "predefined"]
+            },
+            "description": "Get predefined company-wide scenarios"
+          }
+        },
+        {
+          "name": "Get Predefined Project Scenarios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Predefined project scenarios data is valid\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    if(jsonData.length > 0) {",
+                  "        pm.expect(jsonData[0].id).to.exist;",
+                  "        pm.expect(jsonData[0].name).to.exist;",
+                  "        pm.expect(jsonData[0].description).to.exist;",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/scenarios/project/predefined",
+              "host": ["{{base_url}}"],
+              "path": ["api", "scenarios", "project", "predefined"]
+            },
+            "description": "Get predefined project-specific scenarios"
+          }
+        },
+        {
+          "name": "Calculate Company-wide Scenario Impact",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Scenario calculation is valid\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData.impact).to.exist;",
+                  "    pm.expect(jsonData.forecast).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"scenarioType\": \"market_downturn\",\n    \"parameters\": {\n        \"downturnPercentage\": 15,\n        \"duration\": 6\n    }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/scenarios/company/custom",
+              "host": ["{{base_url}}"],
+              "path": ["api", "scenarios", "company", "custom"]
+            },
+            "description": "Calculate impact of a custom company-wide scenario"
+          }
+        },
+        {
+          "name": "Calculate Project-specific Scenario Impact",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Project scenario calculation is valid\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData.impact).to.exist;",
+                  "    pm.expect(jsonData.forecast).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"projectId\": \"{{project_id}}\",\n    \"scenarioType\": \"contract_extension\",\n    \"parameters\": {\n        \"extensionMonths\": 12,\n        \"revenueIncrease\": 10\n    }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/scenarios/project/custom",
+              "host": ["{{base_url}}"],
+              "path": ["api", "scenarios", "project", "custom"]
+            },
+            "description": "Calculate impact of a custom project-specific scenario"
+          }
+        }
+      ],
+      "description": "Tests for scenario analysis API endpoints"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "user_email",
+      "value": "test@example.com",
+      "type": "string"
+    },
+    {
+      "key": "user_password",
+      "value": "password123",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "project_id",
+      "value": ""
+    }
+  ]
+}
