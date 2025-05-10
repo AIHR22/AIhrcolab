@@ -5,6 +5,11 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { Database } from '@/types/supabase'; // Assuming types definition
 
+// Development Supabase URL and key - use existing env variables
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL; // Use the actual Supabase URL from env
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
 // Helper function to get the first day of a month relative to the current month
 const getFirstDayOfRelativeMonth = (monthOffset: number): string => {
   const now = new Date();
@@ -15,10 +20,45 @@ const getFirstDayOfRelativeMonth = (monthOffset: number): string => {
   return targetDate.toISOString().split('T')[0];
 };
 
+// Helper to format date as month name
+const getMonthName = (date: string): string => {
+  return new Date(date).toLocaleString('default', { month: 'short' });
+};
+
+// Helper to combine actual and projected data
+const combineRevenueData = (
+  actualsData: { period_date: string; amount: number }[],
+  projectedData: { period_date: string; amount: number }[]
+) => {
+  const monthlyData = new Map<string, { actual: number | null; projected: number | null }>();
+  
+  // Initialize with actual data
+  actualsData.forEach(({ period_date, amount }) => {
+    const month = getMonthName(period_date);
+    monthlyData.set(month, { actual: amount, projected: null });
+  });
+
+  // Add projected data
+  projectedData.forEach(({ period_date, amount }) => {
+    const month = getMonthName(period_date);
+    const existing = monthlyData.get(month) || { actual: null, projected: null };
+    monthlyData.set(month, { ...existing, projected: amount });
+  });
+
+  // Convert to array and sort by month
+  const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return Array.from(monthlyData.entries())
+    .map(([month, data]) => ({
+      month,
+      ...data
+    }))
+    .sort((a, b) => monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month));
+};
+
 /**
  * @description Fetches company-wide actual and projected revenue trends for the last N months.
  * @param {NextRequest} request - The incoming request object, expecting a 'months' query parameter.
- * @returns {Promise<NextResponse>} NextResponse with trend data ({ actuals: [], projected: [] }) or error.
+ * @returns {Promise<NextResponse>} NextResponse with trend data ({ trends: [] }) or error.
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -31,13 +71,21 @@ export async function GET(request: NextRequest) {
     if (authHeader?.startsWith('Bearer ')) {
       // Use admin client for Bearer token in dev mode
       supabase = createClient<Database>(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
+        SUPABASE_URL!,
+        SUPABASE_SERVICE_ROLE_KEY!,
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false
+          }
+        }
       );
     } else {
       // Default to cookie auth
       const cookieStore = cookies();
-      supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+      supabase = createRouteHandlerClient<Database>({ 
+        cookies: () => cookieStore,
+      });
     }
   } else {
     // Production always uses cookie auth
@@ -104,13 +152,10 @@ export async function GET(request: NextRequest) {
         throw new Error('Failed to fetch projected revenue data');
     }
 
-    // Format the response according to the spec
-    const responsePayload = {
-      actuals: actualsData ?? [],
-      projected: projectedData ?? [], // Send empty array if null
-    };
+    // Transform data into the format expected by the UI
+    const trends = combineRevenueData(actualsData ?? [], projectedData ?? []);
 
-    return NextResponse.json(responsePayload);
+    return NextResponse.json({ trends });
 
   } catch (error: any) {
     console.error(`Error fetching revenue trends for last ${months} months:`, error);

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback, useMemo, ReactNode } from "react"
 import { useRevenueTrends, generateProjections, RevenueTrendData } from "./utils/revenueTrendsHelper"
 import { ChartContainer } from "@/components/ChartContainer"
 import { AlertCircle, Download, RefreshCw, DollarSign, TrendingUp, EyeOff, Eye, History, X, Loader2, Users, Briefcase, CalculatorIcon } from "lucide-react"
@@ -29,6 +29,7 @@ import { toast } from "@/components/ui/use-toast"
 import { ChatInput } from "@/components/ui/chat-input"
 import { ScenarioChat } from "@/components/ui/scenario-chat"
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useRevenueData } from "../../hooks/use-revenue-data";
 
 // Type definitions
 type ViewMode = "company-wide" | "project-based"
@@ -161,11 +162,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 }
 
 export default function RevenuePage() {
-  // TODO: Add actual data fetching when backend is connected
-  // const { data: revenueData, isLoading, error } = useRevenueData();
-  
-  const isLoading = false;
-  const error = null;
+  const { metrics, isLoading, isError: error } = useRevenueData();
   
   // If there's an error, show the error
   if (error) {
@@ -203,13 +200,7 @@ const mockDepartmentData: Department[] = [
 ];
 
 interface DepartmentRevenueApiResponse {
-  departments: Array<{
-    id: string;
-    name: string;
-    currentRevenue: number;
-    previousRevenue: number;
-    percentChange: number;
-  }>;
+  departments: Department[];
   metrics: {
     totalRevenue: number;
     projectedGrowth: number;
@@ -404,7 +395,24 @@ interface DepartmentMetrics {
   }
 };
 
-export function RevenueForecasting() {
+// Update the customScenarios type
+interface CustomScenarios {
+  newContracts: number;
+  attritionRate: number;
+  marketingSpend: number;
+  exchangeRate: number;
+  paymentDelay: number;
+  revenueChange: number;
+  salaryIncrease: number;
+}
+
+// Update the ChatInput component props
+interface ChatInputProps {
+  placeholder: string;
+  onSend: (text: string) => Promise<void>;
+}
+
+export function RevenueForecasting(): ReactNode {
   // UI state
   const [viewMode, setViewMode] = useState<ViewMode>("company-wide")
   const [activeTab, setActiveTab] = useState<TabOption>("current-view")
@@ -449,13 +457,15 @@ export function RevenueForecasting() {
   const [growthRateChange, setGrowthRateChange] = useState(0)
   const [whatIfScenarios, setWhatIfScenarios] = useState(mockWhatIfScenarios)
   const [activeScenarios, setActiveScenarios] = useState<string[]>([])
-  const [customScenarios, setCustomScenarios] = useState({
+  const [customScenarios, setCustomScenarios] = useState<CustomScenarios>({
     newContracts: 0,
     attritionRate: 0,
     marketingSpend: 0,
     exchangeRate: 0,
     paymentDelay: 0,
-  })
+    revenueChange: 0,
+    salaryIncrease: 0
+  });
   const [parsedParams, setParsedParams] = useState<Array<{name: string, label: string, value: number|string, unit: string}>>([])
   const [customImpact, setCustomImpact] = useState<number>(0)
 
@@ -478,10 +488,8 @@ export function RevenueForecasting() {
     projectTimeline: false,
   })
 
-  // TODO: Add actual data fetching when backend is connected
-  // const { data, isLoading: isHookLoading, error: revenueError } = useRevenueData();
-  const isHookLoading = false;
-  const revenueError = null;
+  // Use the real data hook
+  const { metrics, isLoading: isHookLoading, isError: revenueError } = useRevenueData();
   
   // Effect hook to fetch data from backend API (placeholder for now)
   useEffect(() => {
@@ -489,12 +497,13 @@ export function RevenueForecasting() {
     const fetchForecastData = async () => {
       try {
         setIsLoadingForecast(true);
-        const { data: forecastData } = await getRevenueForecast();
-        if (viewMode === 'project' && selectedProject) {
-          const { data: history } = await fetch(`/api/scenarios/history?project_id=${selectedProject}`);
-          setHistory(history || []);
+        const forecastResponse = await getRevenueForecast();
+        if (viewMode === 'project-based' && selectedProject) {
+          const historyResponse = await fetch(`/api/scenarios/history?project_id=${selectedProject}`);
+          const historyData = await historyResponse.json();
+          setHistory(historyData || []);
         }
-        setForecastData(data);
+        setForecastData(forecastResponse);
         setIsLoadingForecast(false);
       } catch (error) {
         console.error('Error fetching forecast data:', error);
@@ -523,7 +532,7 @@ export function RevenueForecasting() {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [viewMode, selectedProject]);
 
   // Already handling forecast data elsewhere
 
@@ -600,12 +609,12 @@ export function RevenueForecasting() {
   const comparisonData = mockComparisonData;
   const projectsList = mockProjects;
   
-  // Calculate revenue metrics
-  const monthlyRevenue = employeeCount && revenuePerEmployee ? employeeCount * revenuePerEmployee : 0
-  const annualRevenue = monthlyRevenue * 12
-  const projectedRevenue = annualRevenue * (1 + (growthRate ?? 0) / 100)
+  // Calculate revenue metrics using real data when available
+  const monthlyRevenue = metrics?.monthly ?? (employeeCount && revenuePerEmployee ? employeeCount * revenuePerEmployee : 0);
+  const annualRevenue = metrics?.annual ?? monthlyRevenue * 12;
+  const projectedRevenue = metrics?.projected ?? annualRevenue * (1 + (growthRate ?? 0) / 100);
   const totalSalaries = employeeCount && averageSalary ? employeeCount * averageSalary : 0
-  const profitMargin = annualRevenue === 0 ? 0 : ((annualRevenue - totalSalaries) / annualRevenue) * 100
+  const profitMargin = metrics?.profitMargin ?? (annualRevenue === 0 ? 0 : ((annualRevenue - totalSalaries) / annualRevenue) * 100);
   
   // Initialize data
   useEffect(() => {
@@ -799,10 +808,12 @@ export function RevenueForecasting() {
     setRevenuePerEmployeeChange(0);
     setGrowthRateChange(0);
     setCustomScenarios({
-      revenueChange: 0,
+      newContracts: 0,
+      attritionRate: 0,
       marketingSpend: 0,
       exchangeRate: 0,
       paymentDelay: 0,
+      revenueChange: 0,
       salaryIncrease: 0
     });
     setActiveScenarios([]);
@@ -1162,7 +1173,7 @@ export function RevenueForecasting() {
                         <div className="text-2xl font-bold">{formatCurrency(monthlyRevenue)}</div>
                         <p className="text-xs text-muted-foreground flex items-center">
                           <TrendingUp className="mr-1 h-4 w-4 text-green-500" />
-                          <span className="text-green-500">+{formatPercentage(growthRate)}</span> projected growth
+                          <span className="text-green-500">+{formatPercentage(metrics?._debug?.modelParams?.growth_rate ?? growthRate)}</span> projected growth
                         </p>
                       </CardContent>
                     </Card>
