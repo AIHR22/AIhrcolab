@@ -19,7 +19,8 @@ export function RevenueChart() {
   const chartData = revenueData.map(item => ({
     date: new Date(item.period_date).toLocaleDateString(),
     revenue: item.amount,
-    isProjected: item.is_projected
+    isProjected: item.is_projected,
+    preview: item.preview
   }))
 
   return (
@@ -36,6 +37,14 @@ export function RevenueChart() {
           stroke="#8884d8"
           strokeDasharray={d => d.isProjected ? "5 5" : "0"}
           name="Revenue"
+        />
+        <Line
+          type="monotone"
+          dataKey="preview"
+          stroke="#82ca9d"
+          strokeDasharray="3 3"
+          name="Preview"
+          strokeOpacity={0.7}
         />
       </LineChart>
     </div>

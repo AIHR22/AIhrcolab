@@ -30,34 +30,34 @@ import { ChatInput } from "@/components/ui/chat-input"
 import { ScenarioChat } from "@/components/ui/scenario-chat"
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useRevenueData } from "../../hooks/use-revenue-data";
+import { useToast } from "@/components/ui/use-toast"
+import { getRevenueForecast } from './api';
+import {
+  ViewMode,
+  TabOption,
+  ComparisonPeriod,
+  ComparisonMetric,
+  Department,
+  SectionVisibility,
+  DepartmentRevenueApiResponse,
+  CustomScenarios,
+  ChatInputProps,
+  ChartConfig
+} from './types';
 
-// Type definitions
-type ViewMode = "company-wide" | "project-based"
-type TabOption = "current-view" | "project-view" | "comparison" | "what-if" | "History" // Added History tab
-type ComparisonPeriod = "monthly" | "quarterly" | "yearly"
-type ComparisonMetric = "revenue" | "growth" | "profitability"
+import {
+  mockComparisonData,
+  mockWhatIfScenarios,
+  mockProjects,
+  mockDepartmentData,
+  formatCurrency,
+  formatPercentage,
+  formatDate,
+  replayScenario
+} from './utils';
 
-interface Department {
-  id: string;
-  name: string;
-  headcount: number;
-  revenue_per_employee: number;
-  total_revenue: number;
-}
-
-interface SectionVisibility {
-  metrics: boolean
-  projectionModel: boolean
-  revenueTrends: boolean
-  profitabilitySimulator: boolean
-  departmentRevenue: boolean
-  whatIfScenario: boolean
-  projectMetrics: boolean
-  departmentAllocation: boolean
-  projectTimeline: boolean;
-}
-
-// Revenue trends data type is now imported from ./utils/revenueTrendsHelper
+import { ChartContainer, type ChartConfig } from './components/ChartContainer';
+import { ChatInput, type ChatInputProps } from './components/ChatInput';
 
 // API Response Types
 interface RevenueTrendsApiResponse {
@@ -73,32 +73,12 @@ interface RevenueTrendsApiResponse {
 
 // Mock comparison data
 // TODO: Replace with actual API data when backend is connected
-const mockComparisonData = [
-  { period: "Jan", current: 120000, previous: 100000 },
-  { period: "Feb", current: 125000, previous: 105000 },
-  { period: "Mar", current: 130000, previous: 110000 },
-  { period: "Apr", current: 135000, previous: 115000 },
-  { period: "May", current: 140000, previous: 120000 },
-  { period: "Jun", current: 145000, previous: 125000 },
-]
 
 // Mock what-if scenarios - company-wide
 // TODO: Replace with actual API data when backend is connected
-const mockWhatIfScenarios = [
-  { id: "1", name: "Revenue drops by 10% in Q2", impact: -350000, category: "revenue" },
-  { id: "2", name: "Marketing spend increases by 25%", impact: -120000, category: "expense" },
-  { id: "3", name: "Exchange rate shifts by 5%", impact: -80000, category: "financial" },
-  { id: "4", name: "Vendor payments delayed by 30 days", impact: 45000, category: "cash-flow" },
-  { id: "5", name: "All salaries increase by 8%", impact: -210000, category: "hr" },
-]
 
 // Mock project data
 // TODO: Replace with actual API data when backend is connected
-const mockProjects = [
-  { id: "project-1", name: "Marketing Campaign Q2", status: "Active", revenue: 250000 },
-  { id: "project-2", name: "New Product Launch", status: "Planning", revenue: 500000 },
-  { id: "project-3", name: "Website Redesign", status: "Completed", revenue: 120000 },
-]
 
 // Helper functions
 const formatCurrency = (value: number | null | undefined) => {
@@ -127,7 +107,31 @@ const replayScenario = (scenario: { id: string; date: Date; summary: string; imp
   })
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+// Update the customScenarios type
+interface CustomScenarios {
+  newContracts: number;
+  attritionRate: number;
+  marketingSpend: number;
+  exchangeRate: number;
+  paymentDelay: number;
+  revenueChange: number;
+  salaryIncrease: number;
+}
+
+// Update the ChatInput component props
+interface ChatInputProps {
+  placeholder: string;
+  onSend: (text: string) => Promise<void>;
+}
+
+// Update the CustomTooltip component to be properly typed
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{ value: number }>;
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (!active || !payload || !payload.length) return null;
   
   const currentValue = payload[0].value;
@@ -154,274 +158,19 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                 {percentChange}%
               </span>
             </p>
-        </>
+          </>
         )}
       </div>
     </div>
   );
-}
-
-export default function RevenuePage() {
-  const { metrics, isLoading, isError: error } = useRevenueData();
-  
-  // If there's an error, show the error
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <h1 className="text-2xl font-bold mb-4 text-destructive">Error Loading Revenue Data</h1>
-        <p className="text-muted-foreground mb-8">
-          An error occurred while loading revenue data.
-        </p>
-        <div className="flex gap-4">
-          <Button onClick={() => window.location.reload()}>
-            Retry
-          </Button>
-        </div>
-      </div>
-    );
-  }
-  
-  return <RevenueForecasting />;
-}
-
-interface Department {
-  id: string;
-  name: string;
-  headcount: number;
-  revenue_per_employee: number;
-  total_revenue: number;
-}
-
-const mockDepartmentData: Department[] = [
-  { id: 'eng', name: 'Engineering', headcount: 50, revenue_per_employee: 200000, total_revenue: 10000000 },
-  { id: 'sales', name: 'Sales', headcount: 30, revenue_per_employee: 300000, total_revenue: 9000000 },
-  { id: 'mktg', name: 'Marketing', headcount: 20, revenue_per_employee: 250000, total_revenue: 5000000 },
-  { id: 'hr', name: 'Human Resources', headcount: 10, revenue_per_employee: 150000, total_revenue: 1500000 },
-];
-
-interface DepartmentRevenueApiResponse {
-  departments: Department[];
-  metrics: {
-    totalRevenue: number;
-    projectedGrowth: number;
-    topPerformer: string;
-    quickStats: {
-      monthlyAverage: number;
-      quarterlyGrowth: number;
-      yearlyProjection: number;
-    };
-  };
-}
-
-const getRevenueForecast = async (): Promise<DepartmentRevenueApiResponse | null> => {
-  try {
-    const response = await fetch('/api/revenue/forecast', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer test_token` // Using test token as set up in middleware
-      },
-      body: JSON.stringify({
-        months: 12
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `API request failed with status ${response.status}`);
-    }
-
-    const data = await response.json() as ForecastApiResponse;
-    
-    // Check if API returned an error
-    if (!data.forecasts || !Array.isArray(data.forecasts) || data.forecasts.length === 0) {
-      console.warn('API returned empty or invalid forecasts data:', data);
-      return null;
-    }
-    
-    // Define API response forecast types outside the function for better type inference
-interface ApiResponseForecast {
-  amount: number;
-  date: string;
-  periodType: string;
-  factors?: {
-    historical_trend?: number;
-    seasonal_factors?: number;
-    market_conditions?: number;
-    other_factors?: string;
-  };
-  // For department-specific data
-  departmentId?: string;
-  total?: number;
-  department_revenue?: Record<string, number>;
-}
-
-interface ForecastApiResponse {
-  forecasts: ApiResponseForecast[];
-  success?: boolean;
-  error?: string;
-}
-
-interface DepartmentData {
-  currentRevenue: number;
-  previousRevenue: number;
-  percentChange: number;
-}
-
-interface MonthlyMetrics {
-  total: number;
-  departments: Record<string, DepartmentData>;
-}
-
-interface DepartmentMetrics {
-  [key: string]: MonthlyMetrics;
-}
-
-    // Transform the API response to match our frontend structure
-    const departmentMetrics = data.forecasts.reduce<DepartmentMetrics>((acc, forecast: ApiResponseForecast) => {
-      const date = new Date(forecast.date);
-      const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
-      
-      // Initialize month data if it doesn't exist
-      if (!acc[monthKey]) {
-        acc[monthKey] = {
-          total: 0,
-          departments: {}
-        };
-      }
-      
-      // In the actual API response, we might not have department_revenue directly
-      // So we'll use a combination of departmentId and amount when available
-      
-      // If we have direct department revenue data
-      if (forecast.department_revenue) {
-        // Use type assertion to help TypeScript understand the structure
-        const departmentRevenues = forecast.department_revenue as Record<string, number>;
-        Object.entries(departmentRevenues).forEach(([deptId, revenue]) => {
-          if (!acc[monthKey].departments[deptId]) {
-            acc[monthKey].departments[deptId] = {
-              currentRevenue: revenue,
-              previousRevenue: 0,
-              percentChange: 0
-            };
-          } else {
-            // Replace the value instead of adding to prevent double-counting
-            acc[monthKey].departments[deptId].currentRevenue = revenue;
-          }
-        });
-      } 
-      // If we have a specific department forecast
-      else if (forecast.departmentId) {
-        const deptId = forecast.departmentId;
-        const revenue = forecast.amount || 0;
-        
-        if (!acc[monthKey].departments[deptId]) {
-          acc[monthKey].departments[deptId] = {
-            currentRevenue: revenue,
-            previousRevenue: 0,
-            percentChange: 0
-          };
-        } else {
-          acc[monthKey].departments[deptId].currentRevenue = revenue;
-        }
-      }
-      // If we just have an amount with no department, create a "Total" category
-      else if (forecast.amount) {
-        const deptId = 'total';
-        if (!acc[monthKey].departments[deptId]) {
-          acc[monthKey].departments[deptId] = {
-            currentRevenue: forecast.amount,
-            previousRevenue: 0,
-            percentChange: 0
-          };
-        } else {
-          acc[monthKey].departments[deptId].currentRevenue = forecast.amount;
-        }
-      }
-      
-      // Calculate total as sum of department revenues to ensure consistency
-      const departmentValues = Object.values(acc[monthKey].departments) as DepartmentData[];
-      acc[monthKey].total = departmentValues.reduce<number>(
-        (sum, dept) => sum + dept.currentRevenue,
-        0
-      );
-      return acc;
-    }, {});
-
-    // Get sorted months for consistent access
-    const months = Object.keys(departmentMetrics).sort();
-    const latestMonth = months[months.length - 1];
-    const previousMonth = months[months.length - 2] || latestMonth;
-
-    if (!latestMonth) {
-      throw new Error('No forecast data available');
-    }
-
-    // Calculate department metrics
-    const departments = Object.entries(departmentMetrics[latestMonth].departments).map(([id, data]) => {
-      const prev = departmentMetrics[previousMonth]?.departments[id]?.currentRevenue || 0;
-      return {
-        id,
-        name: mockDepartmentData.find(d => d.id === id)?.name || id,
-        currentRevenue: data.currentRevenue,
-        previousRevenue: prev,
-        percentChange: prev === 0 ? 0 : ((data.currentRevenue - prev) / prev * 100)
-      };
-    });
-
-    // Sort departments by revenue to find top performer
-    const sortedDepartments = [...departments].sort((a, b) => b.currentRevenue - a.currentRevenue);
-
-    return {
-      departments,
-      metrics: {
-        totalRevenue: departmentMetrics[latestMonth].total,
-        projectedGrowth: ((departmentMetrics[latestMonth].total - 
-          (departmentMetrics[previousMonth]?.total || 0)) / 
-          (departmentMetrics[previousMonth]?.total || 1)) * 100,
-        topPerformer: sortedDepartments[0]?.name || 'N/A',
-        quickStats: {
-          monthlyAverage: months.reduce((sum, month) => sum + departmentMetrics[month].total, 0) / months.length,
-          quarterlyGrowth: ((departmentMetrics[latestMonth].total - 
-            (departmentMetrics[previousMonth]?.total || 0)) / 
-            (departmentMetrics[previousMonth]?.total || 1)) * 100,
-          yearlyProjection: departmentMetrics[latestMonth].total * 12
-        }
-      }
-    };
-  } catch (error) {
-    console.error('Error fetching revenue forecast:', error);
-    return null;
-  }
 };
 
-// Update the customScenarios type
-interface CustomScenarios {
-  newContracts: number;
-  attritionRate: number;
-  marketingSpend: number;
-  exchangeRate: number;
-  paymentDelay: number;
-  revenueChange: number;
-  salaryIncrease: number;
-}
-
-// Update the ChatInput component props
-interface ChatInputProps {
-  placeholder: string;
-  onSend: (text: string) => Promise<void>;
-}
-
 export function RevenueForecasting(): ReactNode {
+  const { toast } = useToast()
   // UI state
   const [viewMode, setViewMode] = useState<ViewMode>("company-wide")
   const [activeTab, setActiveTab] = useState<TabOption>("current-view")
   const [history, setHistory] = useState<Array<{ id: string; date: Date; summary: string; impact: number }>>([]);
-  const [showKPIPanel, setShowKPIPanel] = useState(true);
-  const [showScrollKPIPanel, setShowScrollKPIPanel] = useState(false); // New state for scroll-dependent KPI panel
-
-  // UI state for revenue trends
-  const [scrollPosition, setScrollPosition] = useState(0); // Track scroll position
   const [viewType, setViewType] = useState<'historical' | 'forecast'>('historical');
   const [growthRateAdjustment, setGrowthRateAdjustment] = useState<number>(5.0);
   const [selectedMonths, setSelectedMonths] = useState<number>(12);
@@ -514,24 +263,6 @@ export function RevenueForecasting(): ReactNode {
     
     // Call the fetch function
     fetchForecastData();
-    
-    // Setup scroll listener for KPI panel
-    const handleScroll = () => {
-      const position = window.scrollY;
-      setScrollPosition(position);
-      
-      // Show floating KPI panel when we scroll past the top panel
-      if (position > 300 && !showScrollKPIPanel) {
-        setShowScrollKPIPanel(true);
-      } else if (position <= 300 && showScrollKPIPanel) {
-        setShowScrollKPIPanel(false);
-      }
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
   }, [viewMode, selectedProject]);
 
   // Already handling forecast data elsewhere
@@ -952,89 +683,9 @@ export function RevenueForecasting(): ReactNode {
 
   return (
     <div className="container px-4 py-6 space-y-6">
-      {/* Floating KPI panel that appears when scrolling */}
-      {showScrollKPIPanel && (
-        <div className="fixed right-4 top-4 bg-white p-4 rounded-lg shadow-lg border z-50 w-64 transition-all duration-300 ease-in-out">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="font-semibold text-sm">Department Revenue</h3>
-          <Button variant="ghost" size="sm" onClick={() => setShowScrollKPIPanel(false)}>
-            <X className="h-3 w-3" />
-          </Button>
-        </div>
-        <div className="space-y-3">
-          {/* Display actual metrics from backend when available */}
-          {forecastData && forecastData.metrics ? (
-            <>
-              <div className="flex justify-between">
-                <span className="text-xs text-muted-foreground">Total Revenue</span>
-                <span className="text-xs font-medium">{formatCurrency(forecastData.metrics.totalRevenue || 0)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-xs text-muted-foreground">Projected Growth</span>
-                <span className="text-xs font-medium">{forecastData.metrics.projectedGrowth || 0}%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-xs text-muted-foreground">Top Department</span>
-                <span className="text-xs font-medium">{forecastData.metrics.topPerformer || 'N/A'}</span>
-              </div>
-            </>
-          ) : isLoadingForecast ? (
-            <div className="flex justify-center py-2">
-              <LoadingSpinner className="h-4 w-4" />
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-xs text-muted-foreground">Total Revenue</span>
-                <span className="text-xs font-medium">{formatCurrency(monthlyRevenue * 12)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-xs text-muted-foreground">Growth Rate</span>
-                <span className="text-xs font-medium">{growthRateAdjustment.toFixed(1)}%</span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-      )}
+      {/* Remove the floating KPI panel section */}
       
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative">
-        {showKPIPanel && (
-          <div className="absolute right-0 top-16 bg-white p-4 rounded-lg shadow-lg border z-10 w-64">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="font-semibold">Key Metrics</h3>
-              <Button variant="ghost" size="sm" onClick={() => setShowKPIPanel(false)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Total Revenue</span>
-                  <span className="font-medium">{formatCurrency(monthlyRevenue * 12)}</span>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Growth Rate</span>
-                    <span className="font-medium">{growthRateAdjustment.toFixed(1)}%</span>
-                  </div>
-                  <Slider
-                    value={[growthRateAdjustment]}
-                    onValueChange={([value]) => setGrowthRateAdjustment(value)}
-                    min={-20}
-                    max={50}
-                    step={0.5}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Projected ROI</span>
-                <span className="font-medium">{((monthlyRevenue * 12 * (1 + (growthRateAdjustment || 0)/100)) / (monthlyRevenue * 12) * 100 - 100).toFixed(1)}%</span>
-              </div>
-            </div>
-          </div>
-        )}
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
             Revenue Forecasting
@@ -1044,14 +695,6 @@ export function RevenueForecasting(): ReactNode {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setShowKPIPanel(!showKPIPanel)}>
-            {showKPIPanel ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
-            {showKPIPanel ? 'Hide Metrics' : 'Show Metrics'}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setViewType(viewType === 'historical' ? 'forecast' : 'historical')}>
-            {viewType === 'historical' ? <History className="h-4 w-4 mr-2" /> : <TrendingUp className="h-4 w-4 mr-2" />}
-            {viewType === 'historical' ? 'Historical' : 'Forecast'}
-          </Button>
           <Button variant="outline" size="sm" onClick={() => {}}>
             <RefreshCw size={16} className="mr-2" />
             Refresh
@@ -1287,6 +930,32 @@ export function RevenueForecasting(): ReactNode {
                               </SelectContent>
                             </Select>
                           </div>
+                          <Button 
+                            onClick={() => {
+                              // Call API to update projections
+                              fetch('/api/revenue/projections', {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                  employee_count: employeeCount,
+                                  avg_salary: averageSalary,
+                                  revenue_per_employee: revenuePerEmployee,
+                                  growth_rate: growthRate / 100, // Convert to decimal
+                                  timeframe_months: parseInt(projectionTimeframe.replace('months', ''))
+                                }),
+                              });
+                              
+                              toast({
+                                title: "Projections Updated",
+                                description: "Revenue projections have been recalculated with your parameters.",
+                              });
+                            }}
+                            className="w-full mt-4"
+                          >
+                            Apply Parameters
+                          </Button>
                         </CardContent>
                       </Card>
                     </Section>
@@ -1310,103 +979,87 @@ export function RevenueForecasting(): ReactNode {
                           <CardDescription>Actual vs. projected revenue</CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <div className="h-[300px]">
-                            {isLoadingRevenueTrends ? (
-                              <div className="h-full w-full flex items-center justify-center">
-                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                              </div>
-                            ) : revenueTrendsError ? (
-                              <Alert variant="destructive">
-                                <AlertCircle className="h-4 w-4" />
-                                <AlertTitle>API Error</AlertTitle>
-                                <AlertDescription>
-                                  {revenueTrendsError.message || 'Failed to load revenue trend data'}
-                                </AlertDescription>
-                              </Alert>
-                            ) : revenueTrendsData.length === 0 ? (
-                              <EmptyState message="No revenue data available." />
-                            ) : (
-                              <ChartContainer
-                                config={{
-                                  current: {
-                                    label: 'Actual',
-                                    color: 'hsl(var(--chart-1))',
-                                  },
-                                  previous: {
-                                    label: 'Projected',
-                                    color: 'hsl(var(--chart-2))',
-                                  },
-                                }}
-                                className="h-[300px]"
-                              >
-                                <ResponsiveContainer width="100%" height="100%">
-                                  <LineChart data={revenueTrendsData} margin={{ top: 20, right: 30, left: 0, bottom: 30 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} stroke="#e2e8f0" />
-                                    <XAxis 
-                                      dataKey="month" 
-                                      fontSize={12} 
-                                      tickLine={false} 
-                                      axisLine={true} 
-                                      padding={{ left: 20, right: 20 }}
-                                      angle={-30}
-                                      textAnchor="end"
-                                      height={60}
-                                      tick={{ fill: '#64748b' }}
-                                      stroke="#e2e8f0"
-                                    />
-                                    <YAxis
-                                      fontSize={12}
-                                      tickLine={false}
-                                      axisLine={true}
-                                      tickFormatter={(value) => `$${(value / 1000).toLocaleString()}k`}
-                                      tick={{ fill: '#64748b' }}
-                                      stroke="#e2e8f0"
-                                    />
-                                    <Tooltip
-                                      formatter={(value: number, name: string) => [formatCurrency(value), name]}
-                                      labelFormatter={(label) => `${label}`}
-                                      contentStyle={{
-                                        backgroundColor: "white",
-                                        border: "1px solid #e2e8f0",
-                                        borderRadius: "6px",
-                                        padding: "10px 14px",
-                                        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
-                                      }}
-                                    />
-                                    <Legend 
-                                      verticalAlign="bottom" 
-                                      height={36} 
-                                      iconType="circle"
-                                      wrapperStyle={{
-                                        paddingTop: "20px"
-                                      }}
-                                    />
-                                    <Line
-                                      type="monotone"
-                                      dataKey="actual"
-                                      name="Actual"
-                                      stroke="#3b82f6"
-                                      strokeWidth={2.5}
-                                      dot={{ r: 4, fill: "#3b82f6" }}
-                                      activeDot={{ r: 6, fill: "#3b82f6" }}
-                                      connectNulls
-                                    />
-                                    <Line
-                                      type="monotone"
-                                      dataKey="projected"
-                                      name="Projected"
-                                      stroke="#1d4ed8"
-                                      strokeWidth={2.5}
-                                      strokeDasharray="5 5"
-                                      dot={{ r: 4, fill: "#1d4ed8" }}
-                                      activeDot={{ r: 6, fill: "#1d4ed8" }}
-                                      connectNulls
-                                    />
-                                  </LineChart>
-                                </ResponsiveContainer>
-                              </ChartContainer>
-                            )}
-                          </div>
+                          {isLoadingRevenueTrends ? (
+                            <div className="h-[300px] flex items-center justify-center">
+                              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            </div>
+                          ) : revenueTrendsError ? (
+                            <EmptyState message="Error loading revenue trends." />
+                          ) : revenueTrendsData.length === 0 ? (
+                            <EmptyState message="No revenue data available." />
+                          ) : (
+                            <ChartContainer
+                              config={{
+                                actual: {
+                                  label: 'Actual',
+                                  color: 'hsl(var(--chart-1))',
+                                },
+                                projected: {
+                                  label: 'Projected',
+                                  color: 'hsl(var(--chart-2))',
+                                },
+                              }}
+                              className="h-[300px]"
+                            >
+                              <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={revenueTrendsData} margin={{ top: 20, right: 30, left: 0, bottom: 30 }}>
+                                  <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} stroke="#e2e8f0" />
+                                  <XAxis 
+                                    dataKey="month" 
+                                    fontSize={12} 
+                                    tickLine={false} 
+                                    axisLine={true} 
+                                    padding={{ left: 20, right: 20 }}
+                                    angle={-30}
+                                    textAnchor="end"
+                                    height={60}
+                                    tick={{ fill: '#64748b' }}
+                                    stroke="#e2e8f0"
+                                  />
+                                  <YAxis
+                                    fontSize={12}
+                                    tickLine={false}
+                                    axisLine={true}
+                                    tickFormatter={(value) => `$${(value / 1000).toLocaleString()}k`}
+                                    tick={{ fill: '#64748b' }}
+                                    stroke="#e2e8f0"
+                                  />
+                                  <Tooltip
+                                    formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                                    contentStyle={{
+                                      backgroundColor: 'hsl(var(--background))',
+                                      border: '1px solid hsl(var(--border))',
+                                      borderRadius: '6px',
+                                    }}
+                                  />
+                                  <Legend 
+                                    verticalAlign="top" 
+                                    height={36}
+                                    formatter={(value) => <span style={{ color: '#64748b', fontSize: '12px' }}>{value}</span>}
+                                  />
+                                  <Line
+                                    type="monotone"
+                                    dataKey="actual"
+                                    name="Actual"
+                                    stroke="hsl(var(--chart-1))"
+                                    strokeWidth={2}
+                                    dot={{ r: 4 }}
+                                    activeDot={{ r: 6 }}
+                                  />
+                                  <Line
+                                    type="monotone"
+                                    dataKey="projected"
+                                    name="Projected"
+                                    stroke="hsl(var(--chart-2))"
+                                    strokeWidth={2}
+                                    strokeDasharray="5 5"
+                                    dot={{ r: 4 }}
+                                    activeDot={{ r: 6 }}
+                                  />
+                                </LineChart>
+                              </ResponsiveContainer>
+                            </ChartContainer>
+                          )}
                         </CardContent>
                       </Card>
                     </Section>
@@ -1781,7 +1434,7 @@ export function RevenueForecasting(): ReactNode {
                         label: 'Previous Period',
                         color: 'hsl(var(--chart-2))',
                       },
-                    }}
+                    } as ChartConfig}
                     className="h-[400px]"
                   >
                     <ResponsiveContainer width="100%" height="100%">
@@ -1857,7 +1510,7 @@ export function RevenueForecasting(): ReactNode {
                     <div className="space-y-4">
                       <ChatInput
                         placeholder="Type a scenario (e.g. 'raise marketing by 10% in Q3')"
-                        onSend={async text => {
+                        onSend={async (text: string) => {
                           const res = await fetch('/api/scenarios/parse', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -1985,13 +1638,13 @@ export function RevenueForecasting(): ReactNode {
                             <span className="font-medium">Custom Scenario Impact:</span>
                             <Badge
                               className={cn(
-                                customScenarioImpact > 0
+                                (customScenarioImpact || 0) >= 0
                                   ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-400/10 dark:text-emerald-400"
                                   : "bg-rose-100 text-rose-800 hover:bg-rose-100 dark:bg-rose-400/10 dark:text-rose-400"
                               )}
                               variant="outline"
                             >
-                              {formatCurrency(customScenarioImpact)}
+                              {formatCurrency(customScenarioImpact || 0)}
                             </Badge>
                           </div>
                         </div>
