@@ -124,7 +124,7 @@ export default function AssistantPage() {
           id: (Date.now() + 1).toString(),
           sender: "bot",
           message:
-            "You're currently enrolled in our Premium Health Plan, 401(k) with 5% company match, and have access to our wellness program. Open enrollment for next year begins on November 1. Would you like to review your current benefits in detail?",
+            "You're eligible for the following benefits: health insurance, dental insurance, vision insurance, 401(k) with 4% match, and 20 days of PTO per year. Would you like details on any specific benefit?",
           timestamp: new Date().toISOString(),
         }
       } else {
@@ -132,14 +132,12 @@ export default function AssistantPage() {
           id: (Date.now() + 1).toString(),
           sender: "bot",
           message:
-            "I understand you're asking about " +
-            inputMessage.toLowerCase() +
-            ". Let me look into that for you. Is there any specific information you need?",
+            "I'll help you with that. As your AI HR assistant, I'm here to answer any HR-related questions and help with tasks. Is there anything specific you'd like to know?",
           timestamp: new Date().toISOString(),
         }
       }
 
-      setChatHistory((prev) => [...prev, botResponse])
+      setChatHistory([...chatHistory, userMessage, botResponse])
       setIsTyping(false)
     }, 1500)
   }
@@ -160,15 +158,12 @@ export default function AssistantPage() {
   }
 
   const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return <Badge className="bg-red-500">High</Badge>
-      case "medium":
-        return <Badge className="bg-yellow-500">Medium</Badge>
-      case "low":
-        return <Badge className="bg-blue-500">Low</Badge>
-      default:
-        return <Badge>{priority}</Badge>
+    if (priority === "high") {
+      return <Badge className="bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20">High</Badge>
+    } else if (priority === "medium") {
+      return <Badge className="bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 border-yellow-500/20">Medium</Badge>
+    } else {
+      return <Badge className="bg-green-500/10 text-green-500 hover:bg-green-500/20 border-green-500/20">Low</Badge>
     }
   }
 
@@ -183,155 +178,153 @@ export default function AssistantPage() {
 
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="md:col-span-2">
-          <CardHeader>
-            <Tabs defaultValue="chat" className="w-full" onValueChange={setActiveTab}>
+          <Tabs defaultValue="chat" onValueChange={setActiveTab}>
+            <CardHeader className="px-6">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="chat">Chat</TabsTrigger>
                 <TabsTrigger value="tasks">Tasks</TabsTrigger>
               </TabsList>
-            </Tabs>
-          </CardHeader>
-          <CardContent className="p-0">
-            <TabsContent value="chat" className="m-0">
-              <div className="h-[500px] flex flex-col">
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  {chatHistory.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
-                    >
-                      <div className={`flex gap-3 max-w-[80%] ${message.sender === "user" ? "flex-row-reverse" : ""}`}>
-                        <Avatar className="h-8 w-8">
-                          {message.sender === "bot" ? <Bot className="h-5 w-5" /> : <User className="h-5 w-5" />}
-                          <AvatarFallback>{message.sender === "bot" ? "AI" : "You"}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div
-                            className={`rounded-lg p-3 ${
-                              message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
-                            }`}
-                          >
-                            {message.message}
-                          </div>
-                          <div className="mt-1 text-xs text-muted-foreground">
-                            {new Date(message.timestamp).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {isTyping && (
-                    <div className="flex justify-start">
-                      <div className="flex gap-3 max-w-[80%]">
-                        <Avatar className="h-8 w-8">
-                          <Bot className="h-5 w-5" />
-                          <AvatarFallback>AI</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="rounded-lg p-3 bg-muted">
-                            <div className="flex items-center gap-1">
-                              <div className="h-2 w-2 rounded-full bg-current animate-bounce" />
-                              <div className="h-2 w-2 rounded-full bg-current animate-bounce [animation-delay:0.2s]" />
-                              <div className="h-2 w-2 rounded-full bg-current animate-bounce [animation-delay:0.4s]" />
+            </CardHeader>
+            <CardContent className="p-0">
+              <TabsContent value="chat" className="m-0">
+                <div className="h-[500px] flex flex-col">
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    {chatHistory.map((message) => (
+                      <div
+                        key={message.id}
+                        className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
+                      >
+                        <div className={`flex gap-3 max-w-[80%] ${message.sender === "user" ? "flex-row-reverse" : ""}`}>
+                          <Avatar className="h-8 w-8">
+                            {message.sender === "bot" ? <Bot className="h-5 w-5" /> : <User className="h-5 w-5" />}
+                            <AvatarFallback>{message.sender === "bot" ? "AI" : "You"}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div
+                              className={`rounded-lg p-3 ${
+                                message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
+                              }`}
+                            >
+                              {message.message}
+                            </div>
+                            <div className="mt-1 text-xs text-muted-foreground">
+                              {new Date(message.timestamp).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                  <div ref={chatEndRef} />
-                </div>
-                <div className="border-t p-4">
-                  {activeTab === "chat" && (
-                    <>
-                      <div className="mb-4 flex flex-wrap gap-2">
-                        {suggestedQueries.map((query, index) => (
-                          <Button key={index} variant="outline" size="sm" onClick={() => handleSuggestedQuery(query)}>
-                            {query}
-                          </Button>
-                        ))}
-                      </div>
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Type your message..."
-                          value={inputMessage}
-                          onChange={(e) => setInputMessage(e.target.value)}
-                          onKeyDown={handleKeyDown}
-                          className="flex-1"
-                        />
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="outline" size="icon">
-                                <Paperclip className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Attach a file</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="outline" size="icon">
-                                <Mic className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Voice input</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        <Button onClick={handleSendMessage}>
-                          <Send className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </TabsContent>
-            <TabsContent value="tasks" className="m-0">
-              <div className="h-[500px] overflow-y-auto p-4 space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-medium">Your Tasks</h3>
-                  <Button size="sm">Add Task</Button>
-                </div>
-                <div className="space-y-3">
-                  {tasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className={`flex items-start gap-3 p-3 rounded-lg border ${task.completed ? "opacity-60" : ""}`}
-                    >
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className={`h-6 w-6 rounded-full ${task.completed ? "bg-primary text-primary-foreground" : ""}`}
-                        onClick={() => toggleTaskCompletion(task.id)}
-                      >
-                        {task.completed && <CheckCircle className="h-4 w-4" />}
-                      </Button>
-                      <div className="flex-1">
-                        <p className={`font-medium ${task.completed ? "line-through" : ""}`}>{task.title}</p>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          <span>Due {new Date(task.dueDate).toLocaleDateString()}</span>
-                          {getPriorityBadge(task.priority)}
+                    ))}
+                    {isTyping && (
+                      <div className="flex justify-start">
+                        <div className="flex gap-3 max-w-[80%]">
+                          <Avatar className="h-8 w-8">
+                            <Bot className="h-5 w-5" />
+                            <AvatarFallback>AI</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="rounded-lg p-3 bg-muted">
+                              <div className="flex items-center gap-1">
+                                <div className="h-2 w-2 rounded-full bg-current animate-bounce" />
+                                <div className="h-2 w-2 rounded-full bg-current animate-bounce [animation-delay:0.2s]" />
+                                <div className="h-2 w-2 rounded-full bg-current animate-bounce [animation-delay:0.4s]" />
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <Button variant="ghost" size="icon" className="h-6 w-6">
-                        <X className="h-4 w-4" />
+                    )}
+                    <div ref={chatEndRef} />
+                  </div>
+                  <div className="border-t p-4">
+                    <div className="mb-4 flex flex-wrap gap-2">
+                      {suggestedQueries.map((query, index) => (
+                        <Button key={index} variant="outline" size="sm" onClick={() => handleSuggestedQuery(query)}>
+                          {query}
+                        </Button>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Type your message..."
+                        value={inputMessage}
+                        onChange={(e) => setInputMessage(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        className="flex-1"
+                      />
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="outline" size="icon">
+                              <Paperclip className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Attach a file</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="outline" size="icon">
+                              <Mic className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Voice input</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <Button onClick={handleSendMessage}>
+                        <Send className="h-4 w-4" />
                       </Button>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </div>
-            </TabsContent>
-          </CardContent>
+              </TabsContent>
+              <TabsContent value="tasks" className="m-0">
+                <div className="h-[500px] overflow-y-auto p-4 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium">Your Tasks</h3>
+                    <Button size="sm">Add Task</Button>
+                  </div>
+                  <div className="space-y-3">
+                    {tasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className={`flex items-center gap-3 p-3 border rounded-lg hover:bg-accent transition-colors ${
+                          task.completed ? "opacity-60" : ""
+                        }`}
+                      >
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`h-6 w-6 rounded-full ${task.completed ? "bg-primary text-primary-foreground" : ""}`}
+                          onClick={() => toggleTaskCompletion(task.id)}
+                        >
+                          {task.completed && <CheckCircle className="h-4 w-4" />}
+                        </Button>
+                        <div className="flex-1">
+                          <p className={`font-medium ${task.completed ? "line-through" : ""}`}>{task.title}</p>
+                          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            <span>Due {new Date(task.dueDate).toLocaleDateString()}</span>
+                            {getPriorityBadge(task.priority)}
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-6 w-6">
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+            </CardContent>
+          </Tabs>
         </Card>
 
         <div className="space-y-6">
@@ -402,4 +395,3 @@ export default function AssistantPage() {
     </div>
   )
 }
-
