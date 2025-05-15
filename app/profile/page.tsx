@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
+import { useRouter } from "next/navigation"
+import { ArrowLeft } from "lucide-react"
 
 interface Profile {
   id: string
@@ -18,6 +20,7 @@ interface Profile {
 }
 
 export default function ProfilePage() {
+  const router = useRouter()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
@@ -93,6 +96,16 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto py-10">
+      <div className="mb-6">
+        <Button
+          variant="ghost"
+          className="flex items-center gap-2"
+          onClick={() => router.push('/dashboard')}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Dashboard
+        </Button>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>Profile</CardTitle>

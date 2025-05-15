@@ -1,5 +1,6 @@
 import { DepartmentRevenueApiResponse } from './types';
 import { mockDepartmentData } from './utils';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 interface ApiResponseForecast {
   amount: number;
@@ -39,11 +40,17 @@ interface DepartmentMetrics {
 
 export const getRevenueForecast = async (): Promise<DepartmentRevenueApiResponse | null> => {
   try {
+    const supabase = createClientComponentClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      throw new Error('No active session');
+    }
+
     const response = await fetch('/api/revenue/forecast', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer test_token`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         months: 12

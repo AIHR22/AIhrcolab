@@ -27,6 +27,7 @@ export async function getCurrentTenantContext(): Promise<TenantContext | null> {
     }
 
     // Check user profile role
+    let profile = null;
     const { data: userProfile, error: profileError } = await client
       .from('user_profiles')
       .select('role')
@@ -34,11 +35,34 @@ export async function getCurrentTenantContext(): Promise<TenantContext | null> {
       .single();
 
     if (profileError) {
-      console.error('Error fetching user profile:', profileError);
-      return null;
+      if (profileError.code === 'PGRST116') {
+        // Profile doesn't exist yet, create it
+        const { data: newProfile, error: createError } = await client
+          .from('user_profiles')
+          .insert({
+            user_id: user.id,
+            email: user.email,
+            name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+            role: 'user'
+          })
+          .select('role')
+          .single();
+
+        if (createError) {
+          console.error('Error creating user profile:', createError);
+          return null;
+        }
+
+        profile = newProfile;
+      } else {
+        console.error('Error fetching user profile:', profileError);
+        return null;
+      }
+    } else {
+      profile = userProfile;
     }
 
-    if (userProfile?.role === 'platform_admin') {
+    if (profile?.role === 'platform_admin') {
       return {
         tenantId: null, // Platform admin can access all tenants
         role: 'platform_admin'
@@ -70,7 +94,7 @@ export async function getCurrentTenantContext(): Promise<TenantContext | null> {
 }
 
 // Create a Supabase client with tenant context
-export function createTenantAwareClient(tenantId: string | null) {
+export async function createTenantAwareClient(tenantId: string | null) {
   const supabase = createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -78,18 +102,13 @@ export function createTenantAwareClient(tenantId: string | null) {
 
   // Add tenant context to all requests
   if (tenantId) {
-    // Intercept all requests to add tenant context
-    const { fetch: originalFetch } = supabase;
-    supabase.fetch = async (url, options) => {
-      const modifiedOptions = {
-        ...options,
-        headers: {
-          ...options?.headers,
-          'x-tenant-id': tenantId
-        }
-      };
-      return originalFetch(url, modifiedOptions);
-    };
+    // Add tenant header to all requests
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      await supabase.auth.updateUser({
+        data: { tenant_id: tenantId }
+      });
+    }
   }
 
   return supabase;

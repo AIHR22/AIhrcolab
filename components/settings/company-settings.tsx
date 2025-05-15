@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
@@ -36,39 +36,12 @@ const notificationPreferencesSchema = z.object({
   employeeUpdates: z.boolean(),
 })
 
-export default function GeneralSettings() {
+export function GeneralSettings() {
   const { toast } = useToast()
   const { preferences, updatePreferences } = useNotifications()
   const [isLoading, setIsLoading] = useState(false)
   const [connectedProvider, setConnectedProvider] = useState<{ provider: string; email: string } | null>(null)
   const supabase = createClientComponentClient()
-
-  async function handleEmailDisconnect() {
-    try {
-      setIsLoading(true)
-      const { error } = await supabase
-        .from('email_provider_tokens')
-        .delete()
-        .match({ user_email: connectedProvider?.email })
-
-      if (error) throw error
-
-      setConnectedProvider(null)
-      toast({
-        title: 'Success',
-        description: 'Email provider disconnected successfully',
-      })
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to disconnect email provider',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
 
   useEffect(() => {
     // Check for connected email provider
@@ -241,61 +214,46 @@ export default function GeneralSettings() {
         </CardHeader>
         <CardContent>
           <Form {...companyForm}>
-            <form onSubmit={companyForm.handleSubmit(onCompanySubmit)} className="space-y-8">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={companyForm.control}
-                  name="companyName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Company Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={companyForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email Address</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="email" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={companyForm.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="tel" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={companyForm.control}
-                  name="website"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Website</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="url" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+            <form onSubmit={companyForm.handleSubmit(onCompanySubmit)} className="space-y-4">
+              <FormField
+                control={companyForm.control}
+                name="companyName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Company Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter company name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={companyForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="Enter company email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={companyForm.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone</FormLabel>
+                    <FormControl>
+                      <Input type="tel" placeholder="Enter company phone" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={companyForm.control}
                 name="address"
@@ -303,7 +261,20 @@ export default function GeneralSettings() {
                   <FormItem>
                     <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input placeholder="Enter company address" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={companyForm.control}
+                name="website"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Website</FormLabel>
+                    <FormControl>
+                      <Input type="url" placeholder="Enter company website" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -319,45 +290,59 @@ export default function GeneralSettings() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Email Provider</CardTitle>
-          <CardDescription>Connect your email provider for sending notifications</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {connectedProvider ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{connectedProvider.provider}</p>
-                  <p className="text-sm text-muted-foreground">{connectedProvider.email}</p>
-                </div>
-                <Button variant="outline" onClick={() => setConnectedProvider(null)}>
-                  Disconnect
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Button onClick={() => handleEmailConnect('gmail')} className="w-full">
-                  Connect Gmail
-                </Button>
-                <Button onClick={() => handleEmailConnect('outlook')} className="w-full">
-                  Connect Outlook
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Notification Settings</CardTitle>
-          <CardDescription>Configure how you want to receive notifications</CardDescription>
+          <CardTitle>Notification Preferences</CardTitle>
+          <CardDescription>
+            Manage how you receive notifications and updates.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...notificationForm}>
-            <form onSubmit={notificationForm.handleSubmit(onNotificationSubmit)} className="space-y-8">
+            <form onSubmit={notificationForm.handleSubmit(onNotificationSubmit)} className="space-y-6">
+              <div className="space-y-4">
+                <FormField
+                  control={notificationForm.control}
+                  name="emailNotifications"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between">
+                      <div>
+                        <FormLabel>Email Notifications</FormLabel>
+                        <FormDescription>Receive notifications via email</FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={!connectedProvider}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={notificationForm.control}
+                  name="inAppNotifications"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between">
+                      <div>
+                        <FormLabel>In-App Notifications</FormLabel>
+                        <FormDescription>Show notifications within the application</FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium">Email Notification Types</h3>
+                <div className="space-y-4 border rounded-lg p-4">
+
               <FormField
                 control={notificationForm.control}
                 name="emailNotifications"

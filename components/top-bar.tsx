@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Bell, Menu, Search, Settings, User } from "lucide-react"
 import { TenantSelector } from "@/components/tenant-selector"
 import { Button } from "@/components/ui/button"
@@ -23,6 +24,7 @@ interface TopBarProps {
 }
 
 export function TopBar({ onToggleSidebar }: TopBarProps) {
+  const router = useRouter()
   const [notifications, setNotifications] = useState([
     { id: 1, title: "New employee onboarding", read: false },
     { id: 2, title: "Payroll processing complete", read: false },
@@ -122,7 +124,7 @@ export function TopBar({ onToggleSidebar }: TopBarProps) {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/profile')}>
               <User className="mr-2 h-4 w-4" />
               Profile
             </DropdownMenuItem>
