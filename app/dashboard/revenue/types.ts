@@ -1,53 +1,30 @@
-// Type definitions
-export type ViewMode = "company-wide" | "project-based"
-export type TabOption = "current-view" | "project-view" | "comparison" | "what-if" | "History"
-export type ComparisonPeriod = "monthly" | "quarterly" | "yearly"
-export type ComparisonMetric = "revenue" | "growth" | "profitability"
+import type { CustomTooltipProps, ChartConfig } from '@/types/shared';
 
-export interface Department {
+// Type definitions
+export type ViewMode = 'company-wide' | 'department' | 'project-based';
+export type TabOption = 'current-view' | 'project-view' | 'overview' | 'what-if' | 'comparison' | 'forecast' | 'History';
+export type ComparisonPeriod = 'monthly' | 'quarterly' | 'yearly';
+export type ComparisonMetric = 'revenue' | 'growth';
+
+export type Department = {
   id: string;
   name: string;
+  budget: number;
   headcount: number;
   revenue_per_employee: number;
   total_revenue: number;
-  currentRevenue?: number;
-  previousRevenue?: number;
-  percentChange?: number;
-}
+};
 
-export interface ChartConfig {
-  actual?: {
-    label: string;
-    color: string;
-  };
-  projected?: {
-    label: string;
-    color: string;
-  };
-  current?: {
-    label: string;
-    color: string;
-  };
-  previous?: {
-    label: string;
-    color: string;
-  };
-}
+export type SectionVisibility = {
+  [key: string]: boolean;
+};
 
-export interface SectionVisibility {
-  metrics: boolean
-  projectionModel: boolean
-  revenueTrends: boolean
-  profitabilitySimulator: boolean
-  departmentRevenue: boolean
-  whatIfScenario: boolean
-  projectMetrics: boolean
-  departmentAllocation: boolean
-  projectTimeline: boolean;
-}
-
-export interface DepartmentRevenueApiResponse {
-  departments: Department[];
+export type DepartmentRevenueApiResponse = {
+  id: string;
+  name: string;
+  currentRevenue: number;
+  projectedRevenue: number;
+  growthRate: number;
   metrics: {
     totalRevenue: number;
     projectedGrowth: number;
@@ -58,8 +35,17 @@ export interface DepartmentRevenueApiResponse {
       yearlyProjection: number;
     };
   };
+};
+
+// Chat related types
+export interface ChatInputProps {
+  placeholder?: string;
+  onSend?: (text: string) => Promise<void>;
+  onSubmit?: (text: string) => void;
+  disabled?: boolean;
 }
 
+// Scenario related types
 export interface CustomScenarios {
   newContracts: number;
   attritionRate: number;
@@ -70,7 +56,12 @@ export interface CustomScenarios {
   salaryIncrease: number;
 }
 
-export interface ChatInputProps {
-  placeholder: string;
-  onSend: (text: string) => Promise<void>;
-} 
+export interface WhatIfScenario {
+  id: string;
+  name: string;
+  impact: number;
+  category: string;
+}
+
+// Re-export shared types
+export type { CustomTooltipProps, ChartConfig }; 

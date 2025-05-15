@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Check, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/lib/supabaseClient"
+import { createClient } from "@/lib/supabase/client"
 import { useRealtime } from "@/hooks/use-realtime"
 
 interface TimeOffRequest {
@@ -26,6 +26,8 @@ interface TimeOffRequest {
   created_at: string
   updated_at: string
 }
+
+const supabase = createClient()
 
 export function TimeOffApprovals() {
   const { toast } = useToast()

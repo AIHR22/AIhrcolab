@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { getCompanySettings, updateCompanySettings } from "@/lib/supabase/api"
 import { toast } from "@/hooks/use-toast"
-import { supabase } from "@/lib/supabaseClient"
+import { createClient } from "@/lib/supabase/client"
 import { Skeleton } from "@/components/ui/skeleton"
 import { IntegrationsTab } from "@/components/settings/integrations-tab"
 import { IntegrationProvider } from "@/contexts/integration-context"
@@ -43,6 +43,8 @@ const defaultSettings: Settings = {
   notifications_desktop: false,
   notifications_sound: false
 }
+
+const supabase = createClient()
 
 export default function SettingsPage() {
   // All hooks at the top

@@ -1,167 +1,140 @@
 // /Users/aaydubs/Downloads/AIhrcolab-Worforceedit/app/api/revenue/company/trends/route.ts
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { Database } from '@/types/supabase'; // Assuming types definition
+import { supabaseAdmin } from '@/lib/supabase';
 
-// Development Supabase URL and key - use existing env variables
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL; // Use the actual Supabase URL from env
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+export const dynamic = 'force-dynamic';
 
-// Helper function to get the first day of a month relative to the current month
-const getFirstDayOfRelativeMonth = (monthOffset: number): string => {
+/**
+ * Returns the first day of the month from X months ago
+ * @param {number} monthsAgo - Number of months to go back
+ * @returns {string} Date string in YYYY-MM-DD format
+ */
+const getFirstDayOfMonthsAgo = (monthsAgo: number) => {
   const now = new Date();
-  // Set to the first day of the current month first
-  const targetDate = new Date(now.getFullYear(), now.getMonth(), 1);
-  // Adjust month
-  targetDate.setMonth(targetDate.getMonth() + monthOffset);
-  return targetDate.toISOString().split('T')[0];
-};
-
-// Helper to format date as month name
-const getMonthName = (date: string): string => {
-  return new Date(date).toLocaleString('default', { month: 'short' });
-};
-
-// Helper to combine actual and projected data
-const combineRevenueData = (
-  actualsData: { period_date: string; amount: number }[],
-  projectedData: { period_date: string; amount: number }[]
-) => {
-  const monthlyData = new Map<string, { actual: number | null; projected: number | null }>();
-  
-  // Initialize with actual data
-  actualsData.forEach(({ period_date, amount }) => {
-    const month = getMonthName(period_date);
-    monthlyData.set(month, { actual: amount, projected: null });
-  });
-
-  // Add projected data
-  projectedData.forEach(({ period_date, amount }) => {
-    const month = getMonthName(period_date);
-    const existing = monthlyData.get(month) || { actual: null, projected: null };
-    monthlyData.set(month, { ...existing, projected: amount });
-  });
-
-  // Convert to array and sort by month
-  const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  return Array.from(monthlyData.entries())
-    .map(([month, data]) => ({
-      month,
-      ...data
-    }))
-    .sort((a, b) => monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month));
+  now.setMonth(now.getMonth() - monthsAgo);
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 };
 
 /**
- * @description Fetches company-wide actual and projected revenue trends for the last N months.
- * @param {NextRequest} request - The incoming request object, expecting a 'months' query parameter.
- * @returns {Promise<NextResponse>} NextResponse with trend data ({ trends: [] }) or error.
+ * Returns the last day of the month for a given date
+ * @param {Date} date - The date to get the last day for
+ * @returns {string} Date string in YYYY-MM-DD format
  */
+const getLastDayOfMonth = (date: Date) => {
+  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  return `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
+};
+
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const monthsParam = searchParams.get('months');
-  
-  // Support both cookie and Bearer token auth in development
-  let supabase;
-  if (process.env.NODE_ENV === 'development') {
-    const authHeader = request.headers.get('authorization');
-    if (authHeader?.startsWith('Bearer ')) {
-      // Use admin client for Bearer token in dev mode
-      supabase = createClient<Database>(
-        SUPABASE_URL!,
-        SUPABASE_SERVICE_ROLE_KEY!,
-        {
-          auth: {
-            autoRefreshToken: false,
-            persistSession: false
-          }
-        }
+  try {
+    // Get salary metrics for employee-based calculations
+    const salaryRes = await fetch('http://localhost:3000/api/employees/salary');
+    if (!salaryRes.ok) {
+      throw new Error('Failed to fetch salary data');
+    }
+    const salaryData = await salaryRes.json();
+    const { validCount: employeeCount, avgSalary } = salaryData;
+
+    if (!supabaseAdmin) {
+      throw new Error('Supabase client not initialized');
+    }
+
+    // Get historical revenue data from Supabase for past 6 months
+    const startDate = getFirstDayOfMonthsAgo(6);
+    const { data: revenueData, error: revenueError } = await supabaseAdmin
+      .from('revenue_data')
+      .select('period_date, amount')
+      .eq('is_projected', false)
+      .gte('period_date', startDate)
+      .order('period_date', { ascending: true });
+
+    if (revenueError) {
+      console.error('Failed to fetch revenue data:', revenueError);
+      return NextResponse.json(
+        { error: 'Failed to fetch revenue data' },
+        { status: 500 }
       );
-    } else {
-      // Default to cookie auth
-      const cookieStore = cookies();
-      supabase = createRouteHandlerClient<Database>({ 
-        cookies: () => cookieStore,
+    }
+
+    // Get latest model parameters
+    const { data: modelParams, error: modelError } = await supabaseAdmin
+      .from('revenue_model_params')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (modelError) {
+      console.error('Failed to fetch model parameters:', modelError);
+    }
+
+    const growthRate = modelParams?.growth_rate ?? 0.05; // Default 5% if no params
+
+    // Generate trend data points
+    const trends = [];
+    const now = new Date();
+    
+    // Past 6 months (actual)
+    for (let i = -6; i <= 0; i++) {
+      const date = new Date(now);
+      date.setMonth(date.getMonth() + i);
+      const monthStart = getFirstDayOfMonthsAgo(-i); // Convert positive to negative
+      const monthEnd = getLastDayOfMonth(date);
+      
+      // Get all revenue entries for this month
+      const monthData = revenueData?.filter(entry => {
+        const entryDate = entry.period_date;
+        return entryDate >= monthStart && entryDate <= monthEnd;
+      }) ?? [];
+
+      let actualRevenue;
+      if (monthData.length > 0) {
+        // Sum all revenue for the month
+        actualRevenue = monthData.reduce((sum, entry) => sum + entry.amount, 0);
+      } else if (revenueData && revenueData.length > 0) {
+        // Use average if no data for this month
+        actualRevenue = revenueData.reduce((sum, entry) => sum + entry.amount, 0) / revenueData.length;
+      } else {
+        // Fallback to employee-based estimate
+        actualRevenue = employeeCount * (avgSalary * 1.5);
+      }
+
+      trends.push({
+        month: date.toLocaleString('default', { month: 'short', year: 'numeric' }),
+        actual: actualRevenue,
+        projected: null
       });
     }
-  } else {
-    // Production always uses cookie auth
-    const cookieStore = cookies();
-    supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
-  }
 
-  // Validate 'months' parameter
-  const months = parseInt(monthsParam ?? '', 10);
-  if (isNaN(months) || months <= 0) {
-    return NextResponse.json({ error: "Invalid or missing 'months' query parameter. Must be a positive integer." }, { status: 400 });
-  }
+    // Get latest actual revenue for projections
+    const latestActual = trends[trends.length - 1].actual;
 
-  try {
-    // Check session - RLS handles tenant access
-    if (process.env.NODE_ENV === 'development' && request.headers.get('authorization')?.startsWith('Bearer test_token')) {
-      // Skip session check in development mode with test token
-      console.log('Development mode: Using test token');
-    } else {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session) {
-        console.error('Unauthorized access attempt:', sessionError);
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Next 6 months (projected)
+    for (let i = 1; i <= 6; i++) {
+      const date = new Date(now);
+      date.setMonth(date.getMonth() + i);
+      trends.push({
+        month: date.toLocaleString('default', { month: 'short', year: 'numeric' }),
+        actual: null,
+        projected: latestActual * (1 + (growthRate * i/12))
+      });
+    }
+
+    return NextResponse.json({ 
+      trends,
+      metadata: {
+        growthRate,
+        latestActual,
+        dataPoints: trends.length,
+        modelParams: modelParams ?? undefined
       }
-    }
-
-    // Calculate the date range for the query
-    // We want the last 'months' number of months, including the current month's start date if appropriate.
-    // Fetching data from the start of (months - 1) months ago up to the start of the current month.
-    const endDate = getFirstDayOfRelativeMonth(0); // Start of current month
-    const startDate = getFirstDayOfRelativeMonth(-(months -1)); // Start of the period 'months' ago
-
-    // Fetch actual revenue data for the period
-    // EXPLAIN: Select actual revenue data points (is_projected = false) within the calculated date range.
-    const { data: actualsData, error: actualsError } = await supabase
-      .from('revenue_data')
-      .select('period_date, amount')
-      .gte('period_date', startDate)
-      .lte('period_date', endDate) // Inclusive of the start date of the current month
-      .eq('is_projected', false)
-      .order('period_date', { ascending: true });
-
-    if (actualsError) {
-      console.error('Error fetching actual revenue trends:', actualsError);
-      throw new Error('Failed to fetch actual revenue data');
-    }
-
-    // Fetch projected revenue data for the period
-    // EXPLAIN: Select projected revenue data points (is_projected = true) within the calculated date range.
-    // The spec mentions calling another endpoint or inline math, but we first try fetching from revenue_data.
-    // If revenue_data doesn't store future projections, this might need adjustment based on actual data structure/strategy.
-    const { data: projectedData, error: projectedError } = await supabase
-      .from('revenue_data')
-      .select('period_date, amount')
-      .gte('period_date', startDate)
-      .lte('period_date', endDate) // Inclusive of the start date of the current month
-      .eq('is_projected', true)
-      .order('period_date', { ascending: true });
-
-    if (projectedError) {
-        console.error('Error fetching projected revenue trends:', projectedError);
-        // Depending on requirements, maybe we don't fail the whole request if projections aren't found?
-        // For now, treating it as an error.
-        throw new Error('Failed to fetch projected revenue data');
-    }
-
-    // Transform data into the format expected by the UI
-    const trends = combineRevenueData(actualsData ?? [], projectedData ?? []);
-
-    return NextResponse.json({ trends });
+    });
 
   } catch (error: any) {
-    console.error(`Error fetching revenue trends for last ${months} months:`, error);
-    const message = error.message || 'Internal Server Error';
-    // Ensure status code handling if error comes from Supabase or is thrown manually
-    const status = typeof error.status === 'number' ? error.status : 500;
-    return NextResponse.json({ error: message }, { status });
+    console.error('Error in revenue trends:', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
   }
 }

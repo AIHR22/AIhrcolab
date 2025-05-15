@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo, ReactNode } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
+import type { ReactNode } from "react"
 import { useRevenueTrends, generateProjections, RevenueTrendData } from "./utils/revenueTrendsHelper"
-import { ChartContainer } from "@/components/ChartContainer"
-import { AlertCircle, Download, RefreshCw, DollarSign, TrendingUp, EyeOff, Eye, History, X, Loader2, Users, Briefcase, CalculatorIcon } from "lucide-react"
+import { AlertCircle, Download, RefreshCw, DollarSign, TrendingUp, EyeOff, Eye, History, X, Loader2, Users, Briefcase, CalculatorIcon, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -26,13 +26,13 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/components/ui/use-toast"
-import { ChatInput } from "@/components/ui/chat-input"
-import { ScenarioChat } from "@/components/ui/scenario-chat"
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useRevenueData } from "../../hooks/use-revenue-data";
 import { useToast } from "@/components/ui/use-toast"
 import { getRevenueForecast } from './api';
-import {
+import { ChartContainer } from "@/components/ui/chart"
+import { ChatInput } from "@/components/ui/chat-input"
+import type {
   ViewMode,
   TabOption,
   ComparisonPeriod,
@@ -40,24 +40,18 @@ import {
   Department,
   SectionVisibility,
   DepartmentRevenueApiResponse,
+  ChartConfig,
+  CustomTooltipProps,
   CustomScenarios,
-  ChatInputProps,
-  ChartConfig
-} from './types';
+  ChatInputProps
+} from "./types"
 
 import {
   mockComparisonData,
   mockWhatIfScenarios,
   mockProjects,
   mockDepartmentData,
-  formatCurrency,
-  formatPercentage,
-  formatDate,
-  replayScenario
 } from './utils';
-
-import { ChartContainer, type ChartConfig } from './components/ChartContainer';
-import { ChatInput, type ChatInputProps } from './components/ChatInput';
 
 // API Response Types
 interface RevenueTrendsApiResponse {
@@ -68,69 +62,46 @@ interface RevenueTrendsApiResponse {
   }[];
 }
 
-// Mock revenue trend data
-// TODO: Replace with actual API data when backend is connected
-
-// Mock comparison data
-// TODO: Replace with actual API data when backend is connected
-
-// Mock what-if scenarios - company-wide
-// TODO: Replace with actual API data when backend is connected
-
-// Mock project data
-// TODO: Replace with actual API data when backend is connected
+// Chart configuration
+const defaultChartConfig: ChartConfig = {
+  current: {
+    label: 'Current Period',
+    color: 'hsl(var(--chart-1))',
+  },
+  previous: {
+    label: 'Previous Period',
+    color: 'hsl(var(--chart-2))',
+  },
+  actual: {
+    label: 'Actual',
+    color: 'hsl(var(--chart-3))',
+  },
+  projected: {
+    label: 'Projected',
+    color: 'hsl(var(--chart-4))',
+  },
+}
 
 // Helper functions
 const formatCurrency = (value: number | null | undefined) => {
   if (value === null || value === undefined) return "$0";
   return `$${value.toLocaleString()}`;
-}
+};
 
 const formatPercentage = (value: number | null | undefined, decimals = 1) => {
-  if (value === null || value === undefined) return "--"
-  return `${value.toFixed(decimals)}%`
-}
+  if (value === null || value === undefined) return "--";
+  return `${value.toFixed(decimals)}%`;
+};
 
 const formatDate = (date: Date) => {
   return new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
-  })
-}
+  });
+};
 
-const replayScenario = (scenario: { id: string; date: Date; summary: string; impact: number }) => {
-  // TODO: Implement scenario replay logic using existing handlers
-  toast({
-    title: "Replaying Scenario",
-    description: `Replaying scenario from ${formatDate(scenario.date)}`,
-  })
-}
-
-// Update the customScenarios type
-interface CustomScenarios {
-  newContracts: number;
-  attritionRate: number;
-  marketingSpend: number;
-  exchangeRate: number;
-  paymentDelay: number;
-  revenueChange: number;
-  salaryIncrease: number;
-}
-
-// Update the ChatInput component props
-interface ChatInputProps {
-  placeholder: string;
-  onSend: (text: string) => Promise<void>;
-}
-
-// Update the CustomTooltip component to be properly typed
-interface CustomTooltipProps {
-  active?: boolean;
-  payload?: Array<{ value: number }>;
-  label?: string;
-}
-
+// Custom tooltip component
 const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (!active || !payload || !payload.length) return null;
   
@@ -165,18 +136,28 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   );
 };
 
-export function RevenueForecasting(): ReactNode {
+// Helper functions
+const replayScenario = (scenario: { id: string; date: Date; summary: string; impact: number }) => {
+  // TODO: Implement scenario replay logic using existing handlers
+  toast({
+    title: "Replaying Scenario",
+    description: `Replaying scenario from ${formatDate(scenario.date)}`,
+  })
+}
+
+// Remove local type declarations since they're now imported from types.ts
+
+function RevenueForecasting(): ReactNode {
   const { toast } = useToast()
   // UI state
-  const [viewMode, setViewMode] = useState<ViewMode>("company-wide")
-  const [activeTab, setActiveTab] = useState<TabOption>("current-view")
+  const [viewMode, setViewMode] = useState<ViewMode>('company-wide')
+  const [activeTab, setActiveTab] = useState<TabOption>('current-view')
   const [history, setHistory] = useState<Array<{ id: string; date: Date; summary: string; impact: number }>>([]);
   const [viewType, setViewType] = useState<'historical' | 'forecast'>('historical');
   const [growthRateAdjustment, setGrowthRateAdjustment] = useState<number>(5.0);
-  const [selectedMonths, setSelectedMonths] = useState<number>(12);
   
   // Revenue trends state using the custom hook
-  const { data: revenueTrendsBaseData, isLoading: isLoadingRevenueTrends, error: revenueTrendsError } = useRevenueTrends(selectedMonths)
+  const { data: revenueTrendsBaseData, isLoading: isLoadingRevenueTrends, error: revenueTrendsError } = useRevenueTrends()
   
   // Calculate the final revenue trends data with projections based on growth rate
   const revenueTrendsData = useMemo(() => {
@@ -965,16 +946,6 @@ export function RevenueForecasting(): ReactNode {
                         <CardHeader>
                           <CardTitle className="flex items-center justify-between">
                             <span>Revenue Trends</span>
-                            <Select value={selectedMonths.toString()} onValueChange={(value) => setSelectedMonths(parseInt(value))}>
-                              <SelectTrigger className="w-[100px]">
-                                <SelectValue placeholder="12 Months" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="6">6 Months</SelectItem>
-                                <SelectItem value="12">12 Months</SelectItem>
-                                <SelectItem value="24">24 Months</SelectItem>
-                              </SelectContent>
-                            </Select>
                           </CardTitle>
                           <CardDescription>Actual vs. projected revenue</CardDescription>
                         </CardHeader>
@@ -1820,3 +1791,5 @@ export function RevenueForecasting(): ReactNode {
     </div>
   )
 }
+
+export default RevenueForecasting;

@@ -1,27 +1,28 @@
-import * as React from "react"
-import { Textarea } from "./textarea"
-import { Button } from "./button"
-import { Send } from "lucide-react"
-
-interface ChatInputProps {
-  onSubmit: (message: string) => void
-  placeholder?: string
-  disabled?: boolean
-}
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Send } from 'lucide-react';
+import type { ChatInputProps } from '@/types/shared';
 
 export function ChatInput({
   onSubmit,
+  onSend,
   placeholder = "Type your message...",
   disabled = false,
 }: ChatInputProps) {
-  const [input, setInput] = React.useState("")
+  const [input, setInput] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (input.trim()) {
-      onSubmit(input)
-      setInput("")
+    if (!input.trim()) return;
+
+    if (onSubmit) {
+      onSubmit(input.trim())
+    } else if (onSend) {
+      await onSend(input.trim())
     }
+    
+    setInput("")
   }
 
   return (

@@ -21,12 +21,14 @@ import {
   Cell,
 } from "recharts"
 import { Sparkles } from "lucide-react"
-import { supabase } from "@/lib/supabaseClient"
+import { createClient } from "@/lib/supabase/client"
 
 interface AnalyticsProps {
   title: string
   description?: string
 }
+
+const supabase = createClient()
 
 export function EmployeeAnalytics({ title, description }: AnalyticsProps) {
   const [loading, setLoading] = useState(true)

@@ -25,6 +25,12 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
+  const getRedirectUrl = () => {
+    // Use HTTPS in production, HTTP in development
+    const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https'
+    return `${protocol}://${window.location.host}/api/auth/callback`
+  }
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -60,7 +66,7 @@ export default function RegisterPage() {
           data: {
             full_name: name,
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: getRedirectUrl(),
         },
       })
 
@@ -121,7 +127,7 @@ export default function RegisterPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: getRedirectUrl()
         }
       })
       
@@ -146,7 +152,7 @@ export default function RegisterPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'azure',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: getRedirectUrl()
         }
       })
       

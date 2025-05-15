@@ -18,7 +18,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/lib/supabaseClient"
+import { createClient } from "@/lib/supabase/client"
 import type { EmployeeEducation as EducationType } from "@/types/employees"
 import { useRealtime } from "@/hooks/use-realtime"
 import { GraduationCap, Trash } from "lucide-react"
@@ -37,6 +37,8 @@ type EducationFormValues = z.infer<typeof educationSchema>
 interface EmployeeEducationProps {
   employeeId: string
 }
+
+const supabase = createClient()
 
 export function EmployeeEducation({ employeeId }: EmployeeEducationProps) {
   const [isAddingEducation, setIsAddingEducation] = useState(false)

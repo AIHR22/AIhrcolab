@@ -1,9 +1,9 @@
 "use client"
 
 import { createContext, useContext, type ReactNode, useState, useEffect } from "react"
-import { supabase } from "@/lib/supabaseClient"
+import { createClient } from "@/lib/supabase/client"
 import { toast } from "@/hooks/use-toast"
-import type { Employee, TimeOffRequest, Review } from "@/lib/supabaseClient"
+import type { Employee, TimeOffRequest, Review } from "@/types/employees"
 
 interface DataContextType {
   employees: Employee[]
@@ -23,6 +23,8 @@ interface DataContextType {
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined)
+
+const supabase = createClient()
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [employees, setEmployees] = useState<Employee[]>([])

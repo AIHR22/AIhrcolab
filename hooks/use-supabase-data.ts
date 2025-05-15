@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { supabase } from "@/lib/supabaseClient"
+import { createClient } from "@/lib/supabase/client"
 import { toast } from "@/hooks/use-toast"
+
+const supabase = createClient()
 
 export function useSupabaseData<T>(
   tableName: string,

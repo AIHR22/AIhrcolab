@@ -1,12 +1,11 @@
 // Revenue Trends Helper Functions
 import { useEffect, useState } from 'react';
-import { useRevenueProjectionModel } from '@/app/hooks/use-revenue-projection-model';
 
 // Type definitions
 export interface RevenueTrendData {
   month: string;
   actual: number | null;  // Updated to allow null values
-  projected: number;
+  projected: number | null;
 }
 
 // Types for projection data
@@ -34,66 +33,63 @@ const MOCK_REVENUE_TRENDS: RevenueTrendData[] = [
 
 // Hook for fetching revenue trends data
 export function useRevenueTrends(months: number = 12) {
-  const { 
-    monthlyRevenue,
-    previewMonthlyRevenue,
-    params,
-    previewParams,
-    isLoading,
-    errors: modelErrors
-  } = useRevenueProjectionModel();
-  
   const [data, setData] = useState<RevenueTrendData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // Generate trend data based on the model's revenue projections
-    const now = new Date();
-    const trendData: RevenueTrendData[] = [];
-
-    // Use preview values for real-time updates
-    const currentMonthlyRevenue = previewMonthlyRevenue || monthlyRevenue;
-    const currentGrowthRate = previewParams.growthRate || params.growthRate;
-
-    for (let i = 0; i < months; i++) {
-      const date = new Date(now);
-      date.setMonth(date.getMonth() + i);
-      const monthStr = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/revenue/company/trends');
+        if (!response.ok) {
+          throw new Error('Failed to fetch revenue trends');
+        }
+        const result = await response.json();
       
-      // For past months use actual values, for future months use projections
-      if (i < 6) { // Assuming first 6 months are actual data
-        const actualRevenue = currentMonthlyRevenue * (1 + (i * 0.02)); // Small growth for historical data
-        trendData.push({
-          month: monthStr,
-          actual: actualRevenue,
-          projected: 0
-        });
-      } else {
-        const projectedGrowth = currentGrowthRate / 100 / 12 * (i - 6);
-        trendData.push({
-          month: monthStr,
-          actual: null,
-          projected: currentMonthlyRevenue * (1 + projectedGrowth) // Growth based on current/preview params
-        });
+        // Transform API data to match our format
+        const transformedData = result.trends.map((trend: any) => ({
+          month: trend.month,
+          actual: trend.actual,
+          projected: trend.projected
+        }));
+
+        setData(transformedData);
+      } catch (err) {
+        console.error('Error fetching revenue data:', err);
+        setError(err instanceof Error ? err : new Error(String(err)));
+      } finally {
+        setIsLoading(false);
       }
-    }
-    
-    setData(trendData);
-  }, [monthlyRevenue, previewMonthlyRevenue, months, params.growthRate, previewParams.growthRate]);
+    };
+
+    fetchData();
+    // Refresh data every minute
+    const interval = setInterval(fetchData, 60000);
+    return () => clearInterval(interval);
+  }, [months]);
 
   return {
-    data: data.length > 0 ? data : MOCK_REVENUE_TRENDS,
+    data,
     isLoading,
-    error: Object.keys(modelErrors).length > 0 ? 'Model validation errors' : null
+    error
   };
 }
 
 // Generate projected revenue data based on actual data and growth rate
 export function generateProjections(baseData: RevenueTrendData[], growthRate: number): RevenueTrendData[] {
   return baseData.map((point, index) => {
+    if (point.actual !== null) {
+      return point; // Keep actual data as is
+    }
+    // For projected points, apply the growth rate
+    const lastActualPoint = baseData.find(p => p.actual !== null);
+    const baseValue = lastActualPoint ? lastActualPoint.actual! : point.projected!;
     const growthFactor = Math.pow(1 + growthRate / 100, index / 12);
+    
     return {
       ...point,
-      projected: (point.actual ?? point.projected) * growthFactor
+      projected: baseValue * growthFactor
     };
   });
 }

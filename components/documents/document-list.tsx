@@ -17,7 +17,7 @@ import {
 import { FileText, Download, MoreVertical, Eye, Pencil, Trash2, Upload, Search, Filter } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { supabase } from "@/lib/supabaseClient"
+import { createClient } from "@/lib/supabase/client"
 
 interface Document {
   id: string
@@ -30,6 +30,8 @@ interface Document {
   file_url: string
   status: "draft" | "published" | "archived"
 }
+
+const supabase = createClient()
 
 export function DocumentList() {
   const [documents, setDocuments] = useState<Document[]>([])

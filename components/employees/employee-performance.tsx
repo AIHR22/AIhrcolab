@@ -18,9 +18,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/lib/supabaseClient"
+import { createClient } from "@/lib/supabase/client"
 import type { EmployeePerformance as PerformanceType } from "@/types/employees"
 import { useRealtime } from "@/hooks/use-realtime"
+
+const supabase = createClient()
 
 const performanceSchema = z.object({
   review_date: z.string().min(1, { message: "Review date is required" }),

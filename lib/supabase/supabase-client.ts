@@ -1,5 +1,8 @@
-import { createClient as createSupabaseClient } from "@supabase/supabase-js"
+import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs'
 import type { Database } from "./database.types"
+
+// Create a singleton instance of the Supabase client
+let supabase: ReturnType<typeof createBrowserSupabaseClient<Database>> | null = null
 
 // Export the createClient function with the correct name
 export function createClient() {
@@ -10,9 +13,22 @@ export function createClient() {
     throw new Error("Missing Supabase environment variables")
   }
 
-  return createSupabaseClient<Database>(supabaseUrl, supabaseKey)
+  if (!supabase) {
+    supabase = createBrowserSupabaseClient<Database>({
+      supabaseUrl: supabaseUrl,
+      supabaseKey: supabaseKey,
+      options: { 
+        auth: { 
+          persistSession: true, 
+          detectSessionInUrl: true 
+        } 
+      }
+    })
+  }
+
+  return supabase
 }
 
 // Also export a singleton instance for convenience
-export const supabase = createClient()
+export const supabaseClient = createClient()
 

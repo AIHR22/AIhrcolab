@@ -19,10 +19,12 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/lib/supabaseClient"
+import { createClient } from "@/lib/supabase/client"
 import type { EmployeeSkill } from "@/types/employees"
 import { useRealtime } from "@/hooks/use-realtime"
 import { Award, Trash } from "lucide-react"
+
+const supabase = createClient()
 
 const skillSchema = z.object({
   skill_name: z.string().min(1, { message: "Skill name is required" }),

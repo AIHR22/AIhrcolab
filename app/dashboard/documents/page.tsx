@@ -35,7 +35,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/lib/supabaseClient"
+import { createClient } from "@/lib/supabase/client"
 import { useRealtime } from "@/hooks/use-realtime"
 
 interface Document {
@@ -50,6 +50,8 @@ interface Document {
   owner_name: string
   file_url: string
 }
+
+const supabase = createClient()
 
 export default function DocumentsPage() {
   const [searchQuery, setSearchQuery] = useState("")

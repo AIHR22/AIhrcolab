@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js"
 import type { Database } from "@/types/supabase"
+import { getAuthConfig } from './supabase/auth-config'
 
 // Check and provide fallbacks for environment variables
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -31,8 +32,10 @@ let supabase: ReturnType<typeof createClient<Database>> | null = null
 if (typeof window !== 'undefined' && !supabase) {
   try {
     supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+      ...getAuthConfig(),
       auth: {
-        persistSession: true,
+        ...getAuthConfig().auth,
+        // Additional client-specific settings
         autoRefreshToken: true,
       }
     })

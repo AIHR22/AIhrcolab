@@ -862,3 +862,8 @@ export interface Database {
     }
   }
 }
+
+// Export convenience types for common tables
+export type Employee = Database['public']['Tables']['employees']['Row']
+export type TimeOffRequest = Database['public']['Tables']['time_off_requests']['Row']
+export type Review = Database['public']['Tables']['employee_performance']['Row']

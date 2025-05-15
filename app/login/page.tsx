@@ -30,8 +30,15 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      // Use the signIn method from AuthContext
-      await signIn(email, password)
+      console.log('🔥 Signing in with', { email })
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      console.log('✅ Sign-in response', { data, error })
+
+      if (error) throw error
+      
       // If successful, redirect to dashboard
       router.push("/dashboard")
     } catch (err: any) {
@@ -52,12 +59,14 @@ export default function LoginPage() {
     setError(null)
     
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      console.log('🔥 Signing in with Google')
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: 'http://localhost:3000/api/auth/callback'
         }
       })
+      console.log('✅ Sign-in response', { data, error })
       
       if (error) throw error
     } catch (err: any) {
@@ -77,12 +86,14 @@ export default function LoginPage() {
     setError(null)
     
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      console.log('🔥 Signing in with Microsoft')
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'azure',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: 'http://localhost:3000/api/auth/callback'
         }
       })
+      console.log('✅ Sign-in response', { data, error })
       
       if (error) throw error
     } catch (err: any) {

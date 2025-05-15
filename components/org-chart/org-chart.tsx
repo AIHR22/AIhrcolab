@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { supabase } from "@/lib/supabaseClient"
+import { createClient } from "@/lib/supabase/client"
 
 interface Employee {
   id: string
@@ -22,6 +22,8 @@ interface Employee {
 interface OrgChartProps {
   departmentFilter?: string
 }
+
+const supabase = createClient()
 
 export function OrgChart({ departmentFilter }: OrgChartProps) {
   const [employees, setEmployees] = useState<Employee[]>([])

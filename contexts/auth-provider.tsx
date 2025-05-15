@@ -2,8 +2,7 @@
 
 import { Session } from "@supabase/supabase-js"
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react"
-// Update import to use the consolidated client file
-import { getSupabase } from "@/lib/supabaseClient"
+import { createClient } from "@/lib/supabase/client"
 import { Database } from "@/types/supabase"
 import { createTenantAwareClient, getCurrentTenantContext } from "@/lib/supabase/tenant-context"
 
@@ -13,28 +12,24 @@ interface AuthContextType {
   user: Session['user'] | null
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
+  loading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// This function ensures we always have a Supabase client available
-const getSupabaseClient = () => {
-  // Use the exported function from the consolidated client file
-  return getSupabase()
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const supabase = getSupabaseClient() // Get the client instance
+  const [supabase] = useState(() => createClient())
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const initializeTenantContextRef = useRef<((currentSession: Session | null) => Promise<void>) | null>(null)
+
   useEffect(() => {
-    let mounted = true;
+    let mounted = true
 
     const initializeTenantContext = async (currentSession: Session | null) => {
       if (!mounted) return
       
-      // In development, don't clear session if tenant context isn't available yet
       if (!currentSession) {
         if (process.env.NODE_ENV !== 'development') {
           setSession(null)
@@ -46,29 +41,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const tenantContext = await getCurrentTenantContext()
         if (!tenantContext) {
           console.error('No tenant context available')
-          // In development, keep the session even without tenant context
           if (process.env.NODE_ENV === 'development') {
             setSession(currentSession)
           }
           return
         }
 
-        // For platform admin, we don't need tenant-specific client
         if (tenantContext.role === 'platform_admin') {
           setSession(currentSession)
           return
         }
 
-        // Create a tenant-aware client and use it for subsequent requests
-        const client = createTenantAwareClient(tenantContext.tenantId)
-        
-        // Update session with tenant context
         const updatedSession = {
           ...currentSession,
           user: {
             ...currentSession.user,
             app_metadata: {
-              ...currentSession.user.app_metadata,
+              ...(currentSession.user.app_metadata || {}),
               tenantId: tenantContext.tenantId
             }
           }
@@ -76,29 +65,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(updatedSession)
       } catch (error) {
         console.error('Error initializing tenant context:', error)
-        // Don't automatically sign out on tenant context error
-        // Just log the error and keep the session
+        if (mounted) setSession(currentSession)
       }
     }
 
-    // Store the initializeTenantContext function in the ref
     initializeTenantContextRef.current = initializeTenantContext
 
-    const fetchSession = async () => {
+    const fetchCurrentSession = async () => {
       if (!mounted) return
       
       try {
-        const { data: { session } } = await supabase.auth.getSession()
-        
-        // In development, set session immediately
-        if (process.env.NODE_ENV === 'development' && session) {
-          setSession(session)
+        const { data: { session: fetchedSession } } = await supabase.auth.getSession()
+        if (mounted) {
+          if (process.env.NODE_ENV === 'development' && fetchedSession) {
+            setSession(fetchedSession)
+          }
+          await initializeTenantContext(fetchedSession)
         }
-        
-        await initializeTenantContext(session)
       } catch (error) {
         console.error('Error fetching session:', error)
-        // Don't clear session on fetch error
       } finally {
         if (mounted) {
           setLoading(false)
@@ -106,70 +91,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    fetchSession()
+    fetchCurrentSession()
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, 'Session:', session ? 'exists' : 'null')
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      if (!mounted) return
+      console.log('Auth state changed:', _event, 'Session:', newSession ? 'exists' : 'null')
       
-      // Only clear session on explicit sign out in development mode
-      if (event === 'SIGNED_OUT') {
-        if (process.env.NODE_ENV !== 'development' || event === 'SIGNED_OUT') {
-          setSession(null)
-        }
+      if (_event === 'SIGNED_OUT') {
+        setSession(null)
         return
       }
-
-      // In development, set session immediately before tenant context
-      if (process.env.NODE_ENV === 'development' && session) {
-        setSession(session)
+      if (process.env.NODE_ENV === 'development' && newSession) {
+        setSession(newSession)
       }
-      
-      await initializeTenantContext(session)
+      await initializeTenantContext(newSession)
+      setLoading(false)
     })
 
     return () => {
-      mounted = false;
+      mounted = false
       authListener?.subscription.unsubscribe()
     }
-  }, [supabase]) // Add supabase as a dependency
-
-  const initializeTenantContextRef = useRef<((session: Session | null) => Promise<void>) | null>(null)
-  const [signInFn, setSignInFn] = useState<((email: string, password: string) => Promise<void>) | null>(null)
-
-  const signOut = async () => {
-    await supabase.auth.signOut()
-    setSession(null) // Clear session locally on sign out
-  }
-
-  // Set up the signIn function
-  useEffect(() => {
-    setSignInFn(() => async (email: string, password: string) => {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (error) {
-        throw error
-      }
-
-      if (initializeTenantContextRef.current) {
-        await initializeTenantContextRef.current(data.session)
-      }
-    })
   }, [supabase])
 
-  // Memoize the context value to prevent unnecessary re-renders
+  const signIn = async (email: string, password: string) => {
+    setLoading(true)
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) throw error
+      if (data.session && initializeTenantContextRef.current) {
+      }
+    } catch (error) {
+      console.error("Sign in error:", error)
+      setSession(null)
+      throw error
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const signOut = async () => {
+    setLoading(true)
+    try {
+      await supabase.auth.signOut()
+      setSession(null)
+    } catch (error) {
+      console.error("Sign out error:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const value = {
     session,
     user: session?.user ?? null,
-    signIn: signInFn || (async () => { throw new Error('Auth not initialized') }),
+    signIn,
     signOut,
+    loading,
   }
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading ? children : <div>Loading auth...</div>} 
+      {children}
     </AuthContext.Provider>
   )
 }

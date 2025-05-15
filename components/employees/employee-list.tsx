@@ -26,13 +26,15 @@ import {
 } from "@/components/ui/alert-dialog"
 import { EmployeeForm } from "./employee-form"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/lib/supabaseClient"
+import { createClient } from "@/lib/supabase/client"
 import type { Employee } from "@/types/employees"
 import { useRealtime } from "@/hooks/use-realtime"
 
 interface EmployeeListProps {
   employees: Employee[]
 }
+
+const supabase = createClient()
 
 export function EmployeeList({ employees }: EmployeeListProps) {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
