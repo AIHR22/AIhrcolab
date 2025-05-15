@@ -1,0 +1,2136 @@
+{
+  "timestamp": "2025-03-20T19:33:54.981Z",
+  "summary": {
+    "total": 54,
+    "successful": 15,
+    "failed": 39
+  },
+  "results": [
+    {
+      "endpoint": "/ai/employee-insights",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Failed to generate employee insights"
+      }
+    },
+    {
+      "endpoint": "/ai/generate-org",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Failed to generate organization structure"
+      }
+    },
+    {
+      "endpoint": "/ai/generate-review",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Failed to generate performance review"
+      }
+    },
+    {
+      "endpoint": "/assistant",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Failed to generate response. Please try again."
+      }
+    },
+    {
+      "endpoint": "/auth",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Internal server error"
+      }
+    },
+    {
+      "endpoint": "/auth/create-profile",
+      "method": "POST",
+      "status": 400,
+      "success": false,
+      "response": {
+        "error": "User ID and email are required"
+      }
+    },
+    {
+      "endpoint": "/auth/signout",
+      "method": "POST",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true
+      }
+    },
+    {
+      "endpoint": "/courses",
+      "method": "GET",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Error fetching courses"
+      }
+    },
+    {
+      "endpoint": "/courses",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Error creating course"
+      }
+    },
+    {
+      "endpoint": "/courses/assign",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Error assigning course"
+      }
+    },
+    {
+      "endpoint": "/departments",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": [
+        {
+          "id": "06120a63-2d55-4537-bad1-ca9547f0def7",
+          "name": "Customer Success",
+          "description": "Customer support and success management",
+          "manager_id": null,
+          "created_at": "2025-03-14T13:59:35.241494+00:00",
+          "updated_at": "2025-03-14T13:59:35.241494+00:00"
+        },
+        {
+          "id": "1f87e8cf-8188-4742-8eec-3583f88164d5",
+          "name": "Customer Success",
+          "description": "Customer support and success management",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "e605175d-9364-44f5-8dca-aea4f4edb324",
+          "name": "Customer Success",
+          "description": "Customer support and success management",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "12a31fed-35c3-41e3-aefe-65ba3fff564b",
+          "name": "Design",
+          "description": "User experience and interface design",
+          "manager_id": null,
+          "created_at": "2025-03-14T13:59:35.241494+00:00",
+          "updated_at": "2025-03-14T13:59:35.241494+00:00"
+        },
+        {
+          "id": "e89eadd2-1555-4888-86aa-887a15ea2d44",
+          "name": "Design",
+          "description": "User experience and interface design",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "b3db06a7-f7aa-47a6-a929-2e1fc3677e16",
+          "name": "Design",
+          "description": "User experience and interface design",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "faa8581b-8371-4aab-9e23-3a2f1485566e",
+          "name": "Engineering",
+          "description": "Software development and technical operations",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "e883e74f-f903-4dee-810e-6ea512d3410e",
+          "name": "Engineering",
+          "description": "Software Development and Infrastructure",
+          "manager_id": null,
+          "created_at": "2025-03-13T21:58:26.060921+00:00",
+          "updated_at": "2025-03-13T21:58:26.060921+00:00"
+        },
+        {
+          "id": "d79fa5c9-7abf-4abf-b9e4-7529579b8a53",
+          "name": "Engineering",
+          "description": "Software Development and Infrastructure",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:09:16.445969+00:00",
+          "updated_at": "2025-03-20T19:09:16.445969+00:00"
+        },
+        {
+          "id": "411e6c74-9d83-476d-a9ee-77d344495fb6",
+          "name": "Engineering",
+          "description": "Software development and technical operations",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "c67208a7-906f-4950-ad6b-04086a8f6deb",
+          "name": "Engineering",
+          "description": "Software Development and Infrastructure",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:21:08.570482+00:00",
+          "updated_at": "2025-03-20T19:21:08.570482+00:00"
+        },
+        {
+          "id": "0d99ed97-5c3a-4ab7-aa7b-272f3240be49",
+          "name": "Engineering",
+          "description": null,
+          "manager_id": null,
+          "created_at": "2025-03-15T09:05:42.112497+00:00",
+          "updated_at": "2025-03-15T09:05:42.112497+00:00"
+        },
+        {
+          "id": "80869df0-d69b-46dd-bc47-499778cce6d3",
+          "name": "Engineering",
+          "description": "Software Development and Infrastructure",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:26:38.884556+00:00",
+          "updated_at": "2025-03-20T19:26:38.884556+00:00"
+        },
+        {
+          "id": "d9a3917f-516b-4fb6-b5f5-095601037521",
+          "name": "Engineering",
+          "description": "Software Development and Infrastructure",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:13:13.977518+00:00",
+          "updated_at": "2025-03-20T19:13:13.977518+00:00"
+        },
+        {
+          "id": "38ed4f7f-ff5f-4a3d-9cf4-8395298861f9",
+          "name": "Engineering",
+          "description": "Software Development and Infrastructure",
+          "manager_id": null,
+          "created_at": "2025-03-13T21:29:11.187406+00:00",
+          "updated_at": "2025-03-13T21:29:11.187406+00:00"
+        },
+        {
+          "id": "527bef22-d93f-4c6f-9c69-e842e1d592a1",
+          "name": "Engineering",
+          "description": "Software Development and Infrastructure",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:00:51.659296+00:00",
+          "updated_at": "2025-03-20T19:00:51.659296+00:00"
+        },
+        {
+          "id": "ddc74474-5a4f-4b11-aae1-8593a55f9c97",
+          "name": "Finance",
+          "description": "Accounting, financial planning, and analysis",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "dfbfda6c-7ade-427c-b5a7-1eef0f1b2cbf",
+          "name": "Finance",
+          "description": "Accounting, financial planning, and analysis",
+          "manager_id": null,
+          "created_at": "2025-03-14T13:59:35.241494+00:00",
+          "updated_at": "2025-03-14T13:59:35.241494+00:00"
+        },
+        {
+          "id": "042cf6e3-7264-4638-81b9-9a58e8f34e4d",
+          "name": "Finance",
+          "description": null,
+          "manager_id": null,
+          "created_at": "2025-03-15T09:05:42.112497+00:00",
+          "updated_at": "2025-03-15T09:05:42.112497+00:00"
+        },
+        {
+          "id": "c4289639-697a-4984-95b5-5f597c28f1de",
+          "name": "Finance",
+          "description": "Accounting, financial planning, and analysis",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "3731b58b-d58d-467e-bdb7-00da43f25903",
+          "name": "Human Resources",
+          "description": null,
+          "manager_id": null,
+          "created_at": "2025-03-15T09:05:42.112497+00:00",
+          "updated_at": "2025-03-15T09:05:42.112497+00:00"
+        },
+        {
+          "id": "dcc621c4-4b77-4fb5-9cf5-38b7fb14deee",
+          "name": "Human Resources",
+          "description": "HR Management and Employee Relations",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:26:38.884556+00:00",
+          "updated_at": "2025-03-20T19:26:38.884556+00:00"
+        },
+        {
+          "id": "9670ce30-4c09-4f80-8cc1-a443e78ef15c",
+          "name": "Human Resources",
+          "description": "HR Management and Employee Relations",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:00:51.659296+00:00",
+          "updated_at": "2025-03-20T19:00:51.659296+00:00"
+        },
+        {
+          "id": "c541d02f-4ca4-4c40-ac20-dfecca76d394",
+          "name": "Human Resources",
+          "description": "HR Management and Employee Relations",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:21:08.570482+00:00",
+          "updated_at": "2025-03-20T19:21:08.570482+00:00"
+        },
+        {
+          "id": "80032780-826d-4f67-af95-7fa7d53553ac",
+          "name": "Human Resources",
+          "description": "Talent acquisition and employee experience",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "67974e31-81f5-4a7b-869f-30b89a5a5339",
+          "name": "Human Resources",
+          "description": "HR Management and Employee Relations",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:13:13.977518+00:00",
+          "updated_at": "2025-03-20T19:13:13.977518+00:00"
+        },
+        {
+          "id": "bdd7a2d3-35b9-473b-bd78-3e60c24e8fc2",
+          "name": "Human Resources",
+          "description": "Talent acquisition and employee experience",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "a1af7fd4-fa8b-4fe9-a284-49b6ad655fc7",
+          "name": "Human Resources",
+          "description": "HR Management and Employee Relations",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:09:16.445969+00:00",
+          "updated_at": "2025-03-20T19:09:16.445969+00:00"
+        },
+        {
+          "id": "aea76e1a-3560-499d-bf1e-87d0e780e7c8",
+          "name": "Human Resources",
+          "description": "Talent acquisition and employee experience",
+          "manager_id": null,
+          "created_at": "2025-03-14T13:59:35.241494+00:00",
+          "updated_at": "2025-03-14T13:59:35.241494+00:00"
+        },
+        {
+          "id": "8f487ece-6f95-4dc7-91bd-08b396874335",
+          "name": "Human Resources",
+          "description": "HR Management and Employee Relations",
+          "manager_id": null,
+          "created_at": "2025-03-13T21:58:26.060921+00:00",
+          "updated_at": "2025-03-13T21:58:26.060921+00:00"
+        },
+        {
+          "id": "23fa2d3c-5846-45c6-a775-1c5ff1428d2a",
+          "name": "Legal",
+          "description": "Legal compliance and contract management",
+          "manager_id": null,
+          "created_at": "2025-03-14T13:59:35.241494+00:00",
+          "updated_at": "2025-03-14T13:59:35.241494+00:00"
+        },
+        {
+          "id": "1773f041-8d6e-4164-a9ef-73c1acd727ef",
+          "name": "Legal",
+          "description": "Legal compliance and contract management",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "987c6b35-e89b-4827-8cab-53a46ac0913b",
+          "name": "Legal",
+          "description": "Legal compliance and contract management",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "0319802d-8730-4435-927d-b7a59c252c65",
+          "name": "Marketing",
+          "description": "Brand, communications, and growth",
+          "manager_id": null,
+          "created_at": "2025-03-14T13:59:35.241494+00:00",
+          "updated_at": "2025-03-14T13:59:35.241494+00:00"
+        },
+        {
+          "id": "bda2e305-0ffe-49d8-a439-4ac51ca49ad6",
+          "name": "Marketing",
+          "description": "Brand, communications, and growth",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "4a989075-d7f4-4e66-9423-7deb3b1c3c3a",
+          "name": "Marketing",
+          "description": "Brand, communications, and growth",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "e677b37b-420b-4548-971c-6898ce003414",
+          "name": "Marketing",
+          "description": null,
+          "manager_id": null,
+          "created_at": "2025-03-15T09:05:42.112497+00:00",
+          "updated_at": "2025-03-15T09:05:42.112497+00:00"
+        },
+        {
+          "id": "989576b2-85d2-4509-8b2f-9ffd8cfd33cf",
+          "name": "Operations",
+          "description": "Business operations and administration",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "ed24dd86-98cf-4cce-a6db-6ce1ac98f5c4",
+          "name": "Operations",
+          "description": "Business operations and administration",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "ad651884-ee5a-451d-b47f-7d87e33e2dae",
+          "name": "Operations",
+          "description": "Business operations and administration",
+          "manager_id": null,
+          "created_at": "2025-03-14T13:59:35.241494+00:00",
+          "updated_at": "2025-03-14T13:59:35.241494+00:00"
+        },
+        {
+          "id": "47eca6dd-515f-48f9-a2fb-dd8cef9416c8",
+          "name": "Operations",
+          "description": null,
+          "manager_id": null,
+          "created_at": "2025-03-15T09:05:42.112497+00:00",
+          "updated_at": "2025-03-15T09:05:42.112497+00:00"
+        },
+        {
+          "id": "0decf3f7-c894-4bbf-aef5-22a3994a364f",
+          "name": "Product",
+          "description": "Product management and strategy",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "e6f3ecdf-b9ed-4643-9ef1-74045b55fa73",
+          "name": "Product",
+          "description": "Product management and strategy",
+          "manager_id": null,
+          "created_at": "2025-03-14T13:59:35.241494+00:00",
+          "updated_at": "2025-03-14T13:59:35.241494+00:00"
+        },
+        {
+          "id": "cf5f4428-afc5-489e-971c-55c271c8c09e",
+          "name": "Product",
+          "description": "Product management and strategy",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "373d06ad-b41a-40a1-9c18-6842cbacb189",
+          "name": "Sales",
+          "description": "Sales and Business Development",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:09:16.445969+00:00",
+          "updated_at": "2025-03-20T19:09:16.445969+00:00"
+        },
+        {
+          "id": "96e2afcd-d1b3-486c-9724-8488e3753f5f",
+          "name": "Sales",
+          "description": "Business development and customer acquisition",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "d3086416-2535-4626-b0b2-a2d41be9ed2e",
+          "name": "Sales",
+          "description": "Sales and Business Development",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:13:13.977518+00:00",
+          "updated_at": "2025-03-20T19:13:13.977518+00:00"
+        },
+        {
+          "id": "af622d51-4824-43a6-9cb9-9268b15a31ec",
+          "name": "Sales",
+          "description": "Business development and customer acquisition",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "e99e2fee-297e-45be-91b3-8c389ad8f9dc",
+          "name": "Sales",
+          "description": "Sales and Business Development",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:21:08.570482+00:00",
+          "updated_at": "2025-03-20T19:21:08.570482+00:00"
+        },
+        {
+          "id": "3b4a0dc5-5de4-4346-ac45-e1a22f8e34b0",
+          "name": "Sales",
+          "description": "Sales and Business Development",
+          "manager_id": null,
+          "created_at": "2025-03-13T21:58:26.060921+00:00",
+          "updated_at": "2025-03-13T21:58:26.060921+00:00"
+        },
+        {
+          "id": "dd113e67-5a48-4969-af5a-522a29d1f963",
+          "name": "Sales",
+          "description": "Sales and Business Development",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:00:51.659296+00:00",
+          "updated_at": "2025-03-20T19:00:51.659296+00:00"
+        },
+        {
+          "id": "b767d7ff-8910-4690-89e4-b06aeee3a03b",
+          "name": "Sales",
+          "description": "Sales and Business Development",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:26:38.884556+00:00",
+          "updated_at": "2025-03-20T19:26:38.884556+00:00"
+        },
+        {
+          "id": "5b9ec353-9ed4-4720-b64e-99875c1fe037",
+          "name": "Sales",
+          "description": null,
+          "manager_id": null,
+          "created_at": "2025-03-15T09:05:42.112497+00:00",
+          "updated_at": "2025-03-15T09:05:42.112497+00:00"
+        },
+        {
+          "id": "e5a6ff85-2c1e-4a84-99ec-2322f21a7d84",
+          "name": "Sales",
+          "description": "Business development and customer acquisition",
+          "manager_id": null,
+          "created_at": "2025-03-14T13:59:35.241494+00:00",
+          "updated_at": "2025-03-14T13:59:35.241494+00:00"
+        }
+      ]
+    },
+    {
+      "endpoint": "/departments",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Could not find the 'budget' column of 'departments' in the schema cache"
+      }
+    },
+    {
+      "endpoint": "/departments/[id]",
+      "method": "GET",
+      "status": 404,
+      "success": false,
+      "response": {
+        "error": "Department not found"
+      }
+    },
+    {
+      "endpoint": "/departments/[id]",
+      "method": "PUT",
+      "status": 404,
+      "success": false,
+      "response": {
+        "error": "Department not found"
+      }
+    },
+    {
+      "endpoint": "/departments/[id]",
+      "method": "DELETE",
+      "status": 404,
+      "success": false,
+      "response": {
+        "error": "Department not found"
+      }
+    },
+    {
+      "endpoint": "/employees",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": [
+        {
+          "id": "878e0154-cd39-4407-8e46-0ae556bbb3c9",
+          "first_name": "William",
+          "last_name": "Jones",
+          "email": "william.jones81@example.com",
+          "department": "Sales",
+          "position": "Sales Manager",
+          "hire_date": "2022-04-28",
+          "manager_id": "7cdfc436-b609-4d01-bb07-47b0077a8bf8",
+          "status": "active",
+          "created_at": "2025-03-20T19:26:09.632+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        },
+        {
+          "id": "6ab2f8a6-4d59-44c9-98eb-48ec5e20dd3c",
+          "first_name": "Michael",
+          "last_name": "Smith",
+          "email": "michael.smith4@example.com",
+          "department": "Engineering",
+          "position": "Tech Lead",
+          "hire_date": "2021-04-16",
+          "manager_id": "26543542-1028-4e4a-a799-6003785bc65a",
+          "status": "active",
+          "created_at": "2025-03-20T19:26:09.632+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        },
+        {
+          "id": "bcf335cd-9450-49d9-a69d-84b45723ba4f",
+          "first_name": "William",
+          "last_name": "Brown",
+          "email": "william.brown63@example.com",
+          "department": "Finance",
+          "position": "Controller",
+          "hire_date": "2021-05-04",
+          "manager_id": "28fea0b6-1c3c-4693-8778-82d9c3067689",
+          "status": "inactive",
+          "created_at": "2025-03-20T19:26:09.632+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        },
+        {
+          "id": "7cdfc436-b609-4d01-bb07-47b0077a8bf8",
+          "first_name": "John",
+          "last_name": "Wilson",
+          "email": "john.wilson@example.com",
+          "department": "Sales",
+          "position": "Customer Success",
+          "hire_date": "2018-12-27",
+          "manager_id": null,
+          "status": "active",
+          "created_at": "2025-03-20T19:26:09.631+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        },
+        {
+          "id": "41b6c132-ab14-4aae-8f2f-bc94db340639",
+          "first_name": "Jane",
+          "last_name": "Moore",
+          "email": "jane.moore@example.com",
+          "department": "HR",
+          "position": "People Operations",
+          "hire_date": "2018-07-30",
+          "manager_id": null,
+          "status": "active",
+          "created_at": "2025-03-20T19:26:09.631+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        },
+        {
+          "id": "28fea0b6-1c3c-4693-8778-82d9c3067689",
+          "first_name": "Emma",
+          "last_name": "Williams",
+          "email": "emma.williams@example.com",
+          "department": "Finance",
+          "position": "Finance Manager",
+          "hire_date": "2018-03-28",
+          "manager_id": null,
+          "status": "active",
+          "created_at": "2025-03-20T19:26:09.631+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        },
+        {
+          "id": "9e361576-fd2d-4181-8810-a273a251434f",
+          "first_name": "David",
+          "last_name": "Brown",
+          "email": "david.brown@example.com",
+          "department": "Operations",
+          "position": "IT Support",
+          "hire_date": "2018-12-30",
+          "manager_id": null,
+          "status": "active",
+          "created_at": "2025-03-20T19:26:09.631+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        },
+        {
+          "id": "a6e49013-e419-4319-b896-c8f95460b38d",
+          "first_name": "Lisa",
+          "last_name": "Smith",
+          "email": "lisa.smith12@example.com",
+          "department": "Product",
+          "position": "Product Designer",
+          "hire_date": "2023-02-23",
+          "manager_id": "f1f8567e-aac5-47ed-8c90-b5ee6cbef27a",
+          "status": "active",
+          "created_at": "2025-03-20T19:26:09.631+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        },
+        {
+          "id": "b44f2e1e-75d1-4060-b215-6ea0112fabbf",
+          "first_name": "Emily",
+          "last_name": "Brown",
+          "email": "emily.brown65@example.com",
+          "department": "Sales",
+          "position": "Sales Representative",
+          "hire_date": "2020-04-27",
+          "manager_id": "7cdfc436-b609-4d01-bb07-47b0077a8bf8",
+          "status": "active",
+          "created_at": "2025-03-20T19:26:09.631+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        },
+        {
+          "id": "2544f58d-3e93-4cf4-ab37-2ea1f5098779",
+          "first_name": "Lisa",
+          "last_name": "Johnson",
+          "email": "lisa.johnson25@example.com",
+          "department": "Finance",
+          "position": "Controller",
+          "hire_date": "2020-10-19",
+          "manager_id": "28fea0b6-1c3c-4693-8778-82d9c3067689",
+          "status": "active",
+          "created_at": "2025-03-20T19:26:09.631+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        },
+        {
+          "id": "26543542-1028-4e4a-a799-6003785bc65a",
+          "first_name": "Robert",
+          "last_name": "Moore",
+          "email": "robert.moore@example.com",
+          "department": "Engineering",
+          "position": "Engineering Manager",
+          "hire_date": "2020-07-19",
+          "manager_id": null,
+          "status": "active",
+          "created_at": "2025-03-20T19:26:09.631+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        },
+        {
+          "id": "26d92a3b-3a7b-4112-bc5a-21234b8b0e76",
+          "first_name": "Emily",
+          "last_name": "Johnson",
+          "email": "emily.johnson2@example.com",
+          "department": "Product",
+          "position": "UX Researcher",
+          "hire_date": "2021-12-09",
+          "manager_id": "f1f8567e-aac5-47ed-8c90-b5ee6cbef27a",
+          "status": "active",
+          "created_at": "2025-03-20T19:26:09.631+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        },
+        {
+          "id": "00ef28b8-0b8b-4788-9ca7-9ac329d415e2",
+          "first_name": "William",
+          "last_name": "Davis",
+          "email": "william.davis21@example.com",
+          "department": "Product",
+          "position": "Product Designer",
+          "hire_date": "2022-03-23",
+          "manager_id": "f1f8567e-aac5-47ed-8c90-b5ee6cbef27a",
+          "status": "on_leave",
+          "created_at": "2025-03-20T19:26:09.631+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        },
+        {
+          "id": "4d42d6ba-3e4e-45a4-9845-0a1944a901ce",
+          "first_name": "David",
+          "last_name": "Moore",
+          "email": "david.moore8@example.com",
+          "department": "Product",
+          "position": "Product Designer",
+          "hire_date": "2021-01-21",
+          "manager_id": "f1f8567e-aac5-47ed-8c90-b5ee6cbef27a",
+          "status": "active",
+          "created_at": "2025-03-20T19:26:09.631+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        },
+        {
+          "id": "15caf11c-680c-4700-a7ea-c5823a926546",
+          "first_name": "William",
+          "last_name": "Moore",
+          "email": "william.moore4@example.com",
+          "department": "Sales",
+          "position": "Sales Manager",
+          "hire_date": "2021-03-22",
+          "manager_id": "7cdfc436-b609-4d01-bb07-47b0077a8bf8",
+          "status": "active",
+          "created_at": "2025-03-20T19:26:09.631+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        },
+        {
+          "id": "ed4a91dd-53e8-4ae4-93f8-c9565cb8fafb",
+          "first_name": "Jane",
+          "last_name": "Miller",
+          "email": "jane.miller50@example.com",
+          "department": "Finance",
+          "position": "Accountant",
+          "hire_date": "2022-06-16",
+          "manager_id": "28fea0b6-1c3c-4693-8778-82d9c3067689",
+          "status": "on_leave",
+          "created_at": "2025-03-20T19:26:09.631+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        },
+        {
+          "id": "247edb70-1694-471a-aa22-8d92fbd817cc",
+          "first_name": "Sarah",
+          "last_name": "Johnson",
+          "email": "sarah.johnson41@example.com",
+          "department": "Engineering",
+          "position": "Tech Lead",
+          "hire_date": "2023-02-02",
+          "manager_id": "26543542-1028-4e4a-a799-6003785bc65a",
+          "status": "active",
+          "created_at": "2025-03-20T19:26:09.631+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        },
+        {
+          "id": "0d293bff-dd46-4ecb-899a-de10430ce418",
+          "first_name": "David",
+          "last_name": "Taylor",
+          "email": "david.taylor3@example.com",
+          "department": "Operations",
+          "position": "Office Manager",
+          "hire_date": "2023-03-03",
+          "manager_id": "9e361576-fd2d-4181-8810-a273a251434f",
+          "status": "active",
+          "created_at": "2025-03-20T19:26:09.631+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        },
+        {
+          "id": "f1f8567e-aac5-47ed-8c90-b5ee6cbef27a",
+          "first_name": "Sarah",
+          "last_name": "Johnson",
+          "email": "sarah.johnson@example.com",
+          "department": "Product",
+          "position": "Product Director",
+          "hire_date": "2020-10-13",
+          "manager_id": null,
+          "status": "active",
+          "created_at": "2025-03-20T19:26:09.631+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        },
+        {
+          "id": "1b2c1fab-c21a-4723-853d-ec8f9db06274",
+          "first_name": "David",
+          "last_name": "Miller",
+          "email": "david.miller@example.com",
+          "department": "Marketing",
+          "position": "Marketing Manager",
+          "hire_date": "2018-04-26",
+          "manager_id": null,
+          "status": "active",
+          "created_at": "2025-03-20T19:26:09.631+00:00",
+          "address": null,
+          "bio": null,
+          "team": null,
+          "username": null,
+          "role": null,
+          "avatar_url": null,
+          "updated_at": "2025-03-20T19:26:12.879182+00:00",
+          "phone": null
+        }
+      ]
+    },
+    {
+      "endpoint": "/employees",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Could not find the 'department_id' column of 'employees' in the schema cache"
+      }
+    },
+    {
+      "endpoint": "/employees/[id]",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": {
+        "id": "878e0154-cd39-4407-8e46-0ae556bbb3c9",
+        "first_name": "William",
+        "last_name": "Jones",
+        "email": "william.jones81@example.com",
+        "department": "Sales",
+        "position": "Sales Manager",
+        "hire_date": "2022-04-28",
+        "manager_id": "7cdfc436-b609-4d01-bb07-47b0077a8bf8",
+        "status": "active",
+        "created_at": "2025-03-20T19:26:09.632+00:00",
+        "address": null,
+        "bio": null,
+        "team": null,
+        "username": null,
+        "role": null,
+        "avatar_url": null,
+        "updated_at": "2025-03-20T19:26:12.879182+00:00",
+        "phone": null
+      }
+    },
+    {
+      "endpoint": "/employees/[id]",
+      "method": "PUT",
+      "status": 200,
+      "success": true,
+      "response": {
+        "id": "878e0154-cd39-4407-8e46-0ae556bbb3c9",
+        "first_name": "Updated",
+        "last_name": "Employee",
+        "email": "william.jones81@example.com",
+        "department": "Sales",
+        "position": "Updated Position",
+        "hire_date": "2022-04-28",
+        "manager_id": "7cdfc436-b609-4d01-bb07-47b0077a8bf8",
+        "status": "active",
+        "created_at": "2025-03-20T19:26:09.632+00:00",
+        "address": null,
+        "bio": null,
+        "team": null,
+        "username": null,
+        "role": null,
+        "avatar_url": null,
+        "updated_at": "2025-03-20T19:33:10.875939+00:00",
+        "phone": null
+      }
+    },
+    {
+      "endpoint": "/employees/[id]",
+      "method": "DELETE",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true,
+        "message": "Employee deleted successfully"
+      }
+    },
+    {
+      "endpoint": "/job-postings",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": [
+        {
+          "id": "bf0a914f-80a8-43f6-b9aa-6334b631101c",
+          "title": "Senior",
+          "description": "Has to suck",
+          "department_id": "411e6c74-9d83-476d-a9ee-77d344495fb6",
+          "requirements": [
+            "java",
+            "python",
+            "anaconda"
+          ],
+          "salary_range_min": 40000,
+          "salary_range_max": 50000,
+          "location": "Dubai",
+          "employment_type": "full-time",
+          "experience_level": "mid",
+          "status": "open",
+          "closing_date": "2025-03-15",
+          "created_at": "2025-03-15T09:06:47.671286+00:00",
+          "updated_at": "2025-03-15T09:06:47.671286+00:00",
+          "departments": {
+            "id": "411e6c74-9d83-476d-a9ee-77d344495fb6",
+            "name": "Engineering"
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/job-postings",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "null value in column \"title\" of relation \"job_postings\" violates not-null constraint"
+      }
+    },
+    {
+      "endpoint": "/organization/generate",
+      "method": "POST",
+      "status": 400,
+      "success": false,
+      "response": {
+        "error": "Prompt is required"
+      }
+    },
+    {
+      "endpoint": "/payroll",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": []
+    },
+    {
+      "endpoint": "/payroll",
+      "method": "POST",
+      "status": 400,
+      "success": false,
+      "response": {
+        "error": "Employee ID, payment date, and base salary are required"
+      }
+    },
+    {
+      "endpoint": "/payroll/[id]",
+      "method": "GET",
+      "status": 404,
+      "success": false,
+      "response": {
+        "error": "Payroll record not found"
+      }
+    },
+    {
+      "endpoint": "/payroll/[id]",
+      "method": "PUT",
+      "status": 404,
+      "success": false,
+      "response": {
+        "error": "Payroll record not found"
+      }
+    },
+    {
+      "endpoint": "/payroll/[id]",
+      "method": "DELETE",
+      "status": 404,
+      "success": false,
+      "response": {
+        "error": "Payroll record not found"
+      }
+    },
+    {
+      "endpoint": "/payroll/[id]/payslip",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "column employees_1.name does not exist"
+      }
+    },
+    {
+      "endpoint": "/projects",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": [
+        {
+          "id": "85d51b98-8a04-477d-9092-35c15c838739",
+          "name": "Outdoor Solar Hanging Lights",
+          "description": "n n, ",
+          "start_date": null,
+          "end_date": null,
+          "status": "active",
+          "budget": null,
+          "department_id": null,
+          "created_at": "2025-03-14T19:07:53.869924+00:00",
+          "updated_at": "2025-03-14T19:07:53.869924+00:00"
+        },
+        {
+          "id": "64006a1c-08fc-44e3-8c29-64ecb974abfc",
+          "name": "CrimsonBay",
+          "description": "sexxx",
+          "start_date": "2025-03-14",
+          "end_date": "2025-03-31",
+          "status": "active",
+          "budget": 100000.908,
+          "department_id": null,
+          "created_at": "2025-03-14T16:22:23.236599+00:00",
+          "updated_at": "2025-03-14T16:22:23.236599+00:00"
+        },
+        {
+          "id": "ca4e477d-e9b9-4b07-a8ae-46b272775cad",
+          "name": "CrimsonBay",
+          "description": "eex",
+          "start_date": "2025-03-14",
+          "end_date": "2025-03-31",
+          "status": "active",
+          "budget": 12345,
+          "department_id": null,
+          "created_at": "2025-03-14T16:22:42.844597+00:00",
+          "updated_at": "2025-03-14T16:22:42.844597+00:00"
+        },
+        {
+          "id": "b0e5bc91-c683-4625-9967-4032bb41785f",
+          "name": "CrimsonBay",
+          "description": "sex",
+          "start_date": "2025-03-14",
+          "end_date": "2025-03-31",
+          "status": "active",
+          "budget": 1234,
+          "department_id": null,
+          "created_at": "2025-03-14T16:25:13.384243+00:00",
+          "updated_at": "2025-03-14T16:25:13.384243+00:00"
+        }
+      ]
+    },
+    {
+      "endpoint": "/projects",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Could not find the 'manager_id' column of 'projects' in the schema cache"
+      }
+    },
+    {
+      "endpoint": "/projects/[id]",
+      "method": "GET",
+      "status": 404,
+      "success": false,
+      "response": {
+        "error": "Project not found"
+      }
+    },
+    {
+      "endpoint": "/projects/[id]",
+      "method": "PUT",
+      "status": 404,
+      "success": false,
+      "response": {
+        "error": "Project not found"
+      }
+    },
+    {
+      "endpoint": "/projects/[id]",
+      "method": "DELETE",
+      "status": 404,
+      "success": false,
+      "response": {
+        "error": "Project not found"
+      }
+    },
+    {
+      "endpoint": "/revenue",
+      "method": "GET",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "column revenue.date does not exist"
+      }
+    },
+    {
+      "endpoint": "/revenue",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "Could not find the 'date' column of 'revenue' in the schema cache"
+      }
+    },
+    {
+      "endpoint": "/revenue/forecast",
+      "method": "POST",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true,
+        "forecasts": [
+          {
+            "year": 2024,
+            "month": 4,
+            "predicted_amount": 1050000,
+            "confidence_score": 80,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2024,
+            "month": 5,
+            "predicted_amount": 1100000,
+            "confidence_score": 85,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2024,
+            "month": 6,
+            "predicted_amount": 1150000,
+            "confidence_score": 90,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2024,
+            "month": 7,
+            "predicted_amount": 1200000,
+            "confidence_score": 95,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2024,
+            "month": 8,
+            "predicted_amount": 1250000,
+            "confidence_score": 95,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2024,
+            "month": 9,
+            "predicted_amount": 1300000,
+            "confidence_score": 95,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2024,
+            "month": 10,
+            "predicted_amount": 1350000,
+            "confidence_score": 95,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2024,
+            "month": 11,
+            "predicted_amount": 1400000,
+            "confidence_score": 95,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2024,
+            "month": 12,
+            "predicted_amount": 1450000,
+            "confidence_score": 95,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 1,
+            "predicted_amount": 1500000,
+            "confidence_score": 90,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 2,
+            "predicted_amount": 1550000,
+            "confidence_score": 90,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 3,
+            "predicted_amount": 1600000,
+            "confidence_score": 90,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 4,
+            "predicted_amount": 1650000,
+            "confidence_score": 90,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 5,
+            "predicted_amount": 1700000,
+            "confidence_score": 90,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 6,
+            "predicted_amount": 1750000,
+            "confidence_score": 90,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 7,
+            "predicted_amount": 1800000,
+            "confidence_score": 90,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 8,
+            "predicted_amount": 1850000,
+            "confidence_score": 90,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 9,
+            "predicted_amount": 1900000,
+            "confidence_score": 90,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 10,
+            "predicted_amount": 1950000,
+            "confidence_score": 90,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 11,
+            "predicted_amount": 2000000,
+            "confidence_score": 90,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 12,
+            "predicted_amount": 2050000,
+            "confidence_score": 90,
+            "factors": {
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85,
+              "other_factors": "None"
+            }
+          }
+        ],
+        "saved_records": [
+          {
+            "id": "66edc427-82f6-4b92-a3d2-63dd5c114639",
+            "year": 2024,
+            "month": 4,
+            "predicted_amount": 1050000,
+            "confidence_score": 80,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "d0f66f50-4b89-4e1e-8c50-d243b0e77b18",
+            "year": 2024,
+            "month": 5,
+            "predicted_amount": 1100000,
+            "confidence_score": 85,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "cfacb49c-f4e9-4c1e-bff5-1181f5a2a9de",
+            "year": 2024,
+            "month": 6,
+            "predicted_amount": 1150000,
+            "confidence_score": 90,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "aaa63fd2-9971-4b60-ab93-73e8ee82a4ca",
+            "year": 2024,
+            "month": 7,
+            "predicted_amount": 1200000,
+            "confidence_score": 95,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "9352defe-5153-4726-bc0d-6b3f21d91ded",
+            "year": 2024,
+            "month": 8,
+            "predicted_amount": 1250000,
+            "confidence_score": 95,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "ed0d3a03-1bbc-45a9-85fb-f69ffd697e24",
+            "year": 2024,
+            "month": 9,
+            "predicted_amount": 1300000,
+            "confidence_score": 95,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "93e2723b-6bed-4a90-acfc-0e7aa8dbca0f",
+            "year": 2024,
+            "month": 10,
+            "predicted_amount": 1350000,
+            "confidence_score": 95,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "06377b16-09e1-45b7-890a-1cfeb0261324",
+            "year": 2024,
+            "month": 11,
+            "predicted_amount": 1400000,
+            "confidence_score": 95,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "a816528f-0636-456c-8c1a-1bd11005742b",
+            "year": 2024,
+            "month": 12,
+            "predicted_amount": 1450000,
+            "confidence_score": 95,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "781db7ab-6d91-4794-98ac-5cdc4fed3ab8",
+            "year": 2025,
+            "month": 1,
+            "predicted_amount": 1500000,
+            "confidence_score": 90,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "8f4b30b1-32ca-47f4-8fba-7c1bc9ff1561",
+            "year": 2025,
+            "month": 2,
+            "predicted_amount": 1550000,
+            "confidence_score": 90,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "2b36b2ef-3ddc-43d2-9585-13ecf44b3f40",
+            "year": 2025,
+            "month": 3,
+            "predicted_amount": 1600000,
+            "confidence_score": 90,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "d89c96ca-5e48-4c09-acfb-bfb159e6fffe",
+            "year": 2025,
+            "month": 4,
+            "predicted_amount": 1650000,
+            "confidence_score": 90,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "df12de07-522d-4e4c-9595-950b1964fb43",
+            "year": 2025,
+            "month": 5,
+            "predicted_amount": 1700000,
+            "confidence_score": 90,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "eeb9d87c-b193-4bd7-8656-408d0c17c9b5",
+            "year": 2025,
+            "month": 6,
+            "predicted_amount": 1750000,
+            "confidence_score": 90,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "bb4f4e4f-12bf-452f-8f42-5f0506d8f9c3",
+            "year": 2025,
+            "month": 7,
+            "predicted_amount": 1800000,
+            "confidence_score": 90,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "216cc091-6b4b-4dd4-bb8f-b921a7cc7983",
+            "year": 2025,
+            "month": 8,
+            "predicted_amount": 1850000,
+            "confidence_score": 90,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "f4d3df6f-e62e-427e-870e-038464cad3f5",
+            "year": 2025,
+            "month": 9,
+            "predicted_amount": 1900000,
+            "confidence_score": 90,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "f10838a1-9697-454b-a30b-ab0bf0b5eeeb",
+            "year": 2025,
+            "month": 10,
+            "predicted_amount": 1950000,
+            "confidence_score": 90,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "d5498005-100f-4042-bfb5-5aea56bd3c95",
+            "year": 2025,
+            "month": 11,
+            "predicted_amount": 2000000,
+            "confidence_score": 90,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "410badb0-b656-40cc-9565-f2ae4147f789",
+            "year": 2025,
+            "month": 12,
+            "predicted_amount": 2050000,
+            "confidence_score": 90,
+            "factors": {
+              "other_factors": "None",
+              "historical_trend": 0.95,
+              "seasonal_factors": 0.9,
+              "market_conditions": 0.85
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          }
+        ]
+      }
+    },
+    {
+      "endpoint": "/revenue/metrics",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true,
+        "metrics": {
+          "year": 2025,
+          "month": 3,
+          "total_revenue": 0,
+          "total_payroll": 0,
+          "profit_margin": 0,
+          "revenue_by_category": {},
+          "revenue_by_source": {}
+        },
+        "saved_record": {
+          "id": "21c0c263-24d7-41eb-8e26-3d91be6918a7",
+          "year": 2025,
+          "month": 3,
+          "total_revenue": 0,
+          "total_payroll": 0,
+          "profit_margin": 0,
+          "created_at": "2025-03-20T16:14:39.067176+00:00",
+          "updated_at": "2025-03-20T16:14:39.067176+00:00"
+        }
+      }
+    },
+    {
+      "endpoint": "/revenue/[id]",
+      "method": "GET",
+      "status": 404,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "Revenue entry not found"
+      }
+    },
+    {
+      "endpoint": "/revenue/[id]",
+      "method": "PUT",
+      "status": 404,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "Revenue entry not found"
+      }
+    },
+    {
+      "endpoint": "/revenue/[id]",
+      "method": "DELETE",
+      "status": 404,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "Revenue entry not found"
+      }
+    },
+    {
+      "endpoint": "/skills",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true,
+        "skills": []
+      }
+    },
+    {
+      "endpoint": "/skills",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "Could not find the 'description' column of 'skills' in the schema cache"
+      }
+    },
+    {
+      "endpoint": "/skills/[id]",
+      "method": "GET",
+      "status": 404,
+      "success": false,
+      "response": {
+        "error": "Skill not found"
+      }
+    },
+    {
+      "endpoint": "/skills/[id]",
+      "method": "PUT",
+      "status": 404,
+      "success": false,
+      "response": {
+        "error": "Skill not found"
+      }
+    },
+    {
+      "endpoint": "/skills/[id]",
+      "method": "DELETE",
+      "status": 404,
+      "success": false,
+      "response": {
+        "error": "Skill not found"
+      }
+    },
+    {
+      "endpoint": "/test",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true,
+        "environment": {
+          "supabaseUrl": "Set",
+          "supabaseAnonKey": "Set",
+          "supabaseServiceKey": "Set"
+        },
+        "anonClient": {
+          "error": "",
+          "data": null
+        },
+        "adminClient": {
+          "error": "",
+          "data": null
+        }
+      }
+    },
+    {
+      "endpoint": "/test-llama",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true,
+        "text_result": "The capital of France is Paris.",
+        "json_result": [
+          "item1",
+          "item2",
+          "item3"
+        ],
+        "api_key_provided": true,
+        "api_url": "https://api.together.xyz/v1/chat/completions"
+      }
+    },
+    {
+      "endpoint": "/users",
+      "method": "GET",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Internal server error"
+      }
+    },
+    {
+      "endpoint": "/workforce/forecasting",
+      "method": "POST",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true,
+        "forecasts": [
+          {
+            "department_id": "No department",
+            "department_name": "No department",
+            "forecast_date": "2025-01-01",
+            "forecast_type": "6_months",
+            "headcount_prediction": 0,
+            "confidence_score": 80,
+            "factors": {
+              "historical_growth": 0,
+              "project_demands": 0,
+              "seasonal_factors": 0,
+              "other_factors": "No historical data available"
+            }
+          },
+          {
+            "department_id": "No department",
+            "department_name": "No department",
+            "forecast_date": "2025-02-01",
+            "forecast_type": "6_months",
+            "headcount_prediction": 0,
+            "confidence_score": 80,
+            "factors": {
+              "historical_growth": 0,
+              "project_demands": 0,
+              "seasonal_factors": 0,
+              "other_factors": "No historical data available"
+            }
+          },
+          {
+            "department_id": "No department",
+            "department_name": "No department",
+            "forecast_date": "2025-03-01",
+            "forecast_type": "6_months",
+            "headcount_prediction": 0,
+            "confidence_score": 80,
+            "factors": {
+              "historical_growth": 0,
+              "project_demands": 0,
+              "seasonal_factors": 0,
+              "other_factors": "No historical data available"
+            }
+          },
+          {
+            "department_id": "No department",
+            "department_name": "No department",
+            "forecast_date": "2025-04-01",
+            "forecast_type": "6_months",
+            "headcount_prediction": 0,
+            "confidence_score": 80,
+            "factors": {
+              "historical_growth": 0,
+              "project_demands": 0,
+              "seasonal_factors": 0,
+              "other_factors": "No historical data available"
+            }
+          },
+          {
+            "department_id": "No department",
+            "department_name": "No department",
+            "forecast_date": "2025-05-01",
+            "forecast_type": "6_months",
+            "headcount_prediction": 0,
+            "confidence_score": 80,
+            "factors": {
+              "historical_growth": 0,
+              "project_demands": 0,
+              "seasonal_factors": 0,
+              "other_factors": "No historical data available"
+            }
+          },
+          {
+            "department_id": "No department",
+            "department_name": "No department",
+            "forecast_date": "2025-06-01",
+            "forecast_type": "6_months",
+            "headcount_prediction": 0,
+            "confidence_score": 80,
+            "factors": {
+              "historical_growth": 0,
+              "project_demands": 0,
+              "seasonal_factors": 0,
+              "other_factors": "No historical data available"
+            }
+          }
+        ],
+        "saved_records": []
+      }
+    },
+    {
+      "endpoint": "/workforce/hiring-recommendations",
+      "method": "POST",
+      "status": null,
+      "success": false,
+      "response": {
+        "rawResponse": "undefined"
+      }
+    },
+    {
+      "endpoint": "/workforce/project-feasibility",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "column employee_skills_1.proficiency_level does not exist"
+      }
+    },
+    {
+      "endpoint": "/workforce/skill-gap",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "JSON object requested, multiple (or no) rows returned"
+      }
+    },
+    {
+      "endpoint": "/workforce/workload-balancing",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "column employees_1.name does not exist"
+      }
+    }
+  ]
+}

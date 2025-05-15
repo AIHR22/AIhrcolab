@@ -1,0 +1,67 @@
+{
+  "success": true,
+  "data": {
+    "id": "org-1",
+    "name": "CEO",
+    "title": "Chief Executive Officer",
+    "department": "Executive",
+    "children": [
+      {
+        "id": "dept-1",
+        "name": "Marketing",
+        "title": "Head of Marketing",
+        "department": "Marketing",
+        "metadata": {
+          "employeeCount": 15,
+          "budget": 2000000
+        },
+        "children": []
+      },
+      {
+        "id": "dept-2",
+        "name": "Engineering",
+        "title": "Head of Engineering",
+        "department": "Engineering",
+        "metadata": {
+          "employeeCount": 30,
+          "budget": 4000000
+        },
+        "children": []
+      },
+      {
+        "id": "dept-3",
+        "name": "Design",
+        "title": "Head of Design",
+        "department": "Design",
+        "metadata": {
+          "employeeCount": 10,
+          "budget": 1000000
+        },
+        "children": []
+      },
+      {
+        "id": "dept-4",
+        "name": "Finance",
+        "title": "Head of Finance",
+        "department": "Finance",
+        "metadata": {
+          "employeeCount": 15,
+          "budget": 3000000
+        },
+        "children": []
+      },
+      {
+        "id": "dept-5",
+        "name": "HR",
+        "title": "Head of HR",
+        "department": "HR",
+        "metadata": {
+          "employeeCount": 10,
+          "budget": 1500000
+        },
+        "children": []
+      }
+    ]
+  },
+  "message": "Organization chart generated successfully"
+}

@@ -1,0 +1,77 @@
+{
+  "success": true,
+  "data": {
+    "id": "org-1",
+    "name": "Company Name",
+    "department": "Executive",
+    "children": [
+      {
+        "id": "dept-2",
+        "name": "Marketing",
+        "title": "Head of Marketing",
+        "department": "Marketing",
+        "metadata": {
+          "employeeCount": 15,
+          "budget": 2000000
+        }
+      },
+      {
+        "id": "dept-3",
+        "name": "HR",
+        "title": "HR Manager",
+        "department": "HR",
+        "metadata": {
+          "employeeCount": 10,
+          "budget": 1500000
+        },
+        "children": []
+      },
+      {
+        "id": "dept-5",
+        "name": "Finance",
+        "title": "Finance Director",
+        "department": "Finance",
+        "metadata": {
+          "employeeCount": 12,
+          "budget": 3000000
+        },
+        "children": []
+      },
+      {
+        "id": "dept-1",
+        "name": "Engineering",
+        "title": "Head of Engineering",
+        "department": "Engineering",
+        "metadata": {
+          "employeeCount": 50,
+          "budget": 5000000
+        },
+        "children": []
+      },
+      {
+        "id": "dept-4",
+        "name": "Product",
+        "title": "Director of Product",
+        "department": "Product",
+        "metadata": {
+          "employeeCount": 20,
+          "budget": 2500000
+        },
+        "children": [
+          {
+            "id": "dept-6",
+            "name": "Design",
+            "title": "Head of Design",
+            "department": "Design",
+            "metadata": {
+              "employeeCount": 15,
+              "budget": 1000000
+            },
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  "message": "Organization chart generated successfully"
+}

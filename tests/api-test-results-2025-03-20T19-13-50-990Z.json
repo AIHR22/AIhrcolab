@@ -1,0 +1,1938 @@
+{
+  "timestamp": "2025-03-20T19:13:50.991Z",
+  "summary": {
+    "total": 80,
+    "successful": 24,
+    "failed": 56
+  },
+  "results": [
+    {
+      "endpoint": "/ai/employee-insights",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Failed to generate employee insights"
+      }
+    },
+    {
+      "endpoint": "/ai/generate-org",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Failed to generate organization structure"
+      }
+    },
+    {
+      "endpoint": "/ai/generate-review",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Failed to generate performance review"
+      }
+    },
+    {
+      "endpoint": "/assistant",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Failed to generate response. Please try again."
+      }
+    },
+    {
+      "endpoint": "/auth",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Internal server error"
+      }
+    },
+    {
+      "endpoint": "/auth/create-profile",
+      "method": "POST",
+      "status": 400,
+      "success": false,
+      "response": {
+        "error": "User ID and email are required"
+      }
+    },
+    {
+      "endpoint": "/auth/signout",
+      "method": "POST",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true
+      }
+    },
+    {
+      "endpoint": "/auth/test",
+      "method": "GET",
+      "status": 401,
+      "success": false,
+      "response": {
+        "error": "Not authenticated"
+      }
+    },
+    {
+      "endpoint": "/courses",
+      "method": "GET",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Error fetching courses"
+      }
+    },
+    {
+      "endpoint": "/courses",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Error creating course"
+      }
+    },
+    {
+      "endpoint": "/courses/assign",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Error assigning course"
+      }
+    },
+    {
+      "endpoint": "/departments",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": [
+        {
+          "id": "1f87e8cf-8188-4742-8eec-3583f88164d5",
+          "name": "Customer Success",
+          "description": "Customer support and success management",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "06120a63-2d55-4537-bad1-ca9547f0def7",
+          "name": "Customer Success",
+          "description": "Customer support and success management",
+          "manager_id": null,
+          "created_at": "2025-03-14T13:59:35.241494+00:00",
+          "updated_at": "2025-03-14T13:59:35.241494+00:00"
+        },
+        {
+          "id": "e605175d-9364-44f5-8dca-aea4f4edb324",
+          "name": "Customer Success",
+          "description": "Customer support and success management",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "e89eadd2-1555-4888-86aa-887a15ea2d44",
+          "name": "Design",
+          "description": "User experience and interface design",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "12a31fed-35c3-41e3-aefe-65ba3fff564b",
+          "name": "Design",
+          "description": "User experience and interface design",
+          "manager_id": null,
+          "created_at": "2025-03-14T13:59:35.241494+00:00",
+          "updated_at": "2025-03-14T13:59:35.241494+00:00"
+        },
+        {
+          "id": "b3db06a7-f7aa-47a6-a929-2e1fc3677e16",
+          "name": "Design",
+          "description": "User experience and interface design",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "faa8581b-8371-4aab-9e23-3a2f1485566e",
+          "name": "Engineering",
+          "description": "Software development and technical operations",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "38ed4f7f-ff5f-4a3d-9cf4-8395298861f9",
+          "name": "Engineering",
+          "description": "Software Development and Infrastructure",
+          "manager_id": null,
+          "created_at": "2025-03-13T21:29:11.187406+00:00",
+          "updated_at": "2025-03-13T21:29:11.187406+00:00"
+        },
+        {
+          "id": "0d99ed97-5c3a-4ab7-aa7b-272f3240be49",
+          "name": "Engineering",
+          "description": null,
+          "manager_id": null,
+          "created_at": "2025-03-15T09:05:42.112497+00:00",
+          "updated_at": "2025-03-15T09:05:42.112497+00:00"
+        },
+        {
+          "id": "9af54c45-848c-48f0-9b76-681f58054076",
+          "name": "Engineering",
+          "description": "Software development and technical operations",
+          "manager_id": null,
+          "created_at": "2025-03-14T13:59:35.241494+00:00",
+          "updated_at": "2025-03-14T13:59:35.241494+00:00"
+        },
+        {
+          "id": "e883e74f-f903-4dee-810e-6ea512d3410e",
+          "name": "Engineering",
+          "description": "Software Development and Infrastructure",
+          "manager_id": null,
+          "created_at": "2025-03-13T21:58:26.060921+00:00",
+          "updated_at": "2025-03-13T21:58:26.060921+00:00"
+        },
+        {
+          "id": "527bef22-d93f-4c6f-9c69-e842e1d592a1",
+          "name": "Engineering",
+          "description": "Software Development and Infrastructure",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:00:51.659296+00:00",
+          "updated_at": "2025-03-20T19:00:51.659296+00:00"
+        },
+        {
+          "id": "411e6c74-9d83-476d-a9ee-77d344495fb6",
+          "name": "Engineering",
+          "description": "Software development and technical operations",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "d79fa5c9-7abf-4abf-b9e4-7529579b8a53",
+          "name": "Engineering",
+          "description": "Software Development and Infrastructure",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:09:16.445969+00:00",
+          "updated_at": "2025-03-20T19:09:16.445969+00:00"
+        },
+        {
+          "id": "c4289639-697a-4984-95b5-5f597c28f1de",
+          "name": "Finance",
+          "description": "Accounting, financial planning, and analysis",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "042cf6e3-7264-4638-81b9-9a58e8f34e4d",
+          "name": "Finance",
+          "description": null,
+          "manager_id": null,
+          "created_at": "2025-03-15T09:05:42.112497+00:00",
+          "updated_at": "2025-03-15T09:05:42.112497+00:00"
+        },
+        {
+          "id": "ddc74474-5a4f-4b11-aae1-8593a55f9c97",
+          "name": "Finance",
+          "description": "Accounting, financial planning, and analysis",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "dfbfda6c-7ade-427c-b5a7-1eef0f1b2cbf",
+          "name": "Finance",
+          "description": "Accounting, financial planning, and analysis",
+          "manager_id": null,
+          "created_at": "2025-03-14T13:59:35.241494+00:00",
+          "updated_at": "2025-03-14T13:59:35.241494+00:00"
+        },
+        {
+          "id": "a1af7fd4-fa8b-4fe9-a284-49b6ad655fc7",
+          "name": "Human Resources",
+          "description": "HR Management and Employee Relations",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:09:16.445969+00:00",
+          "updated_at": "2025-03-20T19:09:16.445969+00:00"
+        },
+        {
+          "id": "aea76e1a-3560-499d-bf1e-87d0e780e7c8",
+          "name": "Human Resources",
+          "description": "Talent acquisition and employee experience",
+          "manager_id": null,
+          "created_at": "2025-03-14T13:59:35.241494+00:00",
+          "updated_at": "2025-03-14T13:59:35.241494+00:00"
+        },
+        {
+          "id": "9670ce30-4c09-4f80-8cc1-a443e78ef15c",
+          "name": "Human Resources",
+          "description": "HR Management and Employee Relations",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:00:51.659296+00:00",
+          "updated_at": "2025-03-20T19:00:51.659296+00:00"
+        },
+        {
+          "id": "80032780-826d-4f67-af95-7fa7d53553ac",
+          "name": "Human Resources",
+          "description": "Talent acquisition and employee experience",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "8f487ece-6f95-4dc7-91bd-08b396874335",
+          "name": "Human Resources",
+          "description": "HR Management and Employee Relations",
+          "manager_id": null,
+          "created_at": "2025-03-13T21:58:26.060921+00:00",
+          "updated_at": "2025-03-13T21:58:26.060921+00:00"
+        },
+        {
+          "id": "3731b58b-d58d-467e-bdb7-00da43f25903",
+          "name": "Human Resources",
+          "description": null,
+          "manager_id": null,
+          "created_at": "2025-03-15T09:05:42.112497+00:00",
+          "updated_at": "2025-03-15T09:05:42.112497+00:00"
+        },
+        {
+          "id": "bdd7a2d3-35b9-473b-bd78-3e60c24e8fc2",
+          "name": "Human Resources",
+          "description": "Talent acquisition and employee experience",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "987c6b35-e89b-4827-8cab-53a46ac0913b",
+          "name": "Legal",
+          "description": "Legal compliance and contract management",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "1773f041-8d6e-4164-a9ef-73c1acd727ef",
+          "name": "Legal",
+          "description": "Legal compliance and contract management",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "23fa2d3c-5846-45c6-a775-1c5ff1428d2a",
+          "name": "Legal",
+          "description": "Legal compliance and contract management",
+          "manager_id": null,
+          "created_at": "2025-03-14T13:59:35.241494+00:00",
+          "updated_at": "2025-03-14T13:59:35.241494+00:00"
+        },
+        {
+          "id": "e677b37b-420b-4548-971c-6898ce003414",
+          "name": "Marketing",
+          "description": null,
+          "manager_id": null,
+          "created_at": "2025-03-15T09:05:42.112497+00:00",
+          "updated_at": "2025-03-15T09:05:42.112497+00:00"
+        },
+        {
+          "id": "4a989075-d7f4-4e66-9423-7deb3b1c3c3a",
+          "name": "Marketing",
+          "description": "Brand, communications, and growth",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "bda2e305-0ffe-49d8-a439-4ac51ca49ad6",
+          "name": "Marketing",
+          "description": "Brand, communications, and growth",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "0319802d-8730-4435-927d-b7a59c252c65",
+          "name": "Marketing",
+          "description": "Brand, communications, and growth",
+          "manager_id": null,
+          "created_at": "2025-03-14T13:59:35.241494+00:00",
+          "updated_at": "2025-03-14T13:59:35.241494+00:00"
+        },
+        {
+          "id": "ad651884-ee5a-451d-b47f-7d87e33e2dae",
+          "name": "Operations",
+          "description": "Business operations and administration",
+          "manager_id": null,
+          "created_at": "2025-03-14T13:59:35.241494+00:00",
+          "updated_at": "2025-03-14T13:59:35.241494+00:00"
+        },
+        {
+          "id": "989576b2-85d2-4509-8b2f-9ffd8cfd33cf",
+          "name": "Operations",
+          "description": "Business operations and administration",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "47eca6dd-515f-48f9-a2fb-dd8cef9416c8",
+          "name": "Operations",
+          "description": null,
+          "manager_id": null,
+          "created_at": "2025-03-15T09:05:42.112497+00:00",
+          "updated_at": "2025-03-15T09:05:42.112497+00:00"
+        },
+        {
+          "id": "ed24dd86-98cf-4cce-a6db-6ce1ac98f5c4",
+          "name": "Operations",
+          "description": "Business operations and administration",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "cf5f4428-afc5-489e-971c-55c271c8c09e",
+          "name": "Product",
+          "description": "Product management and strategy",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "e6f3ecdf-b9ed-4643-9ef1-74045b55fa73",
+          "name": "Product",
+          "description": "Product management and strategy",
+          "manager_id": null,
+          "created_at": "2025-03-14T13:59:35.241494+00:00",
+          "updated_at": "2025-03-14T13:59:35.241494+00:00"
+        },
+        {
+          "id": "0decf3f7-c894-4bbf-aef5-22a3994a364f",
+          "name": "Product",
+          "description": "Product management and strategy",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "373d06ad-b41a-40a1-9c18-6842cbacb189",
+          "name": "Sales",
+          "description": "Sales and Business Development",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:09:16.445969+00:00",
+          "updated_at": "2025-03-20T19:09:16.445969+00:00"
+        },
+        {
+          "id": "5b9ec353-9ed4-4720-b64e-99875c1fe037",
+          "name": "Sales",
+          "description": null,
+          "manager_id": null,
+          "created_at": "2025-03-15T09:05:42.112497+00:00",
+          "updated_at": "2025-03-15T09:05:42.112497+00:00"
+        },
+        {
+          "id": "dd113e67-5a48-4969-af5a-522a29d1f963",
+          "name": "Sales",
+          "description": "Sales and Business Development",
+          "manager_id": null,
+          "created_at": "2025-03-20T19:00:51.659296+00:00",
+          "updated_at": "2025-03-20T19:00:51.659296+00:00"
+        },
+        {
+          "id": "e5a6ff85-2c1e-4a84-99ec-2322f21a7d84",
+          "name": "Sales",
+          "description": "Business development and customer acquisition",
+          "manager_id": null,
+          "created_at": "2025-03-14T13:59:35.241494+00:00",
+          "updated_at": "2025-03-14T13:59:35.241494+00:00"
+        },
+        {
+          "id": "af622d51-4824-43a6-9cb9-9268b15a31ec",
+          "name": "Sales",
+          "description": "Business development and customer acquisition",
+          "manager_id": null,
+          "created_at": "2025-03-14T10:29:42.165971+00:00",
+          "updated_at": "2025-03-14T10:29:42.165971+00:00"
+        },
+        {
+          "id": "96e2afcd-d1b3-486c-9724-8488e3753f5f",
+          "name": "Sales",
+          "description": "Business development and customer acquisition",
+          "manager_id": null,
+          "created_at": "2025-03-14T11:00:40.86564+00:00",
+          "updated_at": "2025-03-14T11:00:40.86564+00:00"
+        },
+        {
+          "id": "3b4a0dc5-5de4-4346-ac45-e1a22f8e34b0",
+          "name": "Sales",
+          "description": "Sales and Business Development",
+          "manager_id": null,
+          "created_at": "2025-03-13T21:58:26.060921+00:00",
+          "updated_at": "2025-03-13T21:58:26.060921+00:00"
+        }
+      ]
+    },
+    {
+      "endpoint": "/departments",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "null value in column \"name\" of relation \"departments\" violates not-null constraint"
+      }
+    },
+    {
+      "endpoint": "/employees",
+      "method": "GET",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Could not find a relationship between 'employees' and 'department' in the schema cache"
+      }
+    },
+    {
+      "endpoint": "/employees",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Could not find the 'department_id' column of 'employees' in the schema cache"
+      }
+    },
+    {
+      "endpoint": "/employees/[id]",
+      "method": "GET",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Could not find a relationship between 'employees' and 'department' in the schema cache"
+      }
+    },
+    {
+      "endpoint": "/employees/[id]",
+      "method": "PUT",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Value is not JSON serializable"
+      }
+    },
+    {
+      "endpoint": "/employees/[id]",
+      "method": "DELETE",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true
+      }
+    },
+    {
+      "endpoint": "/job-postings",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": [
+        {
+          "id": "bf0a914f-80a8-43f6-b9aa-6334b631101c",
+          "title": "Senior",
+          "description": "Has to suck",
+          "department_id": "411e6c74-9d83-476d-a9ee-77d344495fb6",
+          "requirements": [
+            "java",
+            "python",
+            "anaconda"
+          ],
+          "salary_range_min": 40000,
+          "salary_range_max": 50000,
+          "location": "Dubai",
+          "employment_type": "full-time",
+          "experience_level": "mid",
+          "status": "open",
+          "closing_date": "2025-03-15",
+          "created_at": "2025-03-15T09:06:47.671286+00:00",
+          "updated_at": "2025-03-15T09:06:47.671286+00:00",
+          "departments": {
+            "id": "411e6c74-9d83-476d-a9ee-77d344495fb6",
+            "name": "Engineering"
+          }
+        }
+      ]
+    },
+    {
+      "endpoint": "/job-postings",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "null value in column \"title\" of relation \"job_postings\" violates not-null constraint"
+      }
+    },
+    {
+      "endpoint": "/organization/generate",
+      "method": "POST",
+      "status": 400,
+      "success": false,
+      "response": {
+        "error": "Prompt is required"
+      }
+    },
+    {
+      "endpoint": "/payroll",
+      "method": "GET",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "column employees_1.name does not exist"
+      }
+    },
+    {
+      "endpoint": "/payroll",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "null value in column \"employee_id\" of relation \"payroll\" violates not-null constraint"
+      }
+    },
+    {
+      "endpoint": "/payroll/[id]",
+      "method": "GET",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "column employees_1.name does not exist"
+      }
+    },
+    {
+      "endpoint": "/payroll/[id]",
+      "method": "PUT",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "JSON object requested, multiple (or no) rows returned"
+      }
+    },
+    {
+      "endpoint": "/payroll/[id]",
+      "method": "DELETE",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true
+      }
+    },
+    {
+      "endpoint": "/payroll/[id]/payslip",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "column employees_1.name does not exist"
+      }
+    },
+    {
+      "endpoint": "/projects",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": []
+    },
+    {
+      "endpoint": "/projects/[id]",
+      "method": "GET",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "JSON object requested, multiple (or no) rows returned"
+      }
+    },
+    {
+      "endpoint": "/projects/[id]",
+      "method": "PUT",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Value is not JSON serializable"
+      }
+    },
+    {
+      "endpoint": "/projects/[id]",
+      "method": "DELETE",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true
+      }
+    },
+    {
+      "endpoint": "/revenue",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true,
+        "data": []
+      }
+    },
+    {
+      "endpoint": "/revenue",
+      "method": "POST",
+      "status": 400,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "Missing required fields"
+      }
+    },
+    {
+      "endpoint": "/revenue/forecast",
+      "method": "POST",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true,
+        "forecasts": [
+          {
+            "year": 2024,
+            "month": 4,
+            "predicted_amount": 1050000,
+            "confidence_score": 85,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2024,
+            "month": 5,
+            "predicted_amount": 1100000,
+            "confidence_score": 80,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2024,
+            "month": 6,
+            "predicted_amount": 1150000,
+            "confidence_score": 85,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2024,
+            "month": 7,
+            "predicted_amount": 1200000,
+            "confidence_score": 90,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2024,
+            "month": 8,
+            "predicted_amount": 1250000,
+            "confidence_score": 95,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2024,
+            "month": 9,
+            "predicted_amount": 1300000,
+            "confidence_score": 95,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2024,
+            "month": 10,
+            "predicted_amount": 1350000,
+            "confidence_score": 90,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2024,
+            "month": 11,
+            "predicted_amount": 1400000,
+            "confidence_score": 85,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2024,
+            "month": 12,
+            "predicted_amount": 1450000,
+            "confidence_score": 80,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 1,
+            "predicted_amount": 1500000,
+            "confidence_score": 75,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 2,
+            "predicted_amount": 1550000,
+            "confidence_score": 70,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 3,
+            "predicted_amount": 1600000,
+            "confidence_score": 65,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 4,
+            "predicted_amount": 1650000,
+            "confidence_score": 60,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 5,
+            "predicted_amount": 1700000,
+            "confidence_score": 55,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 6,
+            "predicted_amount": 1750000,
+            "confidence_score": 50,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 7,
+            "predicted_amount": 1800000,
+            "confidence_score": 45,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 8,
+            "predicted_amount": 1850000,
+            "confidence_score": 40,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 9,
+            "predicted_amount": 1900000,
+            "confidence_score": 35,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 10,
+            "predicted_amount": 1950000,
+            "confidence_score": 30,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 11,
+            "predicted_amount": 2000000,
+            "confidence_score": 25,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          },
+          {
+            "year": 2025,
+            "month": 12,
+            "predicted_amount": 2050000,
+            "confidence_score": 20,
+            "factors": {
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0,
+              "other_factors": "none"
+            }
+          }
+        ],
+        "saved_records": [
+          {
+            "id": "66edc427-82f6-4b92-a3d2-63dd5c114639",
+            "year": 2024,
+            "month": 4,
+            "predicted_amount": 1050000,
+            "confidence_score": 85,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "d0f66f50-4b89-4e1e-8c50-d243b0e77b18",
+            "year": 2024,
+            "month": 5,
+            "predicted_amount": 1100000,
+            "confidence_score": 80,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "cfacb49c-f4e9-4c1e-bff5-1181f5a2a9de",
+            "year": 2024,
+            "month": 6,
+            "predicted_amount": 1150000,
+            "confidence_score": 85,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "aaa63fd2-9971-4b60-ab93-73e8ee82a4ca",
+            "year": 2024,
+            "month": 7,
+            "predicted_amount": 1200000,
+            "confidence_score": 90,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "9352defe-5153-4726-bc0d-6b3f21d91ded",
+            "year": 2024,
+            "month": 8,
+            "predicted_amount": 1250000,
+            "confidence_score": 95,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "ed0d3a03-1bbc-45a9-85fb-f69ffd697e24",
+            "year": 2024,
+            "month": 9,
+            "predicted_amount": 1300000,
+            "confidence_score": 95,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "93e2723b-6bed-4a90-acfc-0e7aa8dbca0f",
+            "year": 2024,
+            "month": 10,
+            "predicted_amount": 1350000,
+            "confidence_score": 90,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "06377b16-09e1-45b7-890a-1cfeb0261324",
+            "year": 2024,
+            "month": 11,
+            "predicted_amount": 1400000,
+            "confidence_score": 85,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "a816528f-0636-456c-8c1a-1bd11005742b",
+            "year": 2024,
+            "month": 12,
+            "predicted_amount": 1450000,
+            "confidence_score": 80,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "781db7ab-6d91-4794-98ac-5cdc4fed3ab8",
+            "year": 2025,
+            "month": 1,
+            "predicted_amount": 1500000,
+            "confidence_score": 75,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "8f4b30b1-32ca-47f4-8fba-7c1bc9ff1561",
+            "year": 2025,
+            "month": 2,
+            "predicted_amount": 1550000,
+            "confidence_score": 70,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "2b36b2ef-3ddc-43d2-9585-13ecf44b3f40",
+            "year": 2025,
+            "month": 3,
+            "predicted_amount": 1600000,
+            "confidence_score": 65,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "d89c96ca-5e48-4c09-acfb-bfb159e6fffe",
+            "year": 2025,
+            "month": 4,
+            "predicted_amount": 1650000,
+            "confidence_score": 60,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "df12de07-522d-4e4c-9595-950b1964fb43",
+            "year": 2025,
+            "month": 5,
+            "predicted_amount": 1700000,
+            "confidence_score": 55,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "eeb9d87c-b193-4bd7-8656-408d0c17c9b5",
+            "year": 2025,
+            "month": 6,
+            "predicted_amount": 1750000,
+            "confidence_score": 50,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "bb4f4e4f-12bf-452f-8f42-5f0506d8f9c3",
+            "year": 2025,
+            "month": 7,
+            "predicted_amount": 1800000,
+            "confidence_score": 45,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "216cc091-6b4b-4dd4-bb8f-b921a7cc7983",
+            "year": 2025,
+            "month": 8,
+            "predicted_amount": 1850000,
+            "confidence_score": 40,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "f4d3df6f-e62e-427e-870e-038464cad3f5",
+            "year": 2025,
+            "month": 9,
+            "predicted_amount": 1900000,
+            "confidence_score": 35,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "f10838a1-9697-454b-a30b-ab0bf0b5eeeb",
+            "year": 2025,
+            "month": 10,
+            "predicted_amount": 1950000,
+            "confidence_score": 30,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "d5498005-100f-4042-bfb5-5aea56bd3c95",
+            "year": 2025,
+            "month": 11,
+            "predicted_amount": 2000000,
+            "confidence_score": 25,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          },
+          {
+            "id": "410badb0-b656-40cc-9565-f2ae4147f789",
+            "year": 2025,
+            "month": 12,
+            "predicted_amount": 2050000,
+            "confidence_score": 20,
+            "factors": {
+              "other_factors": "none",
+              "historical_trend": 0.05,
+              "seasonal_factors": 0,
+              "market_conditions": 0
+            },
+            "created_at": "2025-03-20T16:39:22.70457+00:00",
+            "updated_at": "2025-03-20T16:39:22.70457+00:00"
+          }
+        ]
+      }
+    },
+    {
+      "endpoint": "/revenue/metrics",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true,
+        "metrics": {
+          "year": 2025,
+          "month": 3,
+          "total_revenue": 0,
+          "total_payroll": 0,
+          "profit_margin": 0,
+          "revenue_by_category": {},
+          "revenue_by_source": {}
+        },
+        "saved_record": {
+          "id": "21c0c263-24d7-41eb-8e26-3d91be6918a7",
+          "year": 2025,
+          "month": 3,
+          "total_revenue": 0,
+          "total_payroll": 0,
+          "profit_margin": 0,
+          "created_at": "2025-03-20T16:14:39.067176+00:00",
+          "updated_at": "2025-03-20T16:14:39.067176+00:00"
+        }
+      }
+    },
+    {
+      "endpoint": "/revenue/[id]",
+      "method": "GET",
+      "status": 400,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "Invalid ID format. Expected UUID."
+      }
+    },
+    {
+      "endpoint": "/revenue/[id]",
+      "method": "PUT",
+      "status": 400,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "Invalid ID format. Expected UUID."
+      }
+    },
+    {
+      "endpoint": "/revenue/[id]",
+      "method": "DELETE",
+      "status": 400,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "Invalid ID format. Expected UUID."
+      }
+    },
+    {
+      "endpoint": "/seed",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Error seeding employees: duplicate key value violates unique constraint \"employees_email_key\""
+      }
+    },
+    {
+      "endpoint": "/seed-db",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true,
+        "message": "Database seeded successfully",
+        "counts": {
+          "employees": 20,
+          "timeOffRequests": 23,
+          "reviews": 5
+        }
+      }
+    },
+    {
+      "endpoint": "/setup",
+      "method": "GET",
+      "status": 401,
+      "success": false,
+      "response": {
+        "error": "Unauthorized"
+      }
+    },
+    {
+      "endpoint": "/setup",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Could not find the function public.create_employees_table without parameters in the schema cache"
+      }
+    },
+    {
+      "endpoint": "/setup/add-address-column",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Error adding address column: Error checking if table exists: relation \"public.information_schema.tables\" does not exist"
+      }
+    },
+    {
+      "endpoint": "/setup/admin",
+      "method": "POST",
+      "status": 400,
+      "success": false,
+      "response": {
+        "error": "Email and password are required"
+      }
+    },
+    {
+      "endpoint": "/setup/check-tables",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": {
+        "columns": [
+          {
+            "column_name": "id"
+          },
+          {
+            "column_name": "first_name"
+          },
+          {
+            "column_name": "last_name"
+          },
+          {
+            "column_name": "email"
+          },
+          {
+            "column_name": "department"
+          },
+          {
+            "column_name": "position"
+          },
+          {
+            "column_name": "hire_date"
+          },
+          {
+            "column_name": "manager_id"
+          },
+          {
+            "column_name": "status"
+          },
+          {
+            "column_name": "created_at"
+          },
+          {
+            "column_name": "address"
+          },
+          {
+            "column_name": "bio"
+          },
+          {
+            "column_name": "team"
+          },
+          {
+            "column_name": "username"
+          },
+          {
+            "column_name": "role"
+          },
+          {
+            "column_name": "avatar_url"
+          },
+          {
+            "column_name": "updated_at"
+          },
+          {
+            "column_name": "phone"
+          }
+        ],
+        "message": "Retrieved column names from sample data"
+      }
+    },
+    {
+      "endpoint": "/setup/create-all-tables",
+      "method": "POST",
+      "status": 200,
+      "success": true,
+      "response": {
+        "message": "This endpoint needs to be updated to use a different approach"
+      }
+    },
+    {
+      "endpoint": "/setup/create-employees-table",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Could not find the function public.exec(query) in the schema cache"
+      }
+    },
+    {
+      "endpoint": "/setup/create-tables",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Error creating tables: supabase.query is not a function"
+      }
+    },
+    {
+      "endpoint": "/setup/database",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Failed to set up database tables"
+      }
+    },
+    {
+      "endpoint": "/setup/fix-employees-table",
+      "method": "POST",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true
+      }
+    },
+    {
+      "endpoint": "/setup/function",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Failed to set up SQL functions"
+      }
+    },
+    {
+      "endpoint": "/setup/init-db",
+      "method": "POST",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": false,
+        "message": "Database tables not initialized. Please run the SQL script first."
+      }
+    },
+    {
+      "endpoint": "/setup/projects-tables",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "_lib_supabase__WEBPACK_IMPORTED_MODULE_1__.supabaseAdmin.query is not a function"
+      }
+    },
+    {
+      "endpoint": "/setup/recreate-employees",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Error recreating employees table: Error recreating employees table: Could not find the function public.exec(query) in the schema cache"
+      }
+    },
+    {
+      "endpoint": "/setup/recreate-employees-direct",
+      "method": "POST",
+      "status": 200,
+      "success": true,
+      "response": {
+        "message": "Employees table recreated successfully using insert method"
+      }
+    },
+    {
+      "endpoint": "/setup/recreate-employees-fetch",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Error recreating employees table: Error creating employees table: {\"code\":\"PGRST117\",\"details\":null,\"hint\":null,\"message\":\"Unsupported HTTP method: POST\"}"
+      }
+    },
+    {
+      "endpoint": "/setup/recreate-employees-pg",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Error recreating employees table: supabase.from(...).rpc is not a function"
+      }
+    },
+    {
+      "endpoint": "/setup/recreate-employees-rest",
+      "method": "POST",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true
+      }
+    },
+    {
+      "endpoint": "/setup/recreate-employees-simple",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Error recreating employees table: Error creating employees table: {\"code\":\"PGRST117\",\"details\":null,\"hint\":null,\"message\":\"Unsupported HTTP method: POST\"}"
+      }
+    },
+    {
+      "endpoint": "/setup/recreate-employees-sql",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Error recreating employees table: supabase.auth.admin.executeRaw is not a function"
+      }
+    },
+    {
+      "endpoint": "/setup/recreate-employees-sql-direct",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Error recreating employees table: supabase.sql is not a function"
+      }
+    },
+    {
+      "endpoint": "/setup/recreate-employees-storage",
+      "method": "POST",
+      "status": 200,
+      "success": true,
+      "response": {
+        "message": "Employees table verified successfully"
+      }
+    },
+    {
+      "endpoint": "/setup/schema",
+      "method": "GET",
+      "status": 500,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "Failed to parse URL from /api/setup/create-tables"
+      }
+    },
+    {
+      "endpoint": "/setup/seed",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Failed to seed sample data",
+        "message": "Employee insertion failed: Could not find the 'department_id' column of 'employees' in the schema cache",
+        "details": {}
+      }
+    },
+    {
+      "endpoint": "/setup/seed-db",
+      "method": "POST",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true,
+        "message": "Database already has data (20 employees). Skipping seed."
+      }
+    },
+    {
+      "endpoint": "/setup/seed-employees",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "new row for relation \"employees\" violates check constraint \"employees_status_check\""
+      }
+    },
+    {
+      "endpoint": "/setup/time-off-tables",
+      "method": "GET",
+      "status": 500,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "Failed to create time off tables"
+      }
+    },
+    {
+      "endpoint": "/setup/update-employees-simple",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "null value in column \"department\" of relation \"employees\" violates not-null constraint"
+      }
+    },
+    {
+      "endpoint": "/setup/update-employees-table",
+      "method": "POST",
+      "status": 200,
+      "success": true,
+      "response": {
+        "message": "Employees table already has all required columns"
+      }
+    },
+    {
+      "endpoint": "/setup/workforce-planning-tables",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "_lib_supabase__WEBPACK_IMPORTED_MODULE_1__.supabaseAdmin.query is not a function"
+      }
+    },
+    {
+      "endpoint": "/setup-db",
+      "method": "GET",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Error creating employees table: Could not find the function public.create_table_if_not_exists(table_definition, table_name) in the schema cache"
+      }
+    },
+    {
+      "endpoint": "/skills",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true,
+        "skills": []
+      }
+    },
+    {
+      "endpoint": "/test",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true,
+        "environment": {
+          "supabaseUrl": "Set",
+          "supabaseAnonKey": "Set",
+          "supabaseServiceKey": "Set"
+        },
+        "anonClient": {
+          "error": "",
+          "data": null
+        },
+        "adminClient": {
+          "error": "",
+          "data": null
+        }
+      }
+    },
+    {
+      "endpoint": "/test-llama",
+      "method": "GET",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true,
+        "text_result": "The capital of France is Paris.",
+        "json_result": [
+          "item1",
+          "item2",
+          "item3"
+        ],
+        "api_key_provided": true,
+        "api_url": "https://api.together.xyz/v1/chat/completions"
+      }
+    },
+    {
+      "endpoint": "/users",
+      "method": "GET",
+      "status": 500,
+      "success": false,
+      "response": {
+        "error": "Internal server error"
+      }
+    },
+    {
+      "endpoint": "/workforce/forecasting",
+      "method": "POST",
+      "status": 200,
+      "success": true,
+      "response": {
+        "success": true,
+        "forecasts": [
+          {
+            "department_id": "No department",
+            "department_name": "No department",
+            "forecast_date": "2025-04-01",
+            "forecast_type": "6_months",
+            "headcount_prediction": 0,
+            "confidence_score": 80,
+            "factors": {
+              "historical_growth": 0,
+              "project_demands": 0,
+              "seasonal_factors": 0,
+              "other_factors": "No historical data available"
+            }
+          },
+          {
+            "department_id": "No department",
+            "department_name": "No department",
+            "forecast_date": "2025-05-01",
+            "forecast_type": "6_months",
+            "headcount_prediction": 0,
+            "confidence_score": 80,
+            "factors": {
+              "historical_growth": 0,
+              "project_demands": 0,
+              "seasonal_factors": 0,
+              "other_factors": "No historical data available"
+            }
+          },
+          {
+            "department_id": "No department",
+            "department_name": "No department",
+            "forecast_date": "2025-06-01",
+            "forecast_type": "6_months",
+            "headcount_prediction": 0,
+            "confidence_score": 80,
+            "factors": {
+              "historical_growth": 0,
+              "project_demands": 0,
+              "seasonal_factors": 0,
+              "other_factors": "No historical data available"
+            }
+          },
+          {
+            "department_id": "No department",
+            "department_name": "No department",
+            "forecast_date": "2025-07-01",
+            "forecast_type": "6_months",
+            "headcount_prediction": 0,
+            "confidence_score": 80,
+            "factors": {
+              "historical_growth": 0,
+              "project_demands": 0,
+              "seasonal_factors": 0,
+              "other_factors": "No historical data available"
+            }
+          },
+          {
+            "department_id": "No department",
+            "department_name": "No department",
+            "forecast_date": "2025-08-01",
+            "forecast_type": "6_months",
+            "headcount_prediction": 0,
+            "confidence_score": 80,
+            "factors": {
+              "historical_growth": 0,
+              "project_demands": 0,
+              "seasonal_factors": 0,
+              "other_factors": "No historical data available"
+            }
+          },
+          {
+            "department_id": "No department",
+            "department_name": "No department",
+            "forecast_date": "2025-09-01",
+            "forecast_type": "6_months",
+            "headcount_prediction": 0,
+            "confidence_score": 80,
+            "factors": {
+              "historical_growth": 0,
+              "project_demands": 0,
+              "seasonal_factors": 0,
+              "other_factors": "No historical data available"
+            }
+          },
+          {
+            "department_id": "No department",
+            "department_name": "No department",
+            "forecast_date": "2025-10-01",
+            "forecast_type": "6_months",
+            "headcount_prediction": 0,
+            "confidence_score": 80,
+            "factors": {
+              "historical_growth": 0,
+              "project_demands": 0,
+              "seasonal_factors": 0,
+              "other_factors": "No historical data available"
+            }
+          },
+          {
+            "department_id": "No department",
+            "department_name": "No department",
+            "forecast_date": "2025-11-01",
+            "forecast_type": "6_months",
+            "headcount_prediction": 0,
+            "confidence_score": 80,
+            "factors": {
+              "historical_growth": 0,
+              "project_demands": 0,
+              "seasonal_factors": 0,
+              "other_factors": "No historical data available"
+            }
+          },
+          {
+            "department_id": "No department",
+            "department_name": "No department",
+            "forecast_date": "2025-12-01",
+            "forecast_type": "6_months",
+            "headcount_prediction": 0,
+            "confidence_score": 80,
+            "factors": {
+              "historical_growth": 0,
+              "project_demands": 0,
+              "seasonal_factors": 0,
+              "other_factors": "No historical data available"
+            }
+          }
+        ],
+        "saved_records": []
+      }
+    },
+    {
+      "endpoint": "/workforce/hiring-recommendations",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "Failed after 3 attempts. Last error: You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors."
+      }
+    },
+    {
+      "endpoint": "/workforce/project-feasibility",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "column employee_skills_1.proficiency_level does not exist"
+      }
+    },
+    {
+      "endpoint": "/workforce/skill-gap",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "analysis.skill_gaps is not iterable"
+      }
+    },
+    {
+      "endpoint": "/workforce/workload-balancing",
+      "method": "POST",
+      "status": 500,
+      "success": false,
+      "response": {
+        "success": false,
+        "error": "column employees_1.name does not exist"
+      }
+    }
+  ]
+}
