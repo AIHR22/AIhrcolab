@@ -44,7 +44,7 @@ export const getRevenueForecast = async (): Promise<DepartmentRevenueApiResponse
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
-      throw new Error('No active session');
+      return null;
     }
 
     const response = await fetch('/api/revenue/forecast', {
@@ -148,8 +148,18 @@ export const getRevenueForecast = async (): Promise<DepartmentRevenueApiResponse
 
     const sortedDepartments = [...departments].sort((a, b) => b.currentRevenue - a.currentRevenue);
 
+    // Get the top performing department
+    const topDept = sortedDepartments[0] || { id: 'default', name: 'N/A', currentRevenue: 0 };
+    
+    // Calculate growth rate
+    const growthRate = topDept.percentChange || 0;
+
     return {
-      departments: departments as any[], // Type assertion since we know the structure matches
+      id: topDept.id,
+      name: topDept.name,
+      currentRevenue: topDept.currentRevenue,
+      projectedRevenue: topDept.currentRevenue * (1 + (growthRate / 100)),
+      growthRate: growthRate,
       metrics: {
         totalRevenue: departmentMetrics[latestMonth].total,
         projectedGrowth: ((departmentMetrics[latestMonth].total - 

@@ -1,13 +1,15 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
+import { useAuth } from "@/contexts/auth-provider"
 import type { ReactNode } from "react"
 import { useRevenueTrends, generateProjections, RevenueTrendData } from "./utils/revenueTrendsHelper"
-import { AlertCircle, Download, RefreshCw, DollarSign, TrendingUp, EyeOff, Eye, History, X, Loader2, Users, Briefcase, CalculatorIcon, Send } from "lucide-react"
+import { AlertCircle, Download,RefreshCw,DollarSign, TrendingUp, EyeOff, Eye, History, X, Loader2, Users, Briefcase, CalculatorIcon, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
+import { RefreshButton } from "@/components/ui/RefreshButton"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   ResponsiveContainer,
@@ -654,6 +656,18 @@ function RevenueForecasting(): ReactNode {
   const isActiveTab = (tab: TabOption) => activeTab === tab
 
   // Handle report generation
+  const fetchData = () => {
+    fetchForecastData();
+  };
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsLoading(true);
+    await fetchData(); // or your existing fetchData()
+    setIsLoading(false);
+  };
+
   const handleGenerateReport = () => {
     // TODO: Add backend integration when connected
     toast({
@@ -676,10 +690,7 @@ function RevenueForecasting(): ReactNode {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => {}}>
-            <RefreshCw size={16} className="mr-2" />
-            Refresh
-          </Button>
+        <RefreshButton size="sm" onClick={handleRefresh} />
           <Button size="sm" onClick={handleGenerateReport}>
             <Download size={16} className="mr-2" />
             Export Report
@@ -1792,4 +1803,23 @@ function RevenueForecasting(): ReactNode {
   )
 }
 
-export default RevenueForecasting;
+function RevenueContent() {
+  const { session } = useAuth();
+
+  if (!session) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold mb-4">Please Sign In</h2>
+          <p className="text-muted-foreground">You need to be signed in to view this page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <RevenueForecasting />;
+}
+
+export default function RevenuePage() {
+  return <RevenueContent />;
+}

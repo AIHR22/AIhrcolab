@@ -12,6 +12,7 @@ interface AuthContextType {
   user: Session['user'] | null
   client: ReturnType<typeof getSupabase>
   signIn: (email: string, password: string) => Promise<void>
+  signUp: (email: string, password: string) => Promise<{ success: boolean, message: string }>
   signOut: () => Promise<void>
 }
 
@@ -69,22 +70,82 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signIn = async (email: string, password: string) => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const { data, error } = await baseClient.auth.signInWithPassword({
-        email,
-        password
-      })
+      // First check if the email exists and is verified
+      const { data: existingUser, error: lookupError } = await baseClient
+        .from('user_profiles')
+        .select('user_id, role, email_verified')
+        .eq('email', email.toLowerCase())
+        .single();
 
-      if (error) throw error
-      
-      if (data.session) {
-        await initializeTenantContext(data.session)
+      if (lookupError && lookupError.code !== 'PGRST116') {
+        throw new Error('Error checking user status');
       }
+
+      // Attempt to sign in
+      const { data, error } = await baseClient.auth.signInWithPassword({
+        email: email.toLowerCase(),
+        password
+      });
+
+      if (error) throw error;
+
+      if (!data.session) {
+        throw new Error('No session after sign in');
+      }
+
+      // If this is a new user, wait for profile creation
+      if (!existingUser) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      // Initialize tenant context
+      await initializeTenantContext(data.session);
+    } catch (error) {
+      console.error('Sign in error:', error);
+      setError(error instanceof Error ? error : new Error('Failed to sign in'));
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  const signUp = async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      // Check if email already exists
+      const { data: existingUser } = await baseClient
+        .from('user_profiles')
+        .select('user_id')
+        .eq('email', email.toLowerCase())
+        .single();
+
+      if (existingUser) {
+        throw new Error('Email already registered');
+      }
+
+      // Sign up with email verification
+      const { data, error } = await baseClient.auth.signUp({
+        email: email.toLowerCase(),
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        }
+      });
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        message: 'Please check your email to verify your account'
+      };
+    } catch (error) {
+      console.error('Sign up error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const signOut = async () => {
     await baseClient.auth.signOut()
@@ -137,6 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: session?.user ?? null,
     client: tenantClient,
     signIn,
+    signUp,
     signOut,
   }
 

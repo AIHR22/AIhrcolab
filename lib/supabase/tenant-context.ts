@@ -18,42 +18,94 @@ export async function getCurrentTenantContext(): Promise<TenantContext | null> {
 
     const user = session.user;
 
-    // Check if user is platform admin by email and role
-    if (user.email === 'arvindfenova@gmail.com' || user.email === 'test2@test.com') {
-      return {
-        tenantId: null, // Platform admin can access all tenants
-        role: 'platform_admin'
-      };
-    }
-
     // Check user profile role
     let profile = null;
     const { data: userProfile, error: profileError } = await client
       .from('user_profiles')
-      .select('role')
+      .select('role, id')
       .eq('user_id', user.id)
       .single();
 
     if (profileError) {
       if (profileError.code === 'PGRST116') {
-        // Profile doesn't exist yet, create it
-        const { data: newProfile, error: createError } = await client
-          .from('user_profiles')
-          .insert({
-            user_id: user.id,
-            email: user.email,
-            name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-            role: 'user'
-          })
-          .select('role')
-          .single();
+        // Profile doesn't exist yet, try to create it
+        try {
+          // First create the user profile
+          const { data: newProfile, error: createError } = await client
+            .from('user_profiles')
+            .upsert({
+              user_id: user.id,
+              email: user.email,
+              name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+              role: 'sub_user'
+            }, {
+              onConflict: 'user_id'
+            })
+            .select('role')
+            .single();
 
-        if (createError) {
-          console.error('Error creating user profile:', createError);
-          return null;
+          if (createError) {
+            console.error('Error creating user profile:', createError);
+            return null;
+          }
+
+          // Get or create a default tenant for new users
+          const { data: defaultTenant, error: tenantError } = await client
+            .from('tenants')
+            .select('id')
+            .eq('name', 'Default Tenant')
+            .single();
+
+          if (tenantError) {
+            // Create default tenant if it doesn't exist
+            const { data: newTenant, error: createTenantError } = await client
+              .from('tenants')
+              .insert({
+                name: 'Default Tenant',
+                domain: 'default'
+              })
+              .select('id')
+              .single();
+
+            if (createTenantError) {
+              console.error('Error creating default tenant:', createTenantError);
+              return null;
+            }
+
+            // Associate user with the new tenant
+            await client
+              .from('tenant_users')
+              .insert({
+                tenant_id: newTenant.id,
+                user_id: user.id,
+                role: 'sub_user'
+              });
+          } else {
+            // Associate user with existing default tenant
+            await client
+              .from('tenant_users')
+              .insert({
+                tenant_id: defaultTenant.id,
+                user_id: user.id,
+                role: 'sub_user'
+              });
+          }
+
+          profile = newProfile;
+        } catch (e) {
+          // If upsert fails, try one more time to fetch the profile
+          const { data: retryProfile, error: retryError } = await client
+            .from('user_profiles')
+            .select('role')
+            .eq('user_id', user.id)
+            .single();
+
+          if (retryError) {
+            console.error('Error in retry fetch of user profile:', retryError);
+            return null;
+          }
+          profile = retryProfile;
         }
-
-        profile = newProfile;
       } else {
         console.error('Error fetching user profile:', profileError);
         return null;
@@ -62,11 +114,18 @@ export async function getCurrentTenantContext(): Promise<TenantContext | null> {
       profile = userProfile;
     }
 
+    // Check if user is platform_admin
     if (profile?.role === 'platform_admin') {
       return {
-        tenantId: null, // Platform admin can access all tenants
+        tenantId: null,
         role: 'platform_admin'
       };
+    }
+
+    // Validate that profile role is one of the allowed values
+    if (!profile?.role || !['client_admin', 'sub_user'].includes(profile.role)) {
+      console.error('Invalid user role:', profile?.role);
+      return null;
     }
 
     // Get user's tenant association
