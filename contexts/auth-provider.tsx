@@ -11,7 +11,7 @@ interface AuthContextType {
   session: Session | null
   user: Session['user'] | null
   client: ReturnType<typeof getSupabase>
-  signIn: (email: string, password: string) => Promise<void>
+  signIn: (email: string, password: string) => Promise<Session>
   signUp: (email: string, password: string) => Promise<{ success: boolean, message: string }>
   signOut: () => Promise<void>
 }
@@ -30,20 +30,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [shouldRedirect, setShouldRedirect] = useState<string | null>(null)
 
   const initializeTenantContext = async (currentSession: Session | null) => {
+    console.log('Initializing tenant context with session:', currentSession?.user?.email);
+    
     if (!currentSession) {
+      console.log('No session provided, resetting to base client');
       setSession(null)
       setTenantClient(baseClient)
       return
     }
 
     try {
+      console.log('Fetching tenant context...');
       const tenantContext = await getCurrentTenantContext()
+      console.log('Tenant context:', tenantContext);
       
       if (!tenantContext) {
-        console.error('No tenant context available')
+        const errorMsg = 'No tenant context available';
+        console.error(errorMsg);
         await baseClient.auth.signOut()
         setSession(null)
         setTenantClient(baseClient)
+        setError(new Error(errorMsg));
         setShouldRedirect('/login')
         return
       }
@@ -70,7 +77,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signIn = async (email: string, password: string) => {
+    console.log('Starting sign in process for:', email);
     setLoading(true);
+    setError(null);
+    
     try {
       // First check if the email exists and is verified
       const { data: existingUser, error: lookupError } = await baseClient
@@ -79,8 +89,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('email', email.toLowerCase())
         .single();
 
-      if (lookupError && lookupError.code !== 'PGRST116') {
-        throw new Error('Error checking user status');
+      if (lookupError) {
+        if (lookupError.code === 'PGRST116') {
+          console.log('No existing user profile found, will create new one');
+        } else {
+          console.error('Error checking user status:', lookupError);
+          throw new Error('Error checking user status');
+        }
+      } else {
+        console.log('Found existing user profile:', existingUser);
       }
 
       // Attempt to sign in
@@ -92,19 +109,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       if (!data.session) {
+        console.error('No session returned after sign in');
         throw new Error('No session after sign in');
       }
+      
+      console.log('Successfully authenticated, session:', data.session);
 
       // If this is a new user, wait for profile creation
       if (!existingUser) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
-      // Initialize tenant context
+      // Initialize tenant context with the new session
+      console.log('Initializing tenant context...');
       await initializeTenantContext(data.session);
+      console.log('Tenant context initialized');
+      
+      return data.session;
     } catch (error) {
       console.error('Sign in error:', error);
       setError(error instanceof Error ? error : new Error('Failed to sign in'));
+      throw error; // Re-throw to be caught by the login page
     } finally {
       setLoading(false);
     }
@@ -157,10 +182,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Handle redirects in a separate effect
   useEffect(() => {
     if (shouldRedirect) {
-      router.replace(shouldRedirect)
-      setShouldRedirect(null)
+      router.push(shouldRedirect);
+      setShouldRedirect(null);
     }
-  }, [shouldRedirect, router])
+  }, [shouldRedirect, router]);
 
   useEffect(() => {
     const fetchSession = async () => {

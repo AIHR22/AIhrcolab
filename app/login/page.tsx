@@ -12,8 +12,11 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/contexts/auth-provider"
-import { supabase } from "@/lib/supabase"
+import { getSupabase } from "@/lib/supabaseClient"
 import { toast } from "@/components/ui/use-toast"
+
+// Get the Supabase client
+const supabase = getSupabase()
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -31,15 +34,21 @@ export default function LoginPage() {
 
     try {
       // Use the signIn method from AuthContext
-      await signIn(email, password)
-      // If successful, redirect to dashboard
-      router.push("/dashboard")
+      const { user } = await signIn(email, password)
+      
+      if (user) {
+        // If successful, redirect to dashboard
+        router.push("/dashboard")
+      } else {
+        throw new Error("No user returned after sign in")
+      }
     } catch (err: any) {
       console.error("Login error:", err)
-      setError(err.message || "Failed to sign in. Please check your credentials.")
+      const errorMessage = err.message || "Failed to sign in. Please check your credentials."
+      setError(errorMessage)
       toast({
         title: "Login Failed",
-        description: err.message || "Invalid email or password.",
+        description: errorMessage,
         variant: "destructive"
       })
     } finally {
@@ -48,6 +57,11 @@ export default function LoginPage() {
   }
 
   const handleGoogleSignIn = async () => {
+    if (!supabase) {
+      console.error("Supabase client not initialized")
+      return
+    }
+    
     setIsLoading(true)
     setError(null)
     
@@ -62,17 +76,24 @@ export default function LoginPage() {
       if (error) throw error
     } catch (err: any) {
       console.error("Google sign-in error:", err)
-      setError(err.message || "Failed to sign in with Google.")
+      const errorMessage = err.message || "Failed to sign in with Google."
+      setError(errorMessage)
       toast({
         title: "Google Login Failed",
-        description: err.message || "Could not authenticate with Google.",
+        description: errorMessage,
         variant: "destructive"
       })
+    } finally {
       setIsLoading(false)
     }
   }
 
   const handleMicrosoftSignIn = async () => {
+    if (!supabase) {
+      console.error("Supabase client not initialized")
+      return
+    }
+    
     setIsLoading(true)
     setError(null)
     
@@ -87,12 +108,14 @@ export default function LoginPage() {
       if (error) throw error
     } catch (err: any) {
       console.error("Microsoft sign-in error:", err)
-      setError(err.message || "Failed to sign in with Microsoft.")
+      const errorMessage = err.message || "Failed to sign in with Microsoft."
+      setError(errorMessage)
       toast({
         title: "Microsoft Login Failed",
-        description: err.message || "Could not authenticate with Microsoft.",
+        description: errorMessage,
         variant: "destructive"
       })
+    } finally {
       setIsLoading(false)
     }
   }

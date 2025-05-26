@@ -5,152 +5,175 @@ import { getSupabase } from '../supabaseClient';
 // Tenant context management
 export interface TenantContext {
   tenantId: string | null;
-  role: 'platform_admin' | 'client_admin' | 'sub_user';
+  role: 'platform_admin' | 'company_admin' | 'sub_user';
 }
+
+// Get Supabase client
+const client = getSupabase();
 
 // Get current user's tenant context
 export async function getCurrentTenantContext(): Promise<TenantContext | null> {
-  const client = getSupabase();
-  
+  console.log('getCurrentTenantContext: Starting tenant context retrieval');
   try {
+    // Get current session
     const { data: { session }, error: sessionError } = await client.auth.getSession();
-    if (sessionError || !session?.user) return null;
-
-    const user = session.user;
-
-    // Check user profile role
-    let profile = null;
-    const { data: userProfile, error: profileError } = await client
-      .from('user_profiles')
-      .select('role, id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError) {
-      if (profileError.code === 'PGRST116') {
-        // Profile doesn't exist yet, try to create it
-        try {
-          // First create the user profile
-          const { data: newProfile, error: createError } = await client
-            .from('user_profiles')
-            .upsert({
-              user_id: user.id,
-              email: user.email,
-              name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-              role: 'sub_user'
-            }, {
-              onConflict: 'user_id'
-            })
-            .select('role')
-            .single();
-
-          if (createError) {
-            console.error('Error creating user profile:', createError);
-            return null;
-          }
-
-          // Get or create a default tenant for new users
-          const { data: defaultTenant, error: tenantError } = await client
-            .from('tenants')
-            .select('id')
-            .eq('name', 'Default Tenant')
-            .single();
-
-          if (tenantError) {
-            // Create default tenant if it doesn't exist
-            const { data: newTenant, error: createTenantError } = await client
-              .from('tenants')
-              .insert({
-                name: 'Default Tenant',
-                domain: 'default'
-              })
-              .select('id')
-              .single();
-
-            if (createTenantError) {
-              console.error('Error creating default tenant:', createTenantError);
-              return null;
-            }
-
-            // Associate user with the new tenant
-            await client
-              .from('tenant_users')
-              .insert({
-                tenant_id: newTenant.id,
-                user_id: user.id,
-                role: 'sub_user'
-              });
-          } else {
-            // Associate user with existing default tenant
-            await client
-              .from('tenant_users')
-              .insert({
-                tenant_id: defaultTenant.id,
-                user_id: user.id,
-                role: 'sub_user'
-              });
-          }
-
-          profile = newProfile;
-        } catch (e) {
-          // If upsert fails, try one more time to fetch the profile
-          const { data: retryProfile, error: retryError } = await client
-            .from('user_profiles')
-            .select('role')
-            .eq('user_id', user.id)
-            .single();
-
-          if (retryError) {
-            console.error('Error in retry fetch of user profile:', retryError);
-            return null;
-          }
-          profile = retryProfile;
-        }
-      } else {
-        console.error('Error fetching user profile:', profileError);
-        return null;
-      }
-    } else {
-      profile = userProfile;
+    
+    if (sessionError || !session) {
+      console.error('getCurrentTenantContext: No active session');
+      return null;
     }
 
-    // Check if user is platform_admin
-    if (profile?.role === 'platform_admin') {
+    const { user } = session;
+    console.log('getCurrentTenantContext: User session found', { user: user.id });
+
+    // Get the user's tenant memberships with tenant details
+    console.log('getCurrentTenantContext: Fetching tenant memberships with details...');
+    
+    // First, check if user is a platform admin
+    const { data: userProfile, error: profileError } = await client
+      .from('user_profiles')
+      .select('is_platform_admin')
+      .eq('user_id', user.id)
+      .single();
+      
+    if (profileError) {
+      console.error('getCurrentTenantContext: Error fetching user profile:', profileError);
+      return null;
+    }
+    
+    // If user is a platform admin, we can return early with platform_admin role
+    if (userProfile?.is_platform_admin) {
+      console.log('getCurrentTenantContext: User is a platform admin');
       return {
         tenantId: null,
         role: 'platform_admin'
       };
     }
-
-    // Validate that profile role is one of the allowed values
-    if (!profile?.role || !['client_admin', 'sub_user'].includes(profile.role)) {
-      console.error('Invalid user role:', profile?.role);
-      return null;
-    }
-
-    // Get user's tenant association
-    const { data: tenantUser, error: tenantError } = await client
+    
+    // Get tenant memberships with tenant details
+    const { data: tenantMemberships, error: membershipError } = await client
       .from('tenant_users')
-      .select('tenant_id, role')
+      .select(`
+        tenant_id, 
+        role,
+        tenants!inner(
+          id,
+          name,
+          company_id,
+          is_default,
+          status,
+          created_at,
+          updated_at
+        )
+      `)
       .eq('user_id', user.id)
-      .single();
+      .order('tenants.is_default', { ascending: false });
+      
+    console.log('getCurrentTenantContext: Raw tenant memberships:', { tenantMemberships, membershipError });
 
-    if (tenantError) {
-      console.error('Error fetching tenant user:', tenantError);
+    if (membershipError) {
+      console.error('getCurrentTenantContext: Error fetching tenant memberships:', membershipError);
       return null;
     }
+    
+    if (!tenantMemberships || tenantMemberships.length === 0) {
+      console.log('getCurrentTenantContext: No tenant memberships found for user');
+      return null;
+    }
+    
+    // If user has memberships, return the first one (prioritizing default tenant)
+    if (tenantMemberships?.length > 0) {
+      const membership = tenantMemberships[0];
+      console.log('getCurrentTenantContext: Using existing tenant membership:', membership);
+      
+      // Ensure the role is one of the valid values from our database
+      const validRoles = ['client_admin', 'sub_user'] as const;
+      const role = validRoles.includes(membership.role as any) 
+        ? membership.role as 'client_admin' | 'sub_user'
+        : 'sub_user';
+      
+      console.log(`getCurrentTenantContext: Using role '${role}' for tenant '${membership.tenant_id}'`);
+      
+      return {
+        tenantId: membership.tenant_id,
+        role
+      };
+    }
 
-    if (!tenantUser) return null;
-
-    return {
-      tenantId: tenantUser.tenant_id,
-      role: tenantUser.role as 'client_admin' | 'sub_user'
-    };
+    console.log('getCurrentTenantContext: No tenant memberships found, checking for default setup...');
+    
+    // If we get here, user has no tenant memberships - try to create a default setup
+    try {
+      // First, check if there's a default company
+      const { data: defaultCompany, error: companyError } = await client
+        .from('companies')
+        .select('id')
+        .eq('is_default', true)
+        .maybeSingle();
+        
+      let companyId = defaultCompany?.id;
+      
+      // Create default company if it doesn't exist
+      if (!companyId) {
+        console.log('getCurrentTenantContext: Creating default company...');
+        const { data: newCompany, error: createCompanyError } = await client
+          .from('companies')
+          .insert({
+            name: 'Default Company',
+            is_default: true,
+            status: 'active'
+          })
+          .select('id')
+          .single();
+          
+        if (createCompanyError) throw createCompanyError;
+        companyId = newCompany.id;
+      }
+      
+      // Create default tenant for the company
+      console.log('getCurrentTenantContext: Creating default tenant...');
+      const { data: defaultTenant, error: tenantError } = await client
+        .from('tenants')
+        .insert({
+          company_id: companyId,
+          name: 'Default Tenant',
+          is_default: true,
+          status: 'active'
+        })
+        .select('id')
+        .single();
+        
+      if (tenantError) throw tenantError;
+      
+      // Add user to the tenant as admin
+      console.log('getCurrentTenantContext: Adding user to tenant...');
+      const { error: membershipError } = await client
+        .from('tenant_users')
+        .insert({
+          tenant_id: defaultTenant.id,
+          user_id: user.id,
+          role: 'company_admin'
+        });
+        
+      if (membershipError) throw membershipError;
+      
+      console.log('getCurrentTenantContext: Successfully created default tenant setup');
+      
+      return {
+        tenantId: defaultTenant.id,
+        role: 'company_admin'
+      };
+      
+    } catch (error) {
+      console.error('getCurrentTenantContext: Error creating default tenant setup:', error);
+      return null;
+    }
+    
   } catch (error) {
-    console.error('Error getting tenant context:', error);
+    console.error('getCurrentTenantContext: Error getting tenant context:', error);
     return null;
   }
-}
+};
 
 // Create a Supabase client with tenant context
 export async function createTenantAwareClient(tenantId: string | null) {
