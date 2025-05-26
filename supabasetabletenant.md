@@ -24,7 +24,7 @@ Column	Type	Description
 id	uuid	PK, unique mapping ID
 tenant_id	uuid	FK → tenants(id)
 user_id	uuid	FK → auth.users(id) (via user_profiles)
-role	text	platform_admin, company_admin, or sub_user
+role	text	client_admin (users that can access their assigned tenant and has permissions to manage it and users), or sub_user (users that can only access their assigned tenant)
 created_at	timestamp with time zone	when the mapping was created
 updated_at	timestamp with time zone	last update timestamp
 4. user_profiles
@@ -35,7 +35,7 @@ id	uuid	PK, profile ID (could be same as user_id)
 user_id	uuid	FK → auth.users(id)
 email	text	user’s email
 name	text	display name
-role	text	app-level role (default user)
+role	text	platform_admin (for client admins with highest level of access basically super admin can access all tenants) or user
 is_platform_admin	boolean	bypass-all flag for super-admins
 created_at	timestamp with time zone	when profile was created
 updated_at	timestamp with time zone	last time profile was updated

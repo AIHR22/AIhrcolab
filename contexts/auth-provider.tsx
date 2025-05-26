@@ -56,16 +56,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // For platform admin, keep using base client
-      if (tenantContext.role === 'platform_admin') {
+      if (tenantContext.platformRole === 'platform_admin') {
         setSession(currentSession)
         setTenantClient(baseClient)
         return
       }
 
       // For regular users, set up tenant-aware client
-      const client = createTenantAwareClient(tenantContext.tenantId)
-      setTenantClient(client)
-      setSession(currentSession)
+      if (tenantContext.tenantId) {
+        const client = createTenantAwareClient(tenantContext.tenantId)
+        setTenantClient(client)
+        setSession(currentSession)
+      } else {
+        console.error('No tenant ID available for user')
+        throw new Error('No tenant assigned to user')
+      }
     } catch (error) {
       console.error('Error initializing tenant context:', error)
       await baseClient.auth.signOut()

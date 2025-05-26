@@ -5,7 +5,8 @@ import { getSupabase } from '../supabaseClient';
 // Tenant context management
 export interface TenantContext {
   tenantId: string | null;
-  role: 'platform_admin' | 'company_admin' | 'sub_user';
+  platformRole: 'platform_admin' | 'user';
+  tenantRole: 'client_admin' | 'sub_user' | null;
 }
 
 // Get Supabase client
@@ -41,12 +42,16 @@ export async function getCurrentTenantContext(): Promise<TenantContext | null> {
       return null;
     }
     
-    // If user is a platform admin, we can return early with platform_admin role
-    if (userProfile?.is_platform_admin) {
+    // Set platform role
+    const platformRole = userProfile.is_platform_admin ? 'platform_admin' : 'user';
+    
+    // If user is a platform admin, we can return early
+    if (platformRole === 'platform_admin') {
       console.log('getCurrentTenantContext: User is a platform admin');
       return {
         tenantId: null,
-        role: 'platform_admin'
+        platformRole,
+        tenantRole: null
       };
     }
     
@@ -86,17 +91,15 @@ export async function getCurrentTenantContext(): Promise<TenantContext | null> {
       const membership = tenantMemberships[0];
       console.log('getCurrentTenantContext: Using existing tenant membership:', membership);
       
-      // Ensure the role is one of the valid values from our database
-      const validRoles = ['client_admin', 'sub_user'] as const;
-      const role = validRoles.includes(membership.role as any) 
-        ? membership.role as 'client_admin' | 'sub_user'
-        : 'sub_user';
+      // Map the role from tenant_users
+      const tenantRole = membership.role === 'client_admin' ? 'client_admin' : 'sub_user';
       
-      console.log(`getCurrentTenantContext: Using role '${role}' for tenant '${membership.tenant_id}'`);
+      console.log(`getCurrentTenantContext: Using tenant role '${tenantRole}' for tenant '${membership.tenant_id}'`);
       
       return {
         tenantId: membership.tenant_id,
-        role
+        platformRole,
+        tenantRole
       };
     }
 
@@ -152,7 +155,7 @@ export async function getCurrentTenantContext(): Promise<TenantContext | null> {
         .insert({
           tenant_id: defaultTenant.id,
           user_id: user.id,
-          role: 'company_admin'
+          role: 'client_admin'
         });
         
       if (membershipError) throw membershipError;
@@ -161,7 +164,8 @@ export async function getCurrentTenantContext(): Promise<TenantContext | null> {
       
       return {
         tenantId: defaultTenant.id,
-        role: 'company_admin'
+        platformRole,
+        tenantRole: 'client_admin'
       };
       
     } catch (error) {
@@ -198,34 +202,39 @@ export async function createTenantAwareClient(tenantId: string | null) {
 
 // Helper to check if user has access to a specific tenant
 export async function hasAccessToTenant(userId: string, tenantId: string): Promise<boolean> {
-  const client = getSupabase();
-  
+  // Get user profile
   const { data: userProfile, error: profileError } = await client
     .from('user_profiles')
-    .select('role')
+    .select('is_platform_admin')
     .eq('user_id', userId)
     .single();
 
-  if (profileError) {
-    console.error('Error checking user profile:', profileError);
+  if (profileError || !userProfile) {
+    console.error('Error fetching user profile:', profileError);
     return false;
   }
 
   // Platform admins have access to all tenants
-  if (userProfile?.role === 'platform_admin') return true;
+  if (userProfile.is_platform_admin) {
+    console.log('hasAccessToTenant: User is platform admin, access granted');
+    return true;
+  }
 
-  const { data: tenantUser, error: tenantError } = await client
+  // Check if user has access to the specified tenant
+  console.log('hasAccessToTenant: Checking tenant access for user');
+  const { data: tenantUser, error } = await client
     .from('tenant_users')
-    .select('id')
+    .select('role')
     .eq('user_id', userId)
     .eq('tenant_id', tenantId)
     .single();
 
-  if (tenantError) {
-    console.error('Error checking tenant access:', tenantError);
+  if (error) {
+    console.error('Error checking tenant user access:', error);
     return false;
   }
 
+  // If user has any role in the tenant, they have access
   return !!tenantUser;
 }
 
@@ -256,6 +265,21 @@ export async function getAccessibleTenants(userId: string): Promise<string[]> {
     }
 
     return allTenants?.map((t: { id: string }) => t.id) || [];
+  }
+
+  // If user has client_admin role, get their tenant
+  if (userProfile?.role === 'client_admin') {
+    const { data: tenantUsers, error: tenantError } = await client
+      .from('tenant_users')
+      .select('tenant_id')
+      .eq('user_id', userId);
+
+    if (tenantError) {
+      console.error('Error fetching user tenants:', tenantError);
+      return [];
+    }
+
+    return tenantUsers.map(tu => tu.tenant_id);
   }
 
   // Regular users can only access their assigned tenant
