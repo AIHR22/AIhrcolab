@@ -14,6 +14,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { ModeToggle } from "@/components/mode-toggle"
@@ -27,6 +37,7 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import { cn } from "@/lib/utils"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
 // Helper function for debouncing
 function debounce<F extends (...args: any[]) => any>(func: F, waitFor: number) {
@@ -82,6 +93,7 @@ interface TopBarProps {
 
 export function TopBar({ onToggleSidebar }: TopBarProps) {
   const router = useRouter()
+  const supabase = createClientComponentClient()
   const [notifications, setNotifications] = useState([
     { id: 1, title: "New employee onboarding", read: false },
     { id: 2, title: "Payroll processing complete", read: false },
@@ -91,6 +103,7 @@ export function TopBar({ onToggleSidebar }: TopBarProps) {
   const [inputValue, setInputValue] = useState("")
   const [suggestions, setSuggestions] = useState<NavItem[]>([])
   const searchContainerRef = useRef<HTMLDivElement>(null)
+  const [showLogoutAlert, setShowLogoutAlert] = useState(false)
 
   const unreadCount = notifications.filter((n) => !n.read).length
 
@@ -301,16 +314,51 @@ export function TopBar({ onToggleSidebar }: TopBarProps) {
                 <User className="mr-2 h-4 w-4" />
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  router.push('/settings')
+                  router.refresh()
+                }}
+              >
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Log out</DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-red-600 focus:text-red-600"
+                onClick={() => setShowLogoutAlert(true)}
+              >
+                Log out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </header>
+
+      {/* Logout Confirmation Dialog */}
+      <AlertDialog open={showLogoutAlert} onOpenChange={setShowLogoutAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will be redirected to the login page.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                await supabase.auth.signOut()
+                router.push('/login')
+                router.refresh()
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Log out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }
