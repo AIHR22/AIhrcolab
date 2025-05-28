@@ -1,6 +1,6 @@
 "use client"
 
-import { Session } from "@supabase/supabase-js"
+import { Session, AuthError } from "@supabase/supabase-js"
 import { createContext, useContext, useEffect, useState, ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { getSupabase } from "@/lib/supabaseClient"
@@ -11,9 +11,11 @@ interface AuthContextType {
   session: Session | null
   user: Session['user'] | null
   client: ReturnType<typeof getSupabase>
-  signIn: (email: string, password: string) => Promise<Session>
+  signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<{ success: boolean, message: string }>
   signOut: () => Promise<void>
+  error: Error | null
+  isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -21,256 +23,248 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 // Keep the base client immutable
 const baseClient = getSupabase()
 
+// Rate limiting map
+const loginAttempts = new Map<string, { count: number; timestamp: number }>()
+const MAX_ATTEMPTS = 5
+const LOCKOUT_DURATION = 15 * 60 * 1000 // 15 minutes
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
   const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [client, setClient] = useState(baseClient)
   const [error, setError] = useState<Error | null>(null)
-  const [tenantClient, setTenantClient] = useState(baseClient)
-  const [shouldRedirect, setShouldRedirect] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const initializeTenantContext = async (currentSession: Session | null) => {
-    console.log('Initializing tenant context with session:', currentSession?.user?.email);
-    
-    if (!currentSession) {
-      console.log('No session provided, resetting to base client');
-      setSession(null)
-      setTenantClient(baseClient)
-      return
-    }
+  const checkRateLimit = (email: string): boolean => {
+    const now = Date.now()
+    const userAttempts = loginAttempts.get(email)
 
-    try {
-      console.log('Fetching tenant context...');
-      const tenantContext = await getCurrentTenantContext()
-      console.log('Tenant context:', tenantContext);
-      
-      if (!tenantContext) {
-        const errorMsg = 'No tenant context available';
-        console.error(errorMsg);
-        await baseClient.auth.signOut()
-        setSession(null)
-        setTenantClient(baseClient)
-        setError(new Error(errorMsg));
-        setShouldRedirect('/login')
-        return
-      }
-
-      // For platform admin, keep using base client
-      if (tenantContext.platformRole === 'platform_admin') {
-        setSession(currentSession)
-        setTenantClient(baseClient)
-        return
-      }
-
-      // For regular users, set up tenant-aware client
-      if (tenantContext.tenantId) {
-        const client = createTenantAwareClient(tenantContext.tenantId)
-        setTenantClient(client)
-        setSession(currentSession)
+    if (userAttempts) {
+      if (now - userAttempts.timestamp < LOCKOUT_DURATION) {
+        if (userAttempts.count >= MAX_ATTEMPTS) {
+          throw new Error(`Too many login attempts. Please try again in ${Math.ceil((LOCKOUT_DURATION - (now - userAttempts.timestamp)) / 60000)} minutes.`)
+        }
+        userAttempts.count++
       } else {
-        console.error('No tenant ID available for user')
-        throw new Error('No tenant assigned to user')
+        loginAttempts.set(email, { count: 1, timestamp: now })
       }
-    } catch (error) {
-      console.error('Error initializing tenant context:', error)
-      await baseClient.auth.signOut()
-      setSession(null)
-      setTenantClient(baseClient)
-      setError(error instanceof Error ? error : new Error('Failed to initialize tenant context'))
-      setShouldRedirect('/login')
+    } else {
+      loginAttempts.set(email, { count: 1, timestamp: now })
     }
+
+    return true
   }
 
   const signIn = async (email: string, password: string) => {
-    console.log('Starting sign in process for:', email);
-    setLoading(true);
-    setError(null);
-    
     try {
-      // First check if the email exists and is verified
-      const { data: existingUser, error: lookupError } = await baseClient
-        .from('user_profiles')
-        .select('user_id, role, email_verified')
-        .eq('email', email.toLowerCase())
-        .single();
+      setIsLoading(true)
+      setError(null)
+      
+      // Check rate limiting
+      checkRateLimit(email.toLowerCase())
 
-      if (lookupError) {
-        if (lookupError.code === 'PGRST116') {
-          console.log('No existing user profile found, will create new one');
-        } else {
-          console.error('Error checking user status:', lookupError);
-          throw new Error('Error checking user status');
-        }
-      } else {
-        console.log('Found existing user profile:', existingUser);
-      }
-
-      // Attempt to sign in
+      // First, try to sign in
       const { data, error } = await baseClient.auth.signInWithPassword({
         email: email.toLowerCase(),
         password
-      });
+      })
 
-      if (error) throw error;
-
-      if (!data.session) {
-        console.error('No session returned after sign in');
-        throw new Error('No session after sign in');
+      if (error) {
+        if (error instanceof AuthError) {
+          switch (error.status) {
+            case 400:
+              throw new Error('Invalid email or password')
+            case 422:
+              throw new Error('Email not verified. Please check your inbox.')
+            default:
+              throw new Error('Authentication failed. Please try again.')
+          }
+        }
+        throw error
       }
-      
-      console.log('Successfully authenticated, session:', data.session);
 
-      // If this is a new user, wait for profile creation
-      if (!existingUser) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!data.session) throw new Error('No session after sign in')
+
+      // Verify email is confirmed
+      if (!data.user?.email_confirmed_at) {
+        throw new Error('Please verify your email address before signing in')
       }
 
-      // Initialize tenant context with the new session
-      console.log('Initializing tenant context...');
-      await initializeTenantContext(data.session);
-      console.log('Tenant context initialized');
-      
-      return data.session;
+      // Set session first
+      setSession(data.session)
+
+      // Check user profile first - use single row select
+      const { data: profile, error: profileError } = await baseClient
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', data.session.user.id)
+        .limit(1)
+        .maybeSingle()
+
+      if (profileError) {
+        console.error('Error checking user profile:', profileError)
+        throw new Error('Error verifying account status')
+      }
+
+      if (!profile) {
+        throw new Error('User profile not found')
+      }
+
+      // Now check tenant associations
+      const { data: tenantUsers, error: tenantError } = await baseClient
+        .from('tenant_users')
+        .select('tenant_id, role')
+        .eq('user_id', data.session.user.id)
+        .limit(1)
+        .maybeSingle()
+
+      if (tenantError) {
+        console.error('Error checking tenant access:', tenantError)
+        // Don't throw here - user might not have tenant yet
+      }
+
+      // If user has a tenant, set up tenant-aware client
+      if (tenantUsers?.tenant_id) {
+        try {
+          const tenantClient = await createTenantAwareClient(tenantUsers.tenant_id)
+          setClient(tenantClient)
+        } catch (error) {
+          console.error('Error setting up tenant client:', error)
+          // Don't throw - fall back to base client
+        }
+      }
+
+      // Reset login attempts on successful login
+      loginAttempts.delete(email.toLowerCase())
+
+      router.push('/dashboard')
     } catch (error) {
-      console.error('Sign in error:', error);
-      setError(error instanceof Error ? error : new Error('Failed to sign in'));
-      throw error; // Re-throw to be caught by the login page
+      console.error('Sign in error:', error)
+      setError(error instanceof Error ? error : new Error('Failed to sign in'))
+      setSession(null)
+      setClient(baseClient)
+      throw error
     } finally {
-      setLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const signUp = async (email: string, password: string) => {
-    setLoading(true);
     try {
-      // Check if email already exists
-      const { data: existingUser } = await baseClient
-        .from('user_profiles')
-        .select('user_id')
-        .eq('email', email.toLowerCase())
-        .single();
-
-      if (existingUser) {
-        throw new Error('Email already registered');
-      }
-
-      // Sign up with email verification
+      setIsLoading(true)
+      setError(null)
+      
+      // First create the user
       const { data, error } = await baseClient.auth.signUp({
         email: email.toLowerCase(),
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/auth/callback`
         }
-      });
+      })
 
-      if (error) throw error;
+      if (error) throw error
+      if (!data.user) throw new Error('No user data after signup')
+
+      // Create default tenant and membership using the API route
+      const response = await fetch('/api/create-default-tenant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: data.user.id }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(`Error setting up account: ${errorData.error}`)
+      }
 
       return {
         success: true,
-        message: 'Please check your email to verify your account'
-      };
+        message: 'Please check your email for verification link'
+      }
     } catch (error) {
-      console.error('Sign up error:', error);
-      throw error;
+      console.error('Sign up error:', error)
+      setError(error instanceof Error ? error : new Error('Failed to sign up'))
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to sign up'
+      }
     } finally {
-      setLoading(false);
+      setIsLoading(false)
     }
-  };
-
-  const signOut = async () => {
-    await baseClient.auth.signOut()
-    setSession(null)
-    setTenantClient(baseClient)
-    setShouldRedirect('/login')
   }
 
-  // Handle redirects in a separate effect
-  useEffect(() => {
-    if (shouldRedirect) {
-      router.push(shouldRedirect);
-      setShouldRedirect(null);
+  const signOut = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      await baseClient.auth.signOut()
+      setSession(null)
+      setClient(baseClient)
+      router.push('/login')
+    } catch (error) {
+      console.error('Sign out error:', error)
+      setError(error instanceof Error ? error : new Error('Failed to sign out'))
+      throw error
+    } finally {
+      setIsLoading(false)
     }
-  }, [shouldRedirect, router]);
+  }
 
   useEffect(() => {
-    const fetchSession = async () => {
-      try {
-        setError(null)
-        const { data: { session } } = await baseClient.auth.getSession()
-        await initializeTenantContext(session)
-      } catch (err) {
-        console.error('Failed to fetch session:', err)
-        setError(err instanceof Error ? err : new Error('Failed to fetch session'))
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchSession()
-
-    const { data: authListener } = baseClient.auth.onAuthStateChange(async (_event, newSession) => {
-      // Only reinitialize if the user has actually changed
-      const currentUser = session?.user?.id
-      const newUser = newSession?.user?.id
-      
-      if (currentUser !== newUser) {
-        await initializeTenantContext(newSession)
+    // Check for existing session on mount
+    baseClient.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setSession(session)
+        getCurrentTenantContext().then(tenantContext => {
+          if (tenantContext?.tenantId) {
+            createTenantAwareClient(tenantContext.tenantId).then(setClient)
+          }
+        })
       }
     })
 
-    return () => {
-      authListener?.subscription.unsubscribe()
-    }
-  }, [session]) // Include session since we use it in auth state change
-
-  const value = {
-    session,
-    user: session?.user ?? null,
-    client: tenantClient,
-    signIn,
-    signUp,
-    signOut,
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="max-w-md p-6 rounded-lg bg-card border border-border shadow-lg">
-          <h2 className="text-xl font-semibold text-foreground mb-2">Authentication Error</h2>
-          <p className="text-muted-foreground mb-4">{error.message}</p>
-          <button
-            onClick={() => {
-              setError(null)
-              window.location.reload()
-            }}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
+    // Set up auth state listener
+    const { data: { subscription } } = baseClient.auth.onAuthStateChange(
+      async (event, currentSession) => {
+        if (event === 'SIGNED_OUT') {
+          setSession(null)
+          setClient(baseClient)
+          router.push('/login')
+        }
+        // Only handle sign out - sign in is handled by the signIn function
+      }
     )
-  }
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
 
   return (
-    <AuthContext.Provider value={value}>
-      {!loading ? children : (
-        <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
-            <div className="w-4 h-4 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
-            <div className="w-4 h-4 rounded-full bg-primary animate-bounce" />
-          </div>
-        </div>
-      )}
+    <AuthContext.Provider
+      value={{
+        session,
+        user: session?.user ?? null,
+        client,
+        signIn,
+        signUp,
+        signOut,
+        error,
+        isLoading
+      }}
+    >
+      {children}
     </AuthContext.Provider>
   )
 }
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider')
   }
   return context
 }

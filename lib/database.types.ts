@@ -3,74 +3,126 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export interface Database {
   public: {
     Tables: {
-      employees: {
+      user_profiles: {
         Row: {
           id: string
+          user_id: string
+          email: string
+          name: string | null
+          role: string
+          is_platform_admin: boolean
           created_at: string
           updated_at: string
-          first_name: string
-          last_name: string
-          email: string
-          position: string
-          department_id: string
-          status: "active" | "inactive" | "on_leave"
-          avatar_url: string | null
-          hire_date: string
-          salary: number
-          manager_id: string | null
         }
         Insert: {
           id?: string
+          user_id: string
+          email: string
+          name?: string | null
+          role?: string
+          is_platform_admin?: boolean
           created_at?: string
           updated_at?: string
-          first_name: string
-          last_name: string
-          email: string
-          position: string
-          department_id: string
-          status?: "active" | "inactive" | "on_leave"
-          avatar_url?: string | null
-          hire_date: string
-          salary: number
-          manager_id?: string | null
         }
         Update: {
           id?: string
+          user_id?: string
+          email?: string
+          name?: string | null
+          role?: string
+          is_platform_admin?: boolean
           created_at?: string
           updated_at?: string
-          first_name?: string
-          last_name?: string
-          email?: string
-          position?: string
-          department_id?: string
-          status?: "active" | "inactive" | "on_leave"
-          avatar_url?: string | null
-          hire_date?: string
-          salary?: number
-          manager_id?: string | null
         }
       }
-      departments: {
+      tenant_users: {
         Row: {
           id: string
-          name: string
-          description: string | null
-          manager_id: string | null
+          user_id: string
+          role: 'client_admin' | 'sub_user'
           created_at: string
+          updated_at: string
+          tenant_id: string
         }
         Insert: {
           id?: string
-          name: string
-          description?: string | null
-          manager_id?: string | null
+          user_id: string
+          role: 'client_admin' | 'sub_user'
           created_at?: string
+          updated_at?: string
+          tenant_id: string
         }
         Update: {
           id?: string
-          name?: string
-          description?: string | null
-          manager_id?: string | null
+          user_id?: string
+          role?: 'client_admin' | 'sub_user'
           created_at?: string
+          updated_at?: string
+          tenant_id?: string
+        }
+      }
+      tenants: {
+        Row: {
+          id: string
+          status: string
+          created_at: string
+          updated_at: string
+          company_id: string | null
+          is_default: boolean
+        }
+        Insert: {
+          id?: string
+          status?: string
+          created_at?: string
+          updated_at?: string
+          company_id?: string | null
+          is_default?: boolean
+        }
+        Update: {
+          id?: string
+          status?: string
+          created_at?: string
+          updated_at?: string
+          company_id?: string | null
+          is_default?: boolean
+        }
+      }
+      user_settings: {
+        Row: {
+          id: string
+          user_id: string
+          email_notifications: boolean | null
+          notification_frequency: string | null
+          timezone: string | null
+          dark_mode: boolean | null
+          language: string | null
+          two_factor_auth: boolean | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          email_notifications?: boolean | null
+          notification_frequency?: string | null
+          timezone?: string | null
+          dark_mode?: boolean | null
+          language?: string | null
+          two_factor_auth?: boolean | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          email_notifications?: boolean | null
+          notification_frequency?: string | null
+          timezone?: string | null
+          dark_mode?: boolean | null
+          language?: string | null
+          two_factor_auth?: boolean | null
+          created_at?: string
+          updated_at?: string
         }
       }
     }

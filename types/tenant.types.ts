@@ -35,7 +35,6 @@ export interface UserProfile {
   user_id: string;
   email: string;
   name: string;
-  is_platform_admin: boolean;
   created_at: string;
   updated_at: string;
 }

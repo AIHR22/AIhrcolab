@@ -18,7 +18,13 @@ export function getSupabase() {
     return supabaseInstance
   }
   if (supabaseUrl && supabaseAnonKey) {
-    supabaseInstance = createClient<Database>(supabaseUrl, supabaseAnonKey)
+    supabaseInstance = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        storageKey: 'tenant-app-auth'
+      }
+    })
     return supabaseInstance
   } 
   // Return a dummy or throw error if keys are missing and no instance exists

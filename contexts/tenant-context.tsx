@@ -2,8 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createTenantAwareClient, getCurrentTenantContext, getAccessibleTenants } from '@/lib/supabase/tenant-context';
-import { supabaseAdmin } from '@/lib/supabase';
+import { getCurrentTenantContext, getAccessibleTenants } from '@/lib/supabase/tenant-context';
+import { useAuth } from './auth-provider';
 
 interface TenantContextType {
   currentTenantId: string | null;
@@ -18,13 +18,23 @@ const TenantContext = createContext<TenantContextType | null>(null);
 
 export function TenantProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const { client, user } = useAuth();
   const [currentTenantId, setCurrentTenantId] = useState<string | null>(null);
   const [tenants, setTenants] = useState<Array<{ id: string; name: string }>>([]);
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshTenantContext = async () => {
+    if (!user) {
+      setCurrentTenantId(null);
+      setTenants([]);
+      setIsPlatformAdmin(false);
+      setIsLoading(false);
+      return;
+    }
+
     try {
+      setIsLoading(true);
       const tenantContext = await getCurrentTenantContext();
       
       if (!tenantContext) {
@@ -32,29 +42,23 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      setIsPlatformAdmin(tenantContext.role === 'platform_admin');
+      setIsPlatformAdmin(tenantContext.isPlatformAdmin);
+      setCurrentTenantId(tenantContext.tenantId);
 
-      // Get user's accessible tenants
-      const { data: { user } } = await supabaseAdmin.auth.getUser();
-      if (!user) return;
-
+      // Get accessible tenants
       const accessibleTenantIds = await getAccessibleTenants(user.id);
       
       if (accessibleTenantIds.length > 0) {
-        const { data: tenantData } = await supabaseAdmin
+        const { data: tenantData } = await client
           .from('tenants')
           .select('id, name')
           .in('id', accessibleTenantIds);
 
         setTenants(tenantData || []);
-        
-        // Set current tenant if not already set
-        if (!currentTenantId && tenantData && tenantData.length > 0) {
-          setCurrentTenantId(tenantData[0].id);
-        }
       }
     } catch (error) {
       console.error('Error refreshing tenant context:', error);
+      router.push('/login');
     } finally {
       setIsLoading(false);
     }
@@ -62,19 +66,27 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
   const switchTenant = async (tenantId: string) => {
     try {
+      setIsLoading(true);
+      
+      // Verify tenant access
+      const accessibleTenantIds = await getAccessibleTenants(user?.id || '');
+      if (!accessibleTenantIds.includes(tenantId)) {
+        throw new Error('No access to this tenant');
+      }
+
       setCurrentTenantId(tenantId);
-      // Create new Supabase client with tenant context
-      createTenantAwareClient(tenantId);
-      // Refresh the page to update data
       router.refresh();
     } catch (error) {
       console.error('Error switching tenant:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
     refreshTenantContext();
-  }, []);
+  }, [user]);
 
   return (
     <TenantContext.Provider

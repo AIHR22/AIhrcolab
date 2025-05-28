@@ -34,14 +34,10 @@ export default function LoginPage() {
 
     try {
       // Use the signIn method from AuthContext
-      const { user } = await signIn(email, password)
+      await signIn(email, password)
       
-      if (user) {
-        // If successful, redirect to dashboard
-        router.push("/dashboard")
-      } else {
-        throw new Error("No user returned after sign in")
-      }
+      // Don't redirect here - let the auth provider handle it
+      // The auth provider will redirect to dashboard after successful initialization
     } catch (err: any) {
       console.error("Login error:", err)
       const errorMessage = err.message || "Failed to sign in. Please check your credentials."

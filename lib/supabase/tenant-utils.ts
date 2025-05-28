@@ -79,13 +79,13 @@ export async function getCurrentTenantContext(supabase: SupabaseClient): Promise
   if (!user) return null;
 
   // Check if user is a platform admin
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('is_platform_admin')
+  const { data: platformAdmin } = await supabase
+    .from('platform_admins')
+    .select('id')
     .eq('user_id', user.id)
-    .single();
+    .maybeSingle();
 
-  if (profile?.is_platform_admin) {
+  if (platformAdmin) {
     return { tenantId: null, role: 'platform_admin' };
   }
 
@@ -116,13 +116,13 @@ export async function hasAccessToTenant(
   tenantId: string
 ): Promise<boolean> {
   // Platform admins have access to all tenants
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('is_platform_admin')
+  const { data: platformAdmin } = await supabase
+    .from('platform_admins')
+    .select('id')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
 
-  if (profile?.is_platform_admin) {
+  if (platformAdmin) {
     return true;
   }
 

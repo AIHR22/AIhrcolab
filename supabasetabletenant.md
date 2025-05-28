@@ -1,55 +1,157 @@
-1. companies
-Stores your real‐world organizations.
+# Database Schema
 
-Column	Type	Description
-id	uuid	PK, unique company identifier
-name	text	company name
-status	varchar	active/inactive
-created_at	timestamp with time zone	when the row was created
-updated_at	timestamp with time zone	last update timestamp
-2. tenants
-Isolation “workspaces” per company.
+## Tables
 
-Column	Type	Description
-id	uuid	PK, unique tenant identifier
-company_id	uuid	FK → companies(id)
-status	varchar	if the tenant is active or not
-is_default	boolean	marks the company’s default workspace (we added this)
-created_at	timestamp with time zone	when the tenant was created
-updated_at	timestamp with time zone	last time the tenant row was updated
-3. tenant_users
-Joins users to tenants with specific roles.
+### 1. tenant_users
 
-Column	Type	Description
-id	uuid	PK, unique mapping ID
-tenant_id	uuid	FK → tenants(id)
-user_id	uuid	FK → auth.users(id) (via user_profiles)
-role	text	client_admin (users that can access their assigned tenant and has permissions to manage it and users), or sub_user (users that can only access their assigned tenant)
-created_at	timestamp with time zone	when the mapping was created
-updated_at	timestamp with time zone	last update timestamp
-4. user_profiles
-Holds your users’ public info + admin flag.
+- **Columns**
+  - `id` `UUID` NOT NULL DEFAULT `gen_random_uuid()`
+  - `user_id` `UUID` NULL
+  - `role` `TEXT` NOT NULL  
+    - **Allowed values**: `'client_admin'`, `'sub_user'`
+  - `created_at` `TIMESTAMPTZ` NULL DEFAULT `CURRENT_TIMESTAMP`
+  - `updated_at` `TIMESTAMPTZ` NULL DEFAULT `CURRENT_TIMESTAMP`
+  - `tenant_id` `UUID` NULL
 
-Column	Type	Description
-id	uuid	PK, profile ID (could be same as user_id)
-user_id	uuid	FK → auth.users(id)
-email	text	user’s email
-name	text	display name
-role	text	platform_admin (for client admins with highest level of access basically super admin can access all tenants) or user
-is_platform_admin	boolean	bypass-all flag for super-admins
-created_at	timestamp with time zone	when profile was created
-updated_at	timestamp with time zone	last time profile was updated
-5. user_settings
-Stores per-user preferences.
+- **Constraints & Triggers**
+  - `PRIMARY KEY (id)`
+  - `FOREIGN KEY (tenant_id)` → `tenants(id)`
+  - `CHECK (role = ANY(ARRAY['client_admin','sub_user']))`
+  - **Trigger**: `enforce_tenant_user_limit`
+    ```sql
+    BEFORE INSERT ON tenant_users
+    EXECUTE FUNCTION check_tenant_user_limit();
+    ```
 
-Column	Type	Description
-id	uuid	PK, unique settings row
-user_id	uuid	FK → auth.users(id)
-email_notifications	boolean	if true, user gets email alerts
-notification_frequency	text	e.g. daily, weekly
-timezone	text	user’s chosen tz (defaulted via trigger)
-dark_mode	boolean	UI theme preference
-language	text	interface language (e.g. en)
-two_factor_auth	boolean	whether 2FA is on
-created_at	timestamp with time zone	when the settings were first created
-updated_at	timestamp with time zone	last time the settings were updated
+- **RLS Policies**
+  - Users can see and manage their own records
+  - Platform admins have full access to all records
+  - Client admins can manage users within their tenant
+  - Enforces tenant isolation for regular users
+
+---
+
+### 2. user_profiles
+- **Columns**
+  - `id` `UUID` NOT NULL DEFAULT `gen_random_uuid()`
+  - `email` `TEXT` NOT NULL
+  - `name` `TEXT` NULL
+  - `role` `TEXT` NULL DEFAULT `'user'`
+    - (application‐level role; defaults to `user`)
+  - `created_at` `TIMESTAMPTZ` NULL DEFAULT `now()`
+  - `updated_at` `TIMESTAMPTZ` NULL DEFAULT `now()`
+  - `user_id` `UUID` NULL  
+    - `FOREIGN KEY (user_id)` → `auth.users(id)`
+
+- **Triggers**
+  - **Trigger**: `ensure_profile_uuid`
+    ```sql
+    BEFORE INSERT ON user_profiles
+    EXECUTE FUNCTION generate_profile_uuid();
+    ```
+
+- **RLS Policies**
+  - Users can read and update their own profile
+  - Platform admins can read and update all profiles
+  - Client admins can read profiles within their tenant
+  - Basic profile info visible to authenticated users
+
+---
+
+### 3. platform_admins
+- **Columns**
+  - `id` `UUID` NOT NULL DEFAULT `gen_random_uuid()`
+  - `user_id` `UUID` NOT NULL UNIQUE
+    - `FOREIGN KEY (user_id)` → `auth.users(id)` ON DELETE CASCADE
+  - `created_at` `TIMESTAMPTZ` NULL DEFAULT `now()`
+  - `updated_at` `TIMESTAMPTZ` NULL DEFAULT `now()`
+
+- **RLS Policies**
+  - Authenticated users can check platform admin status
+  - Only existing platform admins can modify the platform_admins table
+  - No direct insert/update/delete access for regular users
+  - Used for system-wide administrative access control
+
+- **SQL Migration**
+  ```sql
+  -- Drop existing policies if they exist
+  DROP POLICY IF EXISTS "platform_admins_select" ON platform_admins;
+  DROP POLICY IF EXISTS "platform_admins_insert" ON platform_admins;
+  DROP POLICY IF EXISTS "platform_admins_delete" ON platform_admins;
+
+  -- Create new policies
+  CREATE POLICY "platform_admins_select"
+  ON platform_admins
+  FOR SELECT
+  USING (auth.uid() IS NOT NULL);
+
+  CREATE POLICY "platform_admins_insert"
+  ON platform_admins
+  FOR INSERT
+  WITH CHECK (
+      auth.uid() IN (SELECT user_id FROM platform_admins WHERE user_id = auth.uid())
+  );
+
+  CREATE POLICY "platform_admins_delete"
+  ON platform_admins
+  FOR DELETE
+  USING (
+      auth.uid() IN (SELECT user_id FROM platform_admins WHERE user_id = auth.uid())
+  );
+  ```
+
+---
+
+### 4. user_settings
+
+- **Columns**
+  - `id` `UUID` NOT NULL DEFAULT `extensions.uuid_generate_v4()`
+  - `user_id` `UUID` NOT NULL
+  - `email_notifications` `BOOLEAN` NULL DEFAULT `true`
+  - `notification_frequency` `TEXT` NULL DEFAULT `'daily'`
+  - `timezone` `TEXT` NULL DEFAULT `'America/New_York'`
+  - `dark_mode` `BOOLEAN` NULL DEFAULT `false`
+  - `language` `TEXT` NULL DEFAULT `'en'`
+  - `two_factor_auth` `BOOLEAN` NULL DEFAULT `false`
+  - `created_at` `TIMESTAMPTZ` NULL DEFAULT `now()`
+  - `updated_at` `TIMESTAMPTZ` NULL DEFAULT `now()`
+
+- **Constraints & Triggers**
+  - `PRIMARY KEY (id)`
+  - `UNIQUE (user_id)`
+  - `FOREIGN KEY (user_id)` → `auth.users(id)` ON DELETE CASCADE
+  - **Trigger**: `update_user_settings_updated_at`  
+    ```sql
+    BEFORE UPDATE ON user_settings
+    EXECUTE FUNCTION update_updated_at_column();
+    ```
+
+- **RLS Policies**
+  - Users can only read and update their own settings
+  - Platform admins can view all settings but cannot modify
+  - No tenant-based access control needed
+  - Strict user isolation for privacy
+
+---
+
+### 5. tenants
+
+- **Columns**
+  - `id` `UUID` NOT NULL DEFAULT `gen_random_uuid()`
+  - `status` `VARCHAR(50)` NULL DEFAULT `'active'`
+  - `created_at` `TIMESTAMPTZ` NULL DEFAULT `CURRENT_TIMESTAMP`
+  - `updated_at` `TIMESTAMPTZ` NULL DEFAULT `CURRENT_TIMESTAMP`
+  - `company_id` `UUID` NULL
+  - `is_default` `BOOLEAN` NOT NULL DEFAULT `false`
+
+- **Constraints**
+  - `PRIMARY KEY (id)`
+  - `UNIQUE (id)`
+  - `FOREIGN KEY (company_id)` → `companies(id)`
+
+- **RLS Policies**
+  - Users can only see tenants they belong to
+  - Platform admins have full access to all tenants
+  - Only platform admins can create/update/delete tenants
+  - Client admins can view their tenant details
+  - Enforces multi-tenant isolation

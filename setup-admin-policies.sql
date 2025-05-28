@@ -38,6 +38,39 @@ BEGIN
 
   -- Enable RLS on the user_profiles table
   ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+
+  -- Drop existing policies
+  DROP POLICY IF EXISTS "insert_tenant_users" ON public.tenant_users;
+
+  -- Create new insert policy that allows first user or admin
+  CREATE POLICY "insert_tenant_users"
+  ON public.tenant_users
+  FOR INSERT
+  WITH CHECK (
+    -- Allow if no users exist for this tenant (first user)
+    NOT EXISTS (
+      SELECT 1 
+      FROM public.tenant_users existing
+      WHERE existing.tenant_id = tenant_users.tenant_id
+    )
+    OR
+    -- or if you're a platform admin
+    EXISTS (
+      SELECT 1
+      FROM public.user_profiles up
+      WHERE up.user_id = auth.uid()
+        AND up.is_platform_admin = true
+    )
+    OR
+    -- or if you're already a client_admin for this tenant
+    EXISTS (
+      SELECT 1
+      FROM public.tenant_users tu
+      WHERE tu.user_id = auth.uid()
+        AND tu.tenant_id = tenant_users.tenant_id
+        AND tu.role = 'client_admin'
+    )
+  );
 END;
 $$;
 
