@@ -27,6 +27,7 @@ interface NotificationPreferences {
 interface NotificationContextType {
   notifications: Notification[]
   unreadCount: number
+  preferences: NotificationPreferences
   markAsRead: (id: string) => void
   markAllAsRead: () => void
   updatePreferences: (preferences: Partial<NotificationPreferences>) => Promise<void>
@@ -154,6 +155,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       value={{
         notifications,
         unreadCount,
+        preferences,
         markAsRead,
         markAllAsRead,
         updatePreferences,

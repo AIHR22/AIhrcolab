@@ -5,6 +5,8 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/contexts/auth-provider"
 import { TenantProvider } from "@/contexts/tenant-context"
+import { NotificationProvider } from "@/contexts/notification-provider"
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -25,7 +27,10 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <AuthProvider>
             <TenantProvider>
-              {children}
+              <NotificationProvider>
+                {children}
+                <Toaster />
+              </NotificationProvider>
             </TenantProvider>
           </AuthProvider>
         </ThemeProvider>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
+import { useForm, FormProvider } from 'react-hook-form'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -198,6 +198,7 @@ export default function GeneralSettings() {
                   variant="destructive"
                   size="sm"
                   onClick={handleEmailDisconnect}
+                  disabled={isLoading}
                 >
                   Disconnect
                 </Button>
@@ -224,10 +225,6 @@ export default function GeneralSettings() {
                 </Button>
               </div>
             )}
-            <FormDescription>
-              Connect your email provider to enable sending notifications via email.
-              Your credentials are securely stored and can be revoked at any time.
-            </FormDescription>
           </div>
         </CardContent>
       </Card>
@@ -240,7 +237,7 @@ export default function GeneralSettings() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...companyForm}>
+          <FormProvider {...companyForm}>
             <form onSubmit={companyForm.handleSubmit(onCompanySubmit)} className="space-y-8">
               <div className="grid grid-cols-2 gap-4">
                 <FormField
@@ -313,7 +310,7 @@ export default function GeneralSettings() {
                 Save Changes
               </Button>
             </form>
-          </Form>
+          </FormProvider>
         </CardContent>
       </Card>
 
@@ -356,7 +353,7 @@ export default function GeneralSettings() {
           <CardDescription>Configure how you want to receive notifications</CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...notificationForm}>
+          <FormProvider {...notificationForm}>
             <form onSubmit={notificationForm.handleSubmit(onNotificationSubmit)} className="space-y-8">
               <FormField
                 control={notificationForm.control}
@@ -462,7 +459,7 @@ export default function GeneralSettings() {
                 Save Preferences
               </Button>
             </form>
-          </Form>
+          </FormProvider>
         </CardContent>
       </Card>
     </div>

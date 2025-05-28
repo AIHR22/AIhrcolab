@@ -1,11 +1,13 @@
 'use client'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { useTenant } from "@/contexts/tenant-context"
-import { GeneralSettings } from "@/components/settings/general-settings"
+import GeneralSettings from "@/components/settings/general-settings"
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
@@ -14,7 +16,16 @@ export default function SettingsPage() {
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-2xl font-bold mb-6">Settings</h1>
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          variant="outline"
+          onClick={() => router.push('/dashboard')}
+          className="flex items-center gap-2"
+        >
+          ← Back to Dashboard
+        </Button>
+        <h1 className="text-2xl font-bold">Settings</h1>
+      </div>
       <div className="space-y-6">
         {currentTenantId && (
           <Card>
