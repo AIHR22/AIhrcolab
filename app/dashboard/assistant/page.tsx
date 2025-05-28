@@ -168,7 +168,7 @@ export default function AssistantPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 h-full">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">HR Assistant</h1>
         <p className="text-muted-foreground">
@@ -176,8 +176,8 @@ export default function AssistantPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-2">
+      <div className="grid gap-6 md:grid-cols-3 flex-1">
+        <Card className="md:col-span-2 flex flex-col overflow-y-auto">
           <Tabs defaultValue="chat" onValueChange={setActiveTab}>
             <CardHeader className="px-6">
               <TabsList className="grid w-full grid-cols-2">
@@ -185,9 +185,9 @@ export default function AssistantPage() {
                 <TabsTrigger value="tasks">Tasks</TabsTrigger>
               </TabsList>
             </CardHeader>
-            <CardContent className="p-0">
-              <TabsContent value="chat" className="m-0">
-                <div className="h-[500px] flex flex-col">
+            <CardContent className="p-0 flex-1">
+              <TabsContent value="chat" className="m-0 h-full">
+                <div className="h-full flex flex-col">
                   <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {chatHistory.map((message) => (
                       <div
@@ -327,7 +327,7 @@ export default function AssistantPage() {
           </Tabs>
         </Card>
 
-        <div className="space-y-6">
+        <div className="space-y-6 flex flex-col overflow-y-auto">
           <Card>
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
