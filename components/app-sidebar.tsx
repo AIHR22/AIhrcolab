@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Badge } from "@/components/ui/badge"
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   isCollapsed?: boolean
@@ -61,13 +62,13 @@ export function AppSidebar({ className, isCollapsed = false }: SidebarProps) {
             isActive={pathname.startsWith("/dashboard/organization")}
             isCollapsed={isCollapsed}
           />
-          <SidebarItem
+          {/* <SidebarItem
             icon={DollarSign}
             title="Payroll"
             href="/dashboard/payroll"
             isActive={pathname.startsWith("/dashboard/payroll")}
             isCollapsed={isCollapsed}
-          />
+          /> */}
           <SidebarItem
             icon={Briefcase}
             title="Workforce Planning"
@@ -75,13 +76,13 @@ export function AppSidebar({ className, isCollapsed = false }: SidebarProps) {
             isActive={pathname.startsWith("/dashboard/workforce")}
             isCollapsed={isCollapsed}
           />
-          <SidebarItem
+          {/* <SidebarItem
             icon={TrendingUp}
             title="Strategic Growth Planner"
             href="/strategic-planning/growth-scenarios"
             isActive={pathname.startsWith("/strategic-planning/growth-scenarios")}
             isCollapsed={isCollapsed}
-          />
+          /> */}
           <SidebarItem
             icon={TrendingUp}
             title="Revenue Forecasting"
@@ -90,19 +91,20 @@ export function AppSidebar({ className, isCollapsed = false }: SidebarProps) {
             isCollapsed={isCollapsed}
           />
 
-          <SidebarItem
+          {/* <SidebarItem
             icon={FileText}
             title="Reports"
             href="/dashboard/reports"
             isActive={pathname.startsWith("/dashboard/reports")}
             isCollapsed={isCollapsed}
-          />
+          /> */}
           <SidebarItem
             icon={MessageSquare}
             title="HR Assistant"
             href="/dashboard/assistant"
             isActive={pathname.startsWith("/dashboard/assistant")}
             isCollapsed={isCollapsed}
+            isBeta={true}
           />
           <SidebarItem
             icon={Settings}
@@ -123,9 +125,10 @@ interface SidebarItemProps {
   href: string
   isActive?: boolean
   isCollapsed?: boolean
+  isBeta?: boolean
 }
 
-function SidebarItem({ icon: Icon, title, href, isActive, isCollapsed }: SidebarItemProps) {
+function SidebarItem({ icon: Icon, title, href, isActive, isCollapsed, isBeta }: SidebarItemProps) {
   return (
     <Button
       asChild
@@ -137,9 +140,16 @@ function SidebarItem({ icon: Icon, title, href, isActive, isCollapsed }: Sidebar
         isActive && "bg-primary/10 text-primary",
       )}
     >
-      <Link href={href}>
-        <Icon className={cn("h-5 w-5", isCollapsed ? "" : "mr-2")} />
-        {!isCollapsed && <span>{title}</span>}
+      <Link href={href} className="flex items-center justify-between w-full">
+        <div className="flex items-center">
+          <Icon className={cn("h-5 w-5", isCollapsed ? "" : "mr-2")} />
+          {!isCollapsed && <span>{title}</span>}
+        </div>
+        {isBeta && !isCollapsed && (
+          <Badge variant="outline" className="ml-auto text-xs bg-blue-500 text-white dark:bg-blue-700 dark:text-blue-100">
+            Beta
+          </Badge>
+        )}
       </Link>
     </Button>
   )
