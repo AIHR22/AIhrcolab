@@ -77,8 +77,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               throw new Error('Invalid email or password')
             case 422:
               throw new Error('Email not verified. Please check your inbox.')
+            case 500:
+              throw new Error('Supabase auth service error. Please try again later.')
             default:
-              throw new Error('Authentication failed. Please try again.')
+              throw new Error(`Authentication failed: ${error.message}`)
           }
         }
         throw error
@@ -86,15 +88,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!data.session) throw new Error('No session after sign in')
 
-      // Verify email is confirmed
-      if (!data.user?.email_confirmed_at) {
-        throw new Error('Please verify your email address before signing in')
-      }
-
       // Set session first
       setSession(data.session)
 
-      // Check user profile first - use single row select
+      // Check if user is a platform admin
+      const { data: platformAdmin } = await baseClient
+        .from('platform_admins')
+        .select('id')
+        .eq('user_id', data.session.user.id)
+        .maybeSingle()
+
+      // If they're a platform admin
+      if (platformAdmin?.id) {
+        // Get or create their platform admin profile
+        const { data: adminProfile } = await baseClient
+          .from('platform_admin_profiles')
+          .select('id, email, full_name')
+          .eq('user_id', data.session.user.id)
+          .maybeSingle()
+
+        if (!adminProfile) {
+          // Create profile if it doesn't exist
+          const { error: createError } = await baseClient
+            .from('platform_admin_profiles')
+            .insert({
+              user_id: data.session.user.id,
+              email: data.session.user.email,
+              full_name: data.session.user.user_metadata?.full_name || 'Platform Admin'
+            })
+        }
+
+        // Reset login attempts and redirect
+        loginAttempts.delete(email.toLowerCase())
+        setClient(baseClient) // Use base client for platform admins
+        router.push('/dashboard')
+        return
+      }
+
+      // Only check user profile and tenant for non-platform admins
       const { data: profile, error: profileError } = await baseClient
         .from('user_profiles')
         .select('*')
@@ -102,16 +133,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .limit(1)
         .maybeSingle()
 
-      if (profileError) {
-        console.error('Error checking user profile:', profileError)
-        throw new Error('Error verifying account status')
-      }
-
-      if (!profile) {
+      if (profileError || !profile) {
         throw new Error('User profile not found')
       }
 
-      // Now check tenant associations
+      // Now check tenant associations for regular users
       const { data: tenantUsers, error: tenantError } = await baseClient
         .from('tenant_users')
         .select('tenant_id, role')
@@ -120,7 +146,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle()
 
       if (tenantError) {
-        console.error('Error checking tenant access:', tenantError)
         // Don't throw here - user might not have tenant yet
       }
 
@@ -130,17 +155,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const tenantClient = await createTenantAwareClient(tenantUsers.tenant_id)
           setClient(tenantClient)
         } catch (error) {
-          console.error('Error setting up tenant client:', error)
           // Don't throw - fall back to base client
         }
       }
 
-      // Reset login attempts on successful login
+      // Reset login attempts and redirect
       loginAttempts.delete(email.toLowerCase())
-
       router.push('/dashboard')
+
     } catch (error) {
-      console.error('Sign in error:', error)
       setError(error instanceof Error ? error : new Error('Failed to sign in'))
       setSession(null)
       setClient(baseClient)

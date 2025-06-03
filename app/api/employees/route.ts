@@ -6,20 +6,7 @@ import { headers } from 'next/headers'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-// Debug environment variables
-console.log("[API] Supabase URL:", supabaseUrl)
-console.log("[API] Supabase Key exists:", !!supabaseKey)
-
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error("Missing Supabase environment variables")
-}
-
-const supabaseAdmin = createClient(supabaseUrl, supabaseKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-})
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -41,7 +28,7 @@ export async function GET(request: Request) {
 
     // Test database connection
     console.log("[API] Testing database connection...")
-    const { data: testData, error: testError } = await supabaseAdmin
+    const { data: testData, error: testError } = await supabase
       .from("employees")
       .select("count")
       .limit(1)
@@ -55,7 +42,7 @@ export async function GET(request: Request) {
 
     // Fetch employees without department join
     console.log("[API] Fetching employees data...")
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("employees")
       .select("*")
       .order("first_name")
@@ -146,7 +133,7 @@ export async function POST(request: Request) {
 
     // Check if department exists
     console.log("[API] Checking if department exists:", employeeData.department_id)
-    const { data: departmentExists, error: departmentError } = await supabaseAdmin
+    const { data: departmentExists, error: departmentError } = await supabase
       .from("departments")
       .select("id")
       .eq("id", employeeData.department_id)
@@ -168,7 +155,7 @@ export async function POST(request: Request) {
     // Check if manager exists if provided
     if (employeeData.manager_id) {
       console.log("[API] Checking if manager exists:", employeeData.manager_id)
-      const { data: managerExists, error: managerError } = await supabaseAdmin
+      const { data: managerExists, error: managerError } = await supabase
         .from("employees")
         .select("id")
         .eq("id", employeeData.manager_id)
@@ -200,7 +187,7 @@ export async function POST(request: Request) {
       }
 
       // Check if all skills exist in the database
-      const { data: existingSkills, error: skillsError } = await supabaseAdmin
+      const { data: existingSkills, error: skillsError } = await supabase
         .from("skills")
         .select("id")
         .in("id", skills)
@@ -223,7 +210,7 @@ export async function POST(request: Request) {
     }
 
     console.log("[API] Creating employee with data:", newEmployeeData)
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("employees")
       .insert([newEmployeeData])
       .select("*")
@@ -254,7 +241,7 @@ export async function POST(request: Request) {
         proficiency_level: 1 // Default proficiency level for newly added skills
       }))
 
-      const { error: skillsError } = await supabaseAdmin
+      const { error: skillsError } = await supabase
         .from("employee_skills")
         .insert(employeeSkills)
 

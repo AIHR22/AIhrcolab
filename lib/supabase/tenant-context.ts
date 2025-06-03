@@ -29,14 +29,23 @@ export async function getCurrentTenantContext(): Promise<TenantContext | null> {
 
     const { user } = session;
 
-    // Check if user is a platform admin
+    // Check if user is a platform admin first
     const { data: platformAdmin } = await client
       .from('platform_admins')
       .select('id')
       .eq('user_id', user.id)
       .maybeSingle();
 
-    // Get user profile
+    // If user is a platform admin, they don't need a profile
+    if (platformAdmin) {
+      return {
+        tenantId: null,
+        role: null,
+        isPlatformAdmin: true
+      };
+    }
+
+    // For non-platform admins, get user profile
     const { data: profile, error: profileError } = await client
       .from('user_profiles')
       .select('id, email, name, role')
@@ -51,15 +60,6 @@ export async function getCurrentTenantContext(): Promise<TenantContext | null> {
     if (!profile) {
       console.error('User profile not found');
       return null;
-    }
-
-    // If user is a platform admin, they don't need a tenant
-    if (platformAdmin) {
-      return {
-        tenantId: null,
-        role: null,
-        isPlatformAdmin: true
-      };
     }
 
     // Get user's tenant memberships
@@ -130,11 +130,13 @@ export async function createTenantAwareClient(tenantId: string | null) {
 export async function getAccessibleTenants(userId: string): Promise<string[]> {
   try {
     // Check if user is a platform admin
-    const { data: platformAdmin } = await client
+    const { data: platformAdmin, error: platformAdminError } = await client
       .from('platform_admins')
       .select('id')
       .eq('user_id', userId)
       .maybeSingle();
+
+    console.log('Platform admin check:', { platformAdmin, platformAdminError, userId });
 
     // Platform admins can access all tenants
     if (platformAdmin) {
@@ -142,6 +144,8 @@ export async function getAccessibleTenants(userId: string): Promise<string[]> {
         .from('tenants')
         .select('id')
         .order('created_at', { ascending: true });
+
+      console.log('Fetching all tenants:', { allTenants, tenantsError });
 
       if (tenantsError) {
         console.error('Error fetching all tenants:', tenantsError);

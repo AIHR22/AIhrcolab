@@ -9,16 +9,13 @@ CREATE TABLE IF NOT EXISTS platform_admins (
 -- Enable RLS on platform_admins table
 ALTER TABLE platform_admins ENABLE ROW LEVEL SECURITY;
 
--- Only platform admins can read the platform_admins table
-CREATE POLICY "platform_admins_select"
+-- Allow users to see their own platform admin record
+DROP POLICY IF EXISTS "select_own_platform_admin" ON platform_admins;
+CREATE POLICY "select_own_platform_admin"
 ON platform_admins
 FOR SELECT
 USING (
-    -- Only platform admins can see who else is a platform admin
-    EXISTS (
-        SELECT 1 FROM platform_admins pa
-        WHERE pa.user_id = auth.uid()
-    )
+    user_id = auth.uid()
 );
 
 -- Migrate existing platform admins

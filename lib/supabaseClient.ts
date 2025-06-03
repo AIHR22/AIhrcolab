@@ -1,37 +1,22 @@
 import { createClient } from "@supabase/supabase-js"
 import type { Database } from "@/types/supabase"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn(
-    "Missing Supabase URL or Anon Key. Check .env.local. Client-side features might fail."
-  )
+  throw new Error("Missing Supabase URL or Anon Key")
 }
 
-// Singleton instance for the client-side (anon key)
-let supabaseInstance: ReturnType<typeof createClient<Database>> | null = null
-
-export function getSupabase() {
-  if (supabaseInstance) {
-    return supabaseInstance
+// Create a single supabase client for interacting with your database
+const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce'
   }
-  if (supabaseUrl && supabaseAnonKey) {
-    supabaseInstance = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        storageKey: 'tenant-app-auth'
-      }
-    })
-    return supabaseInstance
-  } 
-  // Return a dummy or throw error if keys are missing and no instance exists
-  console.error("Supabase client could not be initialized client-side due to missing keys.")
-  // Depending on desired behavior, you might throw an error or return a non-functional client
-  throw new Error("Supabase client cannot be initialized.")
-}
+})
 
 // Singleton instance for the server-side admin client (service role key)
 let supabaseAdminInstance: ReturnType<typeof createClient<Database>> | null = null
@@ -51,13 +36,13 @@ export function getSupabaseAdmin() {
   }
 
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL // Use the same URL
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
 
   if (!url || !supabaseServiceKey) {
     console.error(
       "Missing Supabase URL or Service Role Key for admin client. Check environment variables."
     )
-    throw new Error("Supabase admin client cannot be initialized.")
+    throw new Error("Missing Supabase URL or Service Role Key for admin client")
   }
 
   supabaseAdminInstance = createClient<Database>(url, supabaseServiceKey, {
@@ -70,8 +55,9 @@ export function getSupabaseAdmin() {
   return supabaseAdminInstance
 }
 
-// For backward compatibility - direct exports of the clients
-export const supabase = getSupabase()
+// Export the client
+export { supabase }
+export const getSupabase = () => supabase
 
 // Only export supabaseAdmin if we're on the server side
 export const supabaseAdmin = typeof window === 'undefined' ? getSupabaseAdmin() : supabase

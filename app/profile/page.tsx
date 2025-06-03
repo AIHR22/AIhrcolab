@@ -17,6 +17,7 @@ interface Profile {
   email: string
   role: string
   created_at: string
+  isPlatformAdmin?: boolean
 }
 
 export default function ProfilePage() {
@@ -30,20 +31,77 @@ export default function ProfilePage() {
   useEffect(() => {
     const getProfile = async () => {
       try {
-        const response = await fetch('/api/profile')
-        const data = await response.json()
-        
-        if (!response.ok) throw new Error(data.error)
-        
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+        if (!authUser) throw new Error('Not authenticated')
+
+        // Check if user is a platform admin first
+        const { data: platformAdmin, error: platformAdminError } = await supabase
+          .from('platform_admins')
+          .select(`
+            id,
+            platform_admin_profiles (
+              id,
+              email,
+              full_name,
+              avatar_url,
+              phone,
+              title,
+              department,
+              created_at
+            )
+          `)
+          .eq('user_id', authUser.id)
+          .maybeSingle()
+
+        if (platformAdminError) {
+          throw new Error('Error checking platform admin status')
+        }
+
+        // If they are a platform admin
+        if (platformAdmin) {
+          if (!platformAdmin.platform_admin_profiles) {
+            throw new Error('Platform admin profile not found')
+          }
+
+          const adminProfile = platformAdmin.platform_admin_profiles
+          setProfile({
+            id: adminProfile.id,
+            email: adminProfile.email,
+            name: adminProfile.full_name,
+            role: 'platform_admin',
+            created_at: new Date(adminProfile.created_at).toLocaleDateString(),
+            isPlatformAdmin: true
+          })
+          setLoading(false)
+          return
+        }
+
+        // If not a platform admin, check user profile
+        const { data: userProfile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('user_id', authUser.id)
+          .single()
+
+        if (profileError) {
+          throw new Error('User profile not found')
+        }
+
+        if (!userProfile) {
+          throw new Error('User profile not found')
+        }
+
         setProfile({
-          ...data,
-          created_at: new Date(data.created_at).toLocaleDateString()
+          ...userProfile,
+          created_at: new Date(userProfile.created_at).toLocaleDateString(),
+          isPlatformAdmin: false
         })
       } catch (error) {
         console.error('Error loading profile:', error)
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load profile'
         toast({
           title: 'Error',
-          description: 'Failed to load profile information',
+          description: errorMessage,
           variant: 'destructive'
         })
       } finally {
@@ -51,7 +109,7 @@ export default function ProfilePage() {
       }
     }
     getProfile()
-  }, [toast])
+  }, [supabase, toast])
 
   const updateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,14 +117,26 @@ export default function ProfilePage() {
 
     setUpdating(true)
     try {
-      const response = await fetch('/api/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: profile.name })
-      })
-      
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error)
+      if (profile.isPlatformAdmin) {
+        // Update platform admin profile
+        const { error } = await supabase
+          .from('platform_admin_profiles')
+          .update({
+            full_name: profile.name,
+            // Add other fields as needed
+          })
+          .eq('user_id', profile.id)
+
+        if (error) throw error
+      } else {
+        // Update regular user profile
+        const { error } = await supabase
+          .from('user_profiles')
+          .update({ name: profile.name })
+          .eq('user_id', profile.id)
+
+        if (error) throw error
+      }
 
       toast({
         title: 'Success',
@@ -119,7 +189,10 @@ export default function ProfilePage() {
                 <AvatarFallback>{profile?.name?.charAt(0) || 'U'}</AvatarFallback>
               </Avatar>
               <div>
-                <h2 className="text-2xl font-bold">{profile?.name}</h2>
+                <h2 className="text-2xl font-bold">
+                  {profile?.name}
+                  {profile?.isPlatformAdmin && ' (Platform Admin)'}
+                </h2>
                 <p className="text-sm text-muted-foreground">{profile?.email}</p>
               </div>
             </div>
