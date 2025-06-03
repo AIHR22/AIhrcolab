@@ -61,6 +61,14 @@ export const GET = withTenantAuth(async (request: Request) => {
     // Apply tenant filter
     query = query.eq('tenant_id', tenantId);
 
+    // Apply department filter if provided
+    if (departmentId) {
+      query = query.eq('department_id', departmentId);
+    }
+
+    // Execute the query
+    const { data: projects, error: projectsError } = await query;
+
     if (projectsError) {
       console.error("[API] Error fetching projects:", projectsError);
       return NextResponse.json(
@@ -69,7 +77,7 @@ export const GET = withTenantAuth(async (request: Request) => {
       );
     }
 
-    return NextResponse.json(projects);
+    return NextResponse.json({ projects });
   } catch (error: any) {
     console.error("[API] Error in projects fetch:", error);
     return NextResponse.json(

@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { NewIntegrationDialog } from "../../components/integrations/new-integration-dialog"
 import { IntegrationsList } from "../../components/integrations/integrations-list"
 import { SyncLogsList } from "../../components/integrations/sync-logs-list"
+import CsvUploadEmployees from "./CsvUploadEmployees"
 
 export default function IntegrationsPage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -226,6 +227,17 @@ export default function IntegrationsPage() {
               onEdit={(id) => router.push(`/integrations/${id}`)}
             />
           )}
+          <Card className="w-full mt-6">
+            <CardHeader>
+              <CardTitle>Manual Employee Data Upload</CardTitle>
+              <CardDescription>
+                Upload employee data via CSV when direct integration is not available.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CsvUploadEmployees />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="sync-logs">

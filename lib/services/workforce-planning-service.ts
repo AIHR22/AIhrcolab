@@ -135,10 +135,37 @@ export const workforcePlanningService = {
   async getProjectsList() {
     console.log("Fetching projects list...")
     try {
+      // Get the current authenticated user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        console.error("Error getting authenticated user:", userError);
+        throw new Error("User not authenticated or error fetching user.");
+      }
+
+      console.log("[getProjectsList] Authenticated user:", user);
+
+      // Fetch the user's profile to get the tenant_id
+      const { data: profile, error: profileError } = await supabase
+        .from('tenant_users') // Corrected table name
+        .select('tenant_id')
+        .eq('user_id', user.id)
+        .single();
+
+      console.log("[getProjectsList] Profile fetch result:", { profile, profileError });
+
+      if (profileError || !profile?.tenant_id) {
+        console.error("Error fetching user profile or tenant_id:", profileError || "Tenant ID not found in profile");
+        throw new Error("Could not retrieve tenant information.");
+      }
+
+      const tenantId = profile.tenant_id;
+      
       const { data: projects, error } = await supabase
         .from('projects')
-        .select('id, name, start_date, end_date, status') // Select relevant columns
-        .order('created_at', { ascending: false }) // Order by creation date or name
+        .select('id, name, start_date, end_date, status')
+        .eq('tenant_id', tenantId)
+        .order('created_at', { ascending: false })
 
       if (error) {
         console.error("Error fetching projects list:", error)
