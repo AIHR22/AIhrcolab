@@ -6,13 +6,14 @@ import { useRouter } from "next/navigation"
 import { getSupabase } from "@/lib/supabaseClient"
 import { Database } from "@/types/supabase"
 import { createTenantAwareClient, getCurrentTenantContext } from "@/lib/supabase/tenant-context"
+import { signUpUser } from "@/lib/supabase/auth"
 
 interface AuthContextType {
   session: Session | null
   user: Session['user'] | null
   client: ReturnType<typeof getSupabase>
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string) => Promise<{ success: boolean, message: string }>
+  signUp: (email: string, password: string, name: string) => Promise<{ success: boolean, message: string }>
   signOut: () => Promise<void>
   error: Error | null
   isLoading: boolean
@@ -149,40 +150,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, name: string) => {
     try {
       setIsLoading(true)
       setError(null)
       
-      // First create the user
-      const { data, error } = await baseClient.auth.signUp({
+      const result = await signUpUser({
         email: email.toLowerCase(),
         password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`
-        }
+        fullName: name
       })
-
-      if (error) throw error
-      if (!data.user) throw new Error('No user data after signup')
-
-      // Create default tenant and membership using the API route
-      const response = await fetch('/api/create-default-tenant', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: data.user.id }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(`Error setting up account: ${errorData.error}`)
-      }
 
       return {
         success: true,
-        message: 'Please check your email for verification link'
+        message: result.message
       }
     } catch (error) {
       console.error('Sign up error:', error)
