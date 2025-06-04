@@ -14,7 +14,7 @@ export function useRevenueTrends(months: number) {
   useEffect(() => {
     const fetchRevenueTrends = async () => {
       try {
-        const response = await fetch(`/api/revenue/trends?months=${months}`, {
+        const response = await fetch(`/api/revenue/company/trends?months=${months}`, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer test_token`

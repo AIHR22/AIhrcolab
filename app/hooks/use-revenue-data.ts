@@ -30,7 +30,7 @@ export interface RevenueMetrics {
 }
 
 export function useRevenueData() {
-  const { data, error, isLoading } = useSWR<RevenueMetrics>('/api/revenue', fetcher);
+  const { data, error, isLoading } = useSWR<RevenueMetrics>('/api/revenue/company/current', fetcher);
 
   return {
     metrics: data,

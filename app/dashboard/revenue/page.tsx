@@ -924,8 +924,8 @@ function RevenueForecasting(): ReactNode {
                           </div>
                           <Button 
                             onClick={() => {
-                              // Call API to update projections
-                              fetch('/api/revenue/projections', {
+                              // Updated endpoint to align with API route structure
+                              fetch('/api/revenue/company/projections', {
                                 method: 'POST',
                                 headers: {
                                   'Content-Type': 'application/json',

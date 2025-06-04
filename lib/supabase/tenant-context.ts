@@ -36,7 +36,7 @@ export async function getCurrentTenantContext(): Promise<TenantContext | null> {
       .eq('user_id', user.id)
       .maybeSingle();
 
-    // If user is a platform admin, they don't need a profile
+    // If user is a platform admin, they don't need a tenant role
     if (platformAdmin) {
       return {
         tenantId: null,
